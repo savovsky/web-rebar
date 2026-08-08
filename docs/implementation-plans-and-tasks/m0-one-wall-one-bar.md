@@ -87,7 +87,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | T1 | wasm-pack setup: `core/` crate, `wasm:build` script, Vite wiring, round-trip probe | `pnpm build` bundles WASM; bridge call returns value | ✅ Done | `bc11f9b` |
 | T2 | Data models + steel catalog seed (`src/data/models/`, `src/data/catalog/`) | `tsc` typecheck, lint | ✅ Done | `71ecca2` |
 | T3 | `generate_bar_mesh` (Rust) + real bridge binding; test cylinder in viewport | lint/build; visual | ✅ Done | `0a279e1` |
-| T4 | Store: project-slice reducers + ui-slice extension; typed hooks | typecheck | ✅ Done | (hash in follow-up) |
+| T4 | Store: project-slice reducers + ui-slice extension; typed hooks | typecheck | ✅ Done | `4413366` |
 | T5 | Commands + registry + `CommandError`; **add vitest** (Q2) | headless unit tests | ⬜ Pending | — |
 | T6 | App shell layout + toolbar (M0 tool set, §B.6) + status bar | manual | ⬜ Pending | — |
 | T7 | Viewport3D + Place Wall tool (click-click-Enter → `placeWall`) | wall renders | ⬜ Pending | — |
