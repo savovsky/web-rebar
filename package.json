@@ -9,7 +9,8 @@
     "tsc": "tsc -b",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --fix",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "wasm:build": "cd core && wasm-pack build --target web --out-dir ../src/core/pkg --out-name web_rebar_core"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

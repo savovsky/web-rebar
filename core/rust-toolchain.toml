@@ -1,0 +1,7 @@
+# Host toolchain pinned to windows-gnu: the machine has no MSVC Build Tools,
+# and the gnu toolchain ships a bundled MinGW linker, so host build scripts
+# and proc-macros link without any external C++ toolchain. The actual product
+# code compiles to wasm32-unknown-unknown via the bundled rust-lld either way.
+[toolchain]
+channel = "stable-x86_64-pc-windows-gnu"
+targets = ["wasm32-unknown-unknown"]

@@ -1,0 +1,15 @@
+[package]
+name = "web-rebar-core"
+version = "0.1.0"
+edition = "2021"
+description = "web-rebar geometry core — stateless pure functions compiled to WASM (Architecture Spec §D)"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+
+[profile.release]
+opt-level = 3
+lto = true

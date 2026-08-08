@@ -10,8 +10,8 @@
 
 > **Last session:** 2026-08-08 — GitHub repo created (`git@github.com:savovsky/web-rebar.git`); Vite 8 + React 19 + TypeScript 6 scaffolded; M0 dependencies installed (RTK, Three.js, Tailwind v4, Radix, jsPDF); full `src/` folder structure created (stores, engine, io, ui stubs); build verified  
 > **Tooling (2026-08-08):** ESLint/Prettier stack adopted from doxeek — type-checked `typescript-eslint`, custom ruleset (max-params 2 → options objects, naming conventions, complexity limits), Prettier as a lint rule with import sorting; `pnpm lint` and `pnpm build` both clean
-> **Current phase:** Pre-development — project scaffold ready; ~2-month exploration gate (see [Project Vision → Project Strategy](./docs/01-project-vision.md))
-> **Next session:** M0 implementation planning (One Wall, One Bar) — WASM function signatures, data model interfaces, RTK store shape, section-view component design, milestone task breakdown
+> **Current phase:** M0 implementation started — plan approved, task tracker live: [docs/implementation-plans-and-tasks/](./docs/implementation-plans-and-tasks/README.md)
+> **Next session:** M0 task T2 — TypeScript data models + steel catalog seed (see [M0 tracker](./docs/implementation-plans-and-tasks/m0-one-wall-one-bar.md) for task states and resume instructions)
 
 **Where we left off:** 14 architectural topics (A–N) are decided and locked. Both §G.2 open questions are **resolved** (2026-07-29). The **[Architecture Spec](./docs/08-architecture-spec.md)** captures every decision. The project is now **scaffolded and ready for M0**:
 
@@ -64,7 +64,8 @@ README.md                              ← YOU ARE HERE — session state & proj
 │   ├── 06-reference-data.md           ← Extracted reference data (steel grades, country DB)
 │   ├── 07-browser-feasibility.md      ← Can each requirement run in the browser?
 │   ├── 09-tech-libraries.md           ← All chosen libraries & dependencies (future package.json content)
-│   └── 10-design-system.md            ← Design tokens & one-place-change styling rules
+│   ├── 10-design-system.md            ← Design tokens & one-place-change styling rules
+│   └── implementation-plans-and-tasks/ ← 🔵 LIVE — approved milestone plans + task state (M0 active)
 ├── author_notebook.md                 ← ⛔ AUTHOR'S PRIVATE notes — AI sessions must NOT read or use it (contains raw, outdated ideas)
 ```
 
@@ -218,12 +219,12 @@ Read C:\work\personal\projects\web-rebar\README.md first — it has session stat
 Then read docs/08-architecture-spec.md — it has all locked architecture decisions.
 ```
 
-**To resume M0 implementation planning (current), use this:**
+**To resume M0 implementation (current), use this:**
 
 ```
-Read C:\work\personal\projects\web-rebar\README.md and docs/08-architecture-spec.md.
-Then let's plan M0: One Wall, One Bar — WASM function signatures, data model interfaces,
-RTK store shape, command thunks, 3D viewport component, section-view component.
+Read C:\work\personal\projects\web-rebar\README.md, docs/08-architecture-spec.md,
+and docs/implementation-plans-and-tasks/m0-one-wall-one-bar.md (task tracker — it says which task is next).
+Continue with the next pending task. Do not commit — I review and commit each task myself.
 ```
 
 **Session type guide:**
