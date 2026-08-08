@@ -2,7 +2,6 @@
 
 > **Back to:** [README.md](../README.md)  
 > **Related:** [Allplan Analysis](./02-allplan-analysis.md) | [Module Architecture](./05-module-architecture.md)
-
 > **Extracted from:** `C:\Program Files\Allplan\Allplan\2022\Prg\NemReinforcement.dll`  
 > **Source:** Decompiled via .NET reflection (Windows PowerShell 5.1 / .NET Framework 4.7.1)  
 > **Date:** 2026-07-20  
@@ -27,7 +26,7 @@ Instead of guessing what properties a "bending form definition" needs, this docu
 ## When to Use This Document
 
 | Scenario | Use this document |
-|---|---|
+| --- | --- |
 | Designing your data model / TypeScript interfaces | ✅ Reference the properties for each concept |
 | Building parameter dialogs / property grids | ✅ Enum values define dropdown options |
 | Validating user input | ✅ Check validation rules and constraints |
@@ -43,7 +42,7 @@ Instead of guessing what properties a "bending form definition" needs, this docu
 
 The `NemReinforcement.dll` assembly is organized into these functional areas:
 
-```
+```text
 Nemetschek.NemReinforcement
 ├── PG_Data/          ← PropertyGrid data classes (the core data model)
 ├── Converters/       ← Type converters for UI binding (string ↔ value)
@@ -61,6 +60,7 @@ Nemetschek.NemReinforcement
 ## Core Data Classes (PG_Data)
 
 ### PG_ReinforcementBaseInfo
+
 **Purpose:** Fundamental reinforcement bar properties
 
 ```typescript
@@ -79,6 +79,7 @@ interface ReinforcementBaseInfo {
 ---
 
 ### PG_Reinforcement3DPlacement
+
 **Purpose:** 3D bar placement parameters
 
 ```typescript
@@ -96,6 +97,7 @@ interface Reinforcement3DPlacement {
 ---
 
 ### PG_Bending_Data
+
 **Purpose:** Complete bending form definition for reinforcement bars
 
 ```typescript
@@ -124,6 +126,7 @@ interface BendingData {
 ---
 
 ### PG_ConcreteCover_Data
+
 **Purpose:** Concrete cover specifications for bars and stirrups
 
 ```typescript
@@ -150,6 +153,7 @@ interface ConcreteCoverData {
 ---
 
 ### PG_AnchoringLength_Data
+
 **Purpose:** Anchorage length calculation parameters (per EC2/DIN)
 
 ```typescript
@@ -168,6 +172,7 @@ interface AnchoringLengthData {
 ---
 
 ### PG_UeberGreifLanR_Data
+
 **Purpose:** Lap splice / overlap length calculation parameters
 
 ```typescript
@@ -189,6 +194,7 @@ interface OverlapLengthData {
 ---
 
 ### PG_VerAnkLanR_Data
+
 **Purpose:** Anchorage length catalog data
 
 ```typescript
@@ -210,6 +216,7 @@ interface AnchorageLengthCatalogData {
 ---
 
 ### PG_BewRandEinf_Data
+
 **Purpose:** Edge reinforcement data (the most complex entity — 60+ properties)
 
 ```typescript
@@ -246,6 +253,7 @@ interface EdgeReinforcementData {
 ---
 
 ### PG_GlobalSetzen_Data
+
 **Purpose:** "Global Set" — batch apply reinforcement properties to multiple bars
 
 ```typescript
@@ -263,6 +271,7 @@ interface GlobalSetData {
 ---
 
 ### PG_GlobalErsetzen_Data
+
 **Purpose:** "Global Replace" — batch replace properties on existing bars
 
 ```typescript
@@ -282,6 +291,7 @@ interface GlobalReplaceData {
 ---
 
 ### Hoehenbezug_Data (Height Reference)
+
 **Purpose:** Vertical positioning reference for reinforcement layers
 
 ```typescript
@@ -440,7 +450,7 @@ interface PointerOptions {
 ### Reinforcement Types
 
 | Enum | German Name | English | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `EraTyp` | Randbewehrung Typ | Edge Reinforcement Type | ERA shape family |
 | `EraObereBewForms` | ERA Obere Bewehrungsformen | ERA Upper Forms | Upper layer ERA styles |
 | `EraUntereBewForms` | ERA Untere Bewehrungsformen | ERA Lower Forms | Lower layer ERA styles |
@@ -454,7 +464,7 @@ interface PointerOptions {
 ### Anchorage & Connection
 
 | Enum | German Name | Description |
-|---|---|---|
+| --- | --- | --- |
 | `Verankerungsart` | Verankerungsart | Anchorage type (straight, bent, hook, loop) |
 | `VerankerungsLage` | Verankerungslage | Anchorage position (top/bottom layer) |
 | `HookType` | Hakentyp | Hook type (90°, 135°, 180°, custom) |
@@ -466,7 +476,7 @@ interface PointerOptions {
 ### Length & Measurement
 
 | Enum | German Name | Description |
-|---|---|---|
+| --- | --- | --- |
 | `Val_LaengeTyp` | Längentyp | Length type classification |
 | `AbtreppTyp` | Abtreppungstyp | Stepping/staggering type |
 | `ValRunden` | Rundungsregel | Rounding rule (up/down/nearest) |
@@ -474,7 +484,7 @@ interface PointerOptions {
 ### Positioning
 
 | Enum | German Name | Description |
-|---|---|---|
+| --- | --- | --- |
 | `EisenLage` | Eisenlage | Bar layer (top/bottom/middle) |
 | `Einbauort` | Einbauort | Installation location |
 | `EisLanBer` | Eisenlänge/bereich? | Bar length/range |
@@ -487,7 +497,7 @@ interface PointerOptions {
 ### Supply Chain
 
 | Enum | German Name | Description |
-|---|---|---|
+| --- | --- | --- |
 | `Hersteller` | Hersteller | Manufacturer catalog |
 | `Lieferant` | Lieferant | Supplier catalog |
 | `Verfugbarkeit` | Verfügbarkeit | Availability status |
@@ -495,14 +505,14 @@ interface PointerOptions {
 ### Validation
 
 | Enum | German Name | Description |
-|---|---|---|
+| --- | --- | --- |
 | `ValElBeziehung` | Elementbeziehung | Element relationship (for validation) |
 | `ActivityType` | Aktivitätstyp | Activity type |
 
 ### UI Configuration
 
 | Enum | German Name | Description |
-|---|---|---|
+| --- | --- | --- |
 | `SchenkelBeschriftung` | Schenkelbeschriftung | Leg label configuration |
 | `LabelTypForOptionsData` | Beschriftungstyp | Label type for options |
 | `PointerTyp` | Zeigertyp | Pointer/leader type |
@@ -515,7 +525,7 @@ interface PointerOptions {
 The data model includes built-in validation commands that enforce reinforcement rules:
 
 | Validator | Validates |
-|---|---|
+| --- | --- |
 | `ConcreteCover_Stirrup` converter | Stirrup cover values are valid (range, standard values) |
 | `ConcreteCover_Bars` converter | Bar cover values are valid |
 | `TextWidth_ValidationCommand` | Text width is within valid range |
@@ -547,11 +557,13 @@ AllPG_Data (aggregate root)
 ```
 
 **Write patterns:**
+
 - `WriteDatFile()` — Serializes all reinforcement data to `.dat` files
 - `WriteDatFile_All()` — Serializes with section and designation headers
 - `PropertiesToSTW()` — Converts properties to STW (internal format)
 
 **Serialization/Deserialization:**
+
 - `Alloc_PG_Data()` — Allocates array for multiple bending forms/cover sets
 - `Realloc_PG_Data(length)` — Resizes the data arrays
 - `GetSerializedClass()` — Returns serializable version
@@ -562,21 +574,27 @@ AllPG_Data (aggregate root)
 ## What This Tells You About Building a Reinforcement Tool
 
 ### 1. Concrete Cover Is Complex
+
 Allplan models **11 separate cover values** for bars and stirrups, plus an "all equal" shortcut. If you only model one cover value, you'll hear from engineers on day one.
 
 ### 2. Bending Forms Need 7+ Segment Lengths
+
 The bending form model (lengths a through g) captures every standard shape from DIN/ISO 3766 bar bending shapes.
 
 ### 3. Anchorage and Lap Splice Are Calculation-Heavy
+
 These aren't simple input fields — they're calculation engines that take material grades, bar conditions, and area ratios as inputs, then compute code-compliant lengths.
 
 ### 4. Height References Need Layer Awareness
+
 Top/bottom layers, absolute vs. relative spacing, and multiple reference types mean height positioning is more nuanced than a simple "cover" value.
 
 ### 5. Batch Operations Need Before/After Models
+
 `GlobalSetzen` (global set) and `GlobalErsetzen` (global replace) are essential workflows. Users don't edit bars one at a time — they modify groups.
 
 ### 6. Labels Are a First-Class Feature
+
 Four separate label configuration data classes (bar placement, mesh, mark symbols, pointer options) plus text formatting show that reinforcement annotation is as important as the bars themselves.
 
 ---
@@ -586,7 +604,7 @@ Four separate label configuration data classes (bar placement, mesh, mark symbol
 From the install directory structure:
 
 | Module | Relationship to NemReinforcement.dll |
-|---|---|
+| --- | --- |
 | `NP_ReinfPlacement.dll` | WPF UI that binds to these data classes |
 | `NP_CircularAreaReinf.dll` | Circular section UI (also binds these classes) |
 | `NP_ReinfGroup.dll` | Bar grouping — uses these data types |
@@ -602,7 +620,7 @@ From the install directory structure:
 ## Key Terminology (German ↔ English)
 
 | Allplan German Term | English Translation | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Bewehrung | Reinforcement | General term for rebar |
 | Eisen | Bar / Iron | Individual reinforcing bar |
 | Bügel | Stirrup | Closed reinforcement in beams/columns |
