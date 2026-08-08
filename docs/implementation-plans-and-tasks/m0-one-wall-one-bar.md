@@ -7,8 +7,9 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **Next task:** **T2 — TypeScript data models + steel catalog seed** (`src/data/models/`, `src/data/catalog/`). Data model first, before any UI (rule 4).
-- **Done:** T1 (Rust/WASM toolchain + `core/` crate + bridge round-trip) — pending author's commit at time of writing.
+- **Next task:** **T3 — `generate_bar_mesh` (Rust) + real bridge binding**; test cylinder in viewport.
+- **Done:** T1 (WASM toolchain + crate + round-trip) — `bc11f9b`.
+- **Awaiting review:** T2 (data models + steel catalog seed).
 - **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes → **author reviews and commits** → next task.
 
 ## M0 Goal (Architecture Spec §A)
@@ -83,8 +84,8 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 | # | Task | Verify by | State | Commit |
 |---|---|---|---|---|
-| T1 | wasm-pack setup: `core/` crate, `wasm:build` script, Vite wiring, round-trip probe | `pnpm build` bundles WASM; bridge call returns value | 🟡 Review | — |
-| T2 | Data models + steel catalog seed (`src/data/models/`, `src/data/catalog/`) | `tsc` typecheck, lint | ⬜ Pending | — |
+| T1 | wasm-pack setup: `core/` crate, `wasm:build` script, Vite wiring, round-trip probe | `pnpm build` bundles WASM; bridge call returns value | ✅ Done | `bc11f9b` |
+| T2 | Data models + steel catalog seed (`src/data/models/`, `src/data/catalog/`) | `tsc` typecheck, lint | 🟡 Review | — |
 | T3 | `generate_bar_mesh` (Rust) + real bridge binding; test cylinder in viewport | lint/build; visual | ⬜ Pending | — |
 | T4 | Store: project-slice reducers + ui-slice extension; typed hooks | typecheck | ⬜ Pending | — |
 | T5 | Commands + registry + `CommandError`; **add vitest** (Q2) | headless unit tests | ⬜ Pending | — |
@@ -99,7 +100,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 ## Task Log
 
-### T1 — WASM toolchain & round-trip ✅ (2026-08-08, awaiting author commit)
+### T1 — WASM toolchain & round-trip ✅ (2026-08-08, committed `bc11f9b`)
 
 **Machine setup (not in repo):** rustup via winget; `wasm32-unknown-unknown` target; `wasm-pack 0.15.0` prebuilt binary in `~/.cargo/bin`; `stable-x86_64-pc-windows-gnu` toolchain (see §6 above — cargo-install of wasm-pack failed without MSVC linker, hence prebuilt).
 
@@ -111,9 +112,18 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 **Incidental fixes (same review batch):** `.prettierrc.json` extracted so CLI and IDE Prettier share one config (IDE was showing phantom errors); `.prettierignore` excludes `*.md` + lockfile; react-hooks v7 plugin type cast for ESLint 10 (upstream types lag, 7.1.1 is latest).
 
+### T2 — Data models + steel catalog seed 🟡 (2026-08-08, awaiting author commit)
+
+**Files added:** `src/data/models/` — `geometry.ts` (`Vec3`, `Plane`), `elements.ts` (`WallElement`, `ConcreteElement` union), `reinforcement.ts` (`ReinforcementBar` with stored cover intent, §C), `sections.ts` (`SectionDefinition` with `viewDepth`, §G.2.3), `project.ts` (`ProjectModel` — §H.1 subset, normalized entity dictionaries), `index.ts` (type-only barrel). `src/data/catalog/steel.ts` — `SteelCatalog` JSON-shaped per §K.5: DE / DIN 1045+EC2 seed, 8 diameters with nominal kg/m weights (feeds §J schedule later), grade `B500B`, cover defaults (wall 25 mm), `DEFAULT_DIAMETERS` convenience export. `.gitkeep` files removed from both dirs.
+
+**Design notes:** all coordinates plain numbers (JSON-serializable, §H.1); derived values (wall length, meshes, section primitives) documented as never stored; magic-number lint satisfied because catalog data lives in object literals (`detectObjects: false`).
+
+**Verification:** `pnpm lint` ✅ · `pnpm build` ✅ (typecheck covers the new modules).
+
 ## Change Log
 
 | Date | Change |
 |---|---|
 | 2026-08-08 | Plan written and approved (Q1-b, Q2-yes, Q3-no-plugins) |
 | 2026-08-08 | T1 implemented; task tracker created |
+| 2026-08-08 | T1 committed (`bc11f9b`); T2 implemented, awaiting review |
