@@ -58,14 +58,18 @@ export default defineConfig([
       'no-console': ['error', { allow: ['warn', 'error', 'info'] }],
       'no-else-return': 'error',
       'no-multiple-empty-lines': ['warn', { max: 1, maxEOF: 1 }],
-      'no-magic-numbers': [
+      'no-magic-numbers': 'off', // Base rule disabled in favor of the TS-aware extension below
+      '@typescript-eslint/no-magic-numbers': [
         'error',
         {
-          detectObjects: false, // Don't require named constants for object properties
+          detectObjects: false, // Command params objects ({ diameter: 16 }) are NOT checked
           enforceConst: true,
-          ignore: [-1, 0, 1, 2, 3, 4, 5, 10, 12, 24, 60, 100, 1000],
+          ignore: [-1, 0, 1, 2, 3, 4, 5, 10, 12, 24, 45, 60, 90, 100, 180, 360, 1000],
           ignoreArrayIndexes: true,
           ignoreDefaultValues: true,
+          ignoreEnums: true,
+          ignoreNumericLiteralTypes: true,
+          ignoreReadonlyClassProperties: true,
         },
       ],
       '@typescript-eslint/no-unused-vars': [
@@ -138,6 +142,14 @@ export default defineConfig([
           plugins: ['@trivago/prettier-plugin-sort-imports'],
         },
       ],
+    },
+  },
+  // Geometry math: bare numbers allowed — angles, factors, and conversions are self-evident
+  // in math code, and forcing named constants here costs more time than it saves (decided 2026-08-08)
+  {
+    files: ['src/engine/**/*.ts', 'src/core/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-magic-numbers': 'off',
     },
   },
   // Plain JS files (this config): no type-aware linting
