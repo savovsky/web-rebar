@@ -33,14 +33,3 @@ export function createBarGeometry(params: BarGeometryParams): BufferGeometry {
   geometry.setIndex(new BufferAttribute(mesh.indices, 1));
   return geometry;
 }
-
-/** Temporary T3 smoke-test fixture (Ø16 diagonal bar) — replaced by real bar rendering in T8. */
-export function createTestBarGeometry(): BufferGeometry {
-  return createBarGeometry({
-    path: [
-      { x: 0, y: 0, z: 0 },
-      { x: 2400, y: 600, z: 0 },
-    ],
-    diameter: 16,
-  });
-}

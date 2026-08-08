@@ -7,8 +7,8 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **Next task:** **T6 — App shell layout + toolbar (M0 tool set, §B.6) + status bar.**
-- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`.
+- **Next task:** **T7 — Viewport3D + Place Wall tool (click-click-Enter → `placeWall`).**
+- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — implemented, awaiting author review/commit.
 - **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes → **author reviews and commits** → next task.
 
 ## M0 Goal (Architecture Spec §A)
@@ -88,7 +88,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | T3 | `generate_bar_mesh` (Rust) + real bridge binding; test cylinder in viewport | lint/build; visual | ✅ Done | `0a279e1` |
 | T4 | Store: project-slice reducers + ui-slice extension; typed hooks | typecheck | ✅ Done | `4413366` |
 | T5 | Commands + registry + `CommandError`; **add vitest** (Q2) | headless unit tests | ✅ Done | `a7934d2` |
-| T6 | App shell layout + toolbar (M0 tool set, §B.6) + status bar | manual | ⬜ Pending | — |
+| T6 | App shell layout + toolbar (M0 tool set, §B.6) + status bar | manual | 🟡 Awaiting review | — |
 | T7 | Viewport3D + Place Wall tool (click-click-Enter → `placeWall`) | wall renders | ⬜ Pending | — |
 | T8 | Place Bar tool (click face → 2 points → `placeBar`, default cover from catalog) | bar renders in wall | ⬜ Pending | — |
 | T9 | `plane_polyline_intersection` (Rust) + `sectioning.ts` (parametric outline + dots + projection) | unit tests | ⬜ Pending | — |
@@ -139,6 +139,22 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 **Verification:** `pnpm lint` ✅ · `pnpm build` ✅ (typecheck). Store behavior tests arrive with vitest in T5.
 
+### T6 — App shell + toolbar + status bar 🟡 (2026-08-08, awaiting review)
+
+**Files added:** `src/ui/styles/` — `tokens.css` (doc 10 token system: HSL color channels in `:root`/`.dark`, typography + CAD density tokens, Tailwind v4 `@theme` mapping → semantic utilities like `bg-panel`, `h-control`, `w-panel-left`; no `tailwind.config.ts`), `globals.css` (base layer, replaces the `src/index.css` placeholder). `src/ui/toolbar/` — `icons.tsx` (6 monochrome 24×24 stroke icons, inherit currentColor, §B.6 rule 5), `shortcuts.json` (§B.6 rule 3 key→tool config: V/W/B/S/H), `tools.ts` (tool metadata: label, default status-bar hint, shortcut, icon), `ToolButton.tsx` (Radix tooltip; click = activate, double-click = sticky lock, §B.6 rules 1–2), `Toolbar.tsx`, `use-tool-shortcuts.ts` (global keydown: shortcuts + Esc → deselect + Select per §B.5; ignores editable targets and modifier combos). `src/ui/shell/` — `AppShell.tsx` (§B.2 layout), `TopBar.tsx` (product + project name), `StatusBar.tsx` (active tool + hint, snap toggle, grid, coordinate placeholders for T7). `src/ui/panels/SidePanel.tsx` (Building/Properties tabs via Radix, §B.2). `src/ui/viewport/ViewportPlaceholder.tsx` (T7 slot).
+
+**Files changed:** `src/stores/ui-slice.ts` (+ `snapEnabled`/`gridSpacingMm` 100 mm §B.3 default, `toggleSnap`; `ToolId` exported), `src/App.tsx` (T3 smoke scene removed — shell owns the screen), `src/main.tsx` (globals.css), `index.html` (`dark` class = theme switch, doc 10), `tsconfig.app.json` (+ `resolveJsonModule`), `src/engine/bar-geometry.ts` (temporary `createTestBarGeometry` fixture removed with the smoke scene).
+
+**Design notes:** tool state is UI state, not project model — dispatching ui-slice `setTool`/`toggleSnap`/`clearSelection` from UI is the §B.6-sanctioned mechanism; §N commands remain the only doorway for project mutations (none exist in T6 UI). Auto-return to Select fires on tool *completion* — arrives with the tools themselves (T7/T8). Default theme: dark (CAD convention) via one class on `<html>`; light theme = remove the class. JS bundle dropped 1.1 MB → 291 kB (three.js no longer imported by the shell; returns with Viewport3D in T7).
+
+**Review fix 2 (author test 3.3):** on Esc, the previously active tool button keeps DOM focus and showed the browser's default white `:focus-visible` outline (unstyled — my omission). Added a semantic `--focus-ring` token (tokens.css, both themes) + explicit `focus-visible` styling on tool buttons, status-bar snap toggle, and panel tab triggers. The blue focus outline on the previously active button after Esc is intended keyboard-focus indication — it follows DOM focus and disappears on the next click; the sticky ring means "locked tool".
+
+**Review fix (author test 2.4):** sticky indicator was an inset `ring-primary-foreground` — in the dark theme that color ≈ panel background, so the ring was invisible (looked like the active background shrank). Changed to an outer `ring-2 ring-primary ring-offset-2 ring-offset-panel` — visible in both themes.
+
+**Deferred to UI/UX polish phase (post-proof, author's call 2026-08-08):** focus ring lingering on the previously active tool until the next click; general focus-management refinement (e.g., returning focus to the viewport after tool switching).
+
+**Verification:** `pnpm lint` ✅ (incl. prettier) · `pnpm test` 23/23 ✅ · `pnpm build` ✅ · built CSS confirmed to contain every custom token utility (`h-control-lg`, `w-panel-left`, `h-statusbar`, …) · doc 10 review check: zero hex/px/font-size literals in `src/ui` outside `tokens.css` ✅.
+
 ### T5 — Commands + registry + `CommandError` + vitest ✅ (2026-08-08, committed `a7934d2`)
 
 **Files added:** `src/commands/` — `command-error.ts` (`CommandError`, codes `INVALID_PARAMS`/`NOT_FOUND`), `place-wall.ts`, `place-bar.ts` (catalog defaults for cover/grade resolved inside the command), `create-section.ts` (normal normalized; M0 vertical-plane guard), `delete-element.ts` (explicit per-bar cascade + selection prune), `delete-bar.ts`, `set-active-section.ts`, `index.ts` (barrel + `commandRegistry` name→thunk map, §N.2 MCP door), 5 test files + `test-utils.ts` (23 tests). `vitest.config.ts` (node env, `@` alias — commands are UI-free, no jsdom).
@@ -161,3 +177,4 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | 2026-08-08 | T3 committed (`0a279e1`) — visual confirmed by author |
 | 2026-08-08 | T4 implemented + approved by author |
 | 2026-08-08 | T5 implemented + approved by author, committed (`a7934d2`) |
+| 2026-08-08 | T6 implemented (sticky-ring fix after author test 2.4), awaiting review |

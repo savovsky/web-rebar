@@ -4,7 +4,7 @@
 import { type PayloadAction, createSlice } from '@reduxjs/toolkit';
 import type { Vec3 } from '@/data/models';
 
-type ToolId = 'select' | 'placeWall' | 'placeBar' | 'sectionCut' | 'pan' | 'orbit';
+export type ToolId = 'select' | 'placeWall' | 'placeBar' | 'sectionCut' | 'pan' | 'orbit';
 
 interface SelectionState {
   elementIds: string[];
@@ -33,6 +33,10 @@ interface UiState {
   placementDraft: PlacementDraft;
   /** Which section the dockable 2D panel shows (§B.2). */
   activeSectionId: string | null;
+  /** Grid snapping (§B.3) — status-bar toggle, consumed by viewport tools from T7. */
+  snapEnabled: boolean;
+  /** Grid spacing in mm (§B.3 default 100). */
+  gridSpacingMm: number;
 }
 
 const emptyDraft: PlacementDraft = {
@@ -50,6 +54,8 @@ const initialState: UiState = {
   selection: { elementIds: [], barIds: [] },
   placementDraft: emptyDraft,
   activeSectionId: null,
+  snapEnabled: true,
+  gridSpacingMm: 100,
 };
 
 const uiSlice = createSlice({
@@ -97,6 +103,9 @@ const uiSlice = createSlice({
     setActiveSection(state, action: PayloadAction<string | null>) {
       state.activeSectionId = action.payload;
     },
+    toggleSnap(state) {
+      state.snapEnabled = !state.snapEnabled;
+    },
   },
 });
 
@@ -110,5 +119,6 @@ export const {
   setSelection,
   setTool,
   startDraft,
+  toggleSnap,
 } = uiSlice.actions;
 export default uiSlice.reducer;

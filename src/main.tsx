@@ -3,8 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import App from './App.tsx';
 import { initWasm, wasmSelfTest } from './engine/wasm-bridge';
-import './index.css';
 import { store } from './stores';
+import './ui/styles/globals.css';
 
 // WASM loads in parallel with first paint; geometry calls (T3/T9) await initWasm() internally.
 initWasm()
