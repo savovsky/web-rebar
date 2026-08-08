@@ -43,7 +43,9 @@ export default defineConfig([
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
       'react-refresh/only-export-components': ['error', { allowConstantExport: true }],
-      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-explicit-any': 'error', // Use 'unknown' + narrowing; escape via disable-comment with justification
+      eqeqeq: ['error', 'always'], // No silent coercion in numeric/geometry code
+      'prefer-const': 'error',
       'max-statements-per-line': ['error', { max: 1 }],
       'no-nested-ternary': 'error', // Disallow nested ternary expressions for better readability
       'no-unneeded-ternary': 'error', // Disallow ternary operators when simpler alternatives exist
