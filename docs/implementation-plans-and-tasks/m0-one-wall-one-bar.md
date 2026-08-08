@@ -8,7 +8,7 @@
 ## ▶️ Current State (read this first in a fresh session)
 
 - **Next task:** **T7 — Viewport3D + Place Wall tool (click-click-Enter → `placeWall`).**
-- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — implemented, awaiting author review/commit.
+- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author).
 - **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes → **author reviews and commits** → next task.
 
 ## M0 Goal (Architecture Spec §A)
@@ -88,7 +88,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | T3 | `generate_bar_mesh` (Rust) + real bridge binding; test cylinder in viewport | lint/build; visual | ✅ Done | `0a279e1` |
 | T4 | Store: project-slice reducers + ui-slice extension; typed hooks | typecheck | ✅ Done | `4413366` |
 | T5 | Commands + registry + `CommandError`; **add vitest** (Q2) | headless unit tests | ✅ Done | `a7934d2` |
-| T6 | App shell layout + toolbar (M0 tool set, §B.6) + status bar | manual | 🟡 Awaiting review | — |
+| T6 | App shell layout + toolbar (M0 tool set, §B.6) + status bar | manual | ✅ Done | `20fe9b6` |
 | T7 | Viewport3D + Place Wall tool (click-click-Enter → `placeWall`) | wall renders | ⬜ Pending | — |
 | T8 | Place Bar tool (click face → 2 points → `placeBar`, default cover from catalog) | bar renders in wall | ⬜ Pending | — |
 | T9 | `plane_polyline_intersection` (Rust) + `sectioning.ts` (parametric outline + dots + projection) | unit tests | ⬜ Pending | — |
@@ -139,7 +139,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 **Verification:** `pnpm lint` ✅ · `pnpm build` ✅ (typecheck). Store behavior tests arrive with vitest in T5.
 
-### T6 — App shell + toolbar + status bar 🟡 (2026-08-08, awaiting review)
+### T6 — App shell + toolbar + status bar ✅ (2026-08-08, committed `20fe9b6`)
 
 **Files added:** `src/ui/styles/` — `tokens.css` (doc 10 token system: HSL color channels in `:root`/`.dark`, typography + CAD density tokens, Tailwind v4 `@theme` mapping → semantic utilities like `bg-panel`, `h-control`, `w-panel-left`; no `tailwind.config.ts`), `globals.css` (base layer, replaces the `src/index.css` placeholder). `src/ui/toolbar/` — `icons.tsx` (6 monochrome 24×24 stroke icons, inherit currentColor, §B.6 rule 5), `shortcuts.json` (§B.6 rule 3 key→tool config: V/W/B/S/H), `tools.ts` (tool metadata: label, default status-bar hint, shortcut, icon), `ToolButton.tsx` (Radix tooltip; click = activate, double-click = sticky lock, §B.6 rules 1–2), `Toolbar.tsx`, `use-tool-shortcuts.ts` (global keydown: shortcuts + Esc → deselect + Select per §B.5; ignores editable targets and modifier combos). `src/ui/shell/` — `AppShell.tsx` (§B.2 layout), `TopBar.tsx` (product + project name), `StatusBar.tsx` (active tool + hint, snap toggle, grid, coordinate placeholders for T7). `src/ui/panels/SidePanel.tsx` (Building/Properties tabs via Radix, §B.2). `src/ui/viewport/ViewportPlaceholder.tsx` (T7 slot).
 
@@ -177,4 +177,5 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | 2026-08-08 | T3 committed (`0a279e1`) — visual confirmed by author |
 | 2026-08-08 | T4 implemented + approved by author |
 | 2026-08-08 | T5 implemented + approved by author, committed (`a7934d2`) |
-| 2026-08-08 | T6 implemented (sticky-ring fix after author test 2.4), awaiting review |
+| 2026-08-08 | T6 implemented; author visual pass — two review fixes (sticky ring contrast, focus-visible token) |
+| 2026-08-08 | T6 committed (`20fe9b6`) — visual confirmed by author |
