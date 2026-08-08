@@ -8,13 +8,24 @@
 
 ## Session State
 
-> **Last session:** 2026-07-29 — §G.2 open questions resolved (2D polygon union for junctions; convention-based depth visibility); Tool Palette Design locked (§B.2 expanded); deferred topics reviewed 
-> **Current phase:** Pre-development — architecture updated; ~2-month exploration gate (see [Project Vision → Project Strategy](./docs/01-project-vision.md))  
-> **Next session:** M0 implementation planning (One Wall, One Bar) — tool palette known, section algorithm specified, section-view component design, WASM function signatures, RTK store shape for project slice, milestone task breakdown  
+> **Last session:** 2026-08-08 — GitHub repo created (`git@github.com:savovsky/web-rebar.git`); Vite 8 + React 19 + TypeScript 6 scaffolded; M0 dependencies installed (RTK, Three.js, Tailwind v4, Radix, jsPDF); full `src/` folder structure created (stores, engine, io, ui stubs); build verified
+> **Current phase:** Pre-development — project scaffold ready; ~2-month exploration gate (see [Project Vision → Project Strategy](./docs/01-project-vision.md))
+> **Next session:** M0 implementation planning (One Wall, One Bar) — WASM function signatures, data model interfaces, RTK store shape, section-view component design, milestone task breakdown
 
-**Where we left off:** 14 architectural topics (A–N) are decided and locked. Both §G.2 open questions are now **resolved** (2026-07-29): (1) element junctions handled via 2D polygon union of parametric profiles — no 3D CSG needed; (2) depth-view hidden lines use convention-based visibility (dashed within depth) as default, raster-assisted HLR deferred past M4. The **[Architecture Spec](./docs/08-architecture-spec.md)** captures every decision with rationale, alternatives, and revision history. The workflow model is confirmed: **structure first** (even a single beam with two columns or one foundation), **then reinforcement**. A **command-layer rule (§N)** governs all implementation from M0, keeping doors open for future AI features (MCP server, natural-language input). The critical deferred topic blocking M0 — **Tool Palette Design** — is now locked (§B.2 expanded). Remaining deferred topics (Layer Model, Drawing Layouts, etc.) are slotted for later milestones.
+**Where we left off:** 14 architectural topics (A–N) are decided and locked. Both §G.2 open questions are **resolved** (2026-07-29). The **[Architecture Spec](./docs/08-architecture-spec.md)** captures every decision. The project is now **scaffolded and ready for M0**:
 
-### Tool Palette (locked 2026-07-29, see §B.2)
+**Repository:** `git@github.com:savovsky/web-rebar.git`
+
+| What | Details |
+|------|---------|
+| **Build** | Vite 8.2 + TypeScript 6.0 — `pnpm dev` / `pnpm build` |
+| **UI** | React 19.2 + Tailwind v4 + Radix primitives |
+| **State** | Redux Toolkit 2.12 (thunks = §N command layer) |
+| **3D** | Three.js 0.185 + React Three Fiber 9.7 + Drei 10.7 |
+| **PDF** | jsPDF 4.2 |
+| **Structure** | `src/stores/` (configured), `src/engine/` (stubs), `src/io/` (stubs), `src/commands/` (empty, ready for §N), `src/ui/` (empty dirs per feature), `src/data/` (dirs for models/catalog/validation) |
+
+**Still needed (M0 session):** Rust `core/` crate (WASM), first TypeScript data model interfaces, first command thunks, 3D viewport component, section-view component.
 
 Designed for M0 minimal viable tool set, extensible to full palette. Toolbar is a single vertical icon column (left edge of viewport). Figma-style auto-return to Select after single-use tools. Keyboard shortcuts configurable (defaults below).
 
@@ -193,14 +204,14 @@ These topics need dedicated discussion sessions before implementation reaches th
 | # | Topic | When Needed | Depends On |
 |---|---|---|---|
 | **Layer Model** | On/off, freeze/thaw, lock/unlock, active layer per storey. User-defined layer names. | Before M4 (multi-element building) | B (interaction model) |
-| **Tool Palette Design** | Exact tool list, icons, shortcuts, workflow sequences. User-editable keyboard shortcuts. | Before M0 (needs tools to interact) | B |
+| **Tool Palette Design** | Exact tool list, icons, shortcuts, workflow sequences. User-editable keyboard shortcuts. | **✅ LOCKED 2026-07-29** — M0 tool set defined (§B.6) | B |
 | **Drawing Layouts & Title Blocks** | A0-A4 + custom sheets. Predefined and custom title blocks, borders, scale settings. | Before I (2D drawing pipeline) is complete | I |
 | **Dimension & Annotation System** | Associative dimensions, elevation markers, leader lines, bar labels. Strategy locked in §M — remains: detailed design + implementation. Prototype early (2D-only, no 3D stack needed). | Early — it is the differentiator; after the first 2D view exists | G, J, M |
 | **BVBS Export** | Export bar schedule to BVBS format for bending machines. | After J (schedule) works | J |
 | **Parametric Reinforcement Blocks** | JSON-defined parametric objects (like Allplan PythonParts). Custom block editor. | Phase 2 | F |
 | **Multi-Country Steel Catalogs** | Extract and load country-specific steel grade files from Allplan data. | After K (validation) with DIN/EC2 working | K, [06](./docs/06-reference-data.md) |
 | **DWG Import** | Native DWG support. Currently DXF-only as workaround. | When user demand requires it | C (IO adapters) |
-| **Junction Section Handling** | Beam-column-slab joints: view-composition rules vs. CSG union of touching solids (§G.2 open question). | M4 or first milestone needing joint sections | G |
+| **Junction Section Handling** | Beam-column-slab joints: view-composition rules vs. CSG union of touching solids. | **✅ RESOLVED 2026-07-29** — 2D polygon union (§G.2.2); impl at M4 | G |
 | **Cloud Storage & Accounts** | BaaS (Backend as a Service) for project sync. v1 = upload/download of project.json (Supabase-leaning, §H.4). Only after product value is proven. | Phase 2 | H |
 | **MCP (Model Context Protocol) Server** | External AI (Artificial Intelligence) agents drive the app via the command layer exposed as MCP tools. Core engine packaged for Node.js; MCP server = thin wrapper (a browser app cannot host a server — separate companion process; remote MCP endpoint possible once backend exists, §H.4). **Bring-your-own-AI model (2026-07-28):** users drive the app with their OWN AI subscription (Claude Desktop etc.) — zero inference cost for the product, no API-key management, strong privacy story. Direction validated by FreeCAD+Claude Desktop MCP integrations. | Phase 2+, after the tool is proven | N |
 | **Natural-Language Detailing Input** | LLM (Large Language Model) translates text ("Beam 30×60, 2 spans, stirrups Ø8/15") → command params → validate against catalog/code rules → user confirms → engine executes. LLM gives intent, never geometry (§N.2). **Note (2026-07-28):** an external AI via MCP may serve as the FIRST natural-language front-end (bring-your-own-AI) — an in-app assistant becomes optional/complementary rather than a prerequisite. | Phase 2, after schemas stabilize | N, F, K |
@@ -219,12 +230,12 @@ Read C:\work\personal\projects\web-rebar\README.md first — it has session stat
 Then read docs/08-architecture-spec.md — it has all locked architecture decisions.
 ```
 
-**To resume where we stopped (2026-07-28), use this:**
+**To resume M0 implementation planning (current), use this:**
 
 ```
 Read C:\work\personal\projects\web-rebar\README.md and docs/08-architecture-spec.md.
-Then let's resolve the two open questions in §G.2 (junction section handling,
-depth-view hidden lines) and continue with the deferred topics before M0 planning.
+Then let's plan M0: One Wall, One Bar — WASM function signatures, data model interfaces,
+RTK store shape, command thunks, 3D viewport component, section-view component.
 ```
 
 **Session type guide:**

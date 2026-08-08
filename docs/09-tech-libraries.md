@@ -3,7 +3,11 @@
 > **Back to:** [README.md](../README.md)  
 > **Related:** [Tech Stack](./03-tech-stack.md) | [Architecture Spec](./08-architecture-spec.md)  
 > **Created:** 2026-07-28  
-> **Status:** Planned dependencies — nothing installed yet (no `package.json` exists). Versions are pinned at project init; until then "Latest" means latest stable at init time.
+> **Status:** ✅ Installed 2026-08-08 — pinned versions below. Rust crates pending M0 WASM session.
+
+> **package.json:** `C:\work\personal\projects\web-rebar\package.json`  
+> **Lockfile:** `C:\work\personal\projects\web-rebar\pnpm-lock.yaml`  
+> **Check actual versions:** `pnpm list --depth=0`
 
 ---
 
@@ -17,24 +21,32 @@ The complete list of chosen libraries for the project, with the role of each. Th
 
 ---
 
-## Runtime Dependencies (npm — future `package.json` dependencies)
+## Runtime Dependencies (npm — installed 2026-08-08)
 
-| Package | Role | Decided in |
-| --- | --- | --- |
-| **react** (v19) | UI (User Interface) framework — author's core expertise | [03](./03-tech-stack.md) |
-| **react-dom** (v19) | React renderer for the browser | [03](./03-tech-stack.md) |
-| **@reduxjs/toolkit** (RTK — Redux Toolkit) | State management. Thunks = the §N command layer; slices = reducers; Immer is built in | [§E](./08-architecture-spec.md#e--state-management--undoredo) (revised 2026-07-28) |
-| **react-redux** | React bindings for the RTK store (`useSelector`, `useDispatch`) | [§E](./08-architecture-spec.md#e--state-management--undoredo) |
-| **three** (Three.js) | 3D rendering engine (WebGL (Web Graphics Library) 2) — viewport, meshes, instancing, raycasting | [03](./03-tech-stack.md), [§L](./08-architecture-spec.md#l--performance--rendering-strategy) |
-| **@react-three/fiber** (React Three Fiber) | Declarative React renderer for Three.js — 3D scene as components | [03](./03-tech-stack.md) |
-| **@react-three/drei** | Utility components for R3F (React Three Fiber): orbit controls, gizmos, helpers | [03](./03-tech-stack.md) |
-| **web-ifc** | IFC (Industry Foundation Classes) parsing and writing (existing WASM (WebAssembly) library) — import/export adapter | [§D.4](./08-architecture-spec.md#d--wasm--typescript-boundary) |
-| **jspdf** | Vector PDF (Portable Document Format) export — scale-accurate plan output (A0–A4 + custom) | [§I.3](./08-architecture-spec.md#i--2d-drawing--pdf-pipeline) |
-| **rbush** | R-tree spatial index in JavaScript — label/leader collision detection for auto-annotation | [§M.2](./08-architecture-spec.md#m--annotation--labeling-strategy) |
-| **dxf-parser** | DXF (Drawing Exchange Format) import (or custom parser — DXF is ASCII; decide at implementation) | [07](./07-browser-feasibility.md) |
-| **tailwindcss** | Utility-first CSS (Cascading Style Sheets) for UI styling | [03](./03-tech-stack.md) |
-| **@radix-ui/react-*** | Accessible UI primitives (dialogs, dropdowns, tabs, tooltips, context menus). Locked 2026-07-28 — chosen over react-aria: standard Tailwind pairing, shadcn/ui ecosystem, larger community | [03](./03-tech-stack.md) |
-| **shadcn/ui** *(not a runtime dependency — code is vendored into the repo)* | Pre-styled component layer built on Radix + Tailwind. Components are copied into `src/ui/components/` and owned by the project. Locked 2026-07-28 | [03](./03-tech-stack.md) |
+| Package | Version | Role | Decided in |
+| --- | --- | --- | --- |
+| **react** | ^19.2.8 | UI framework — author's core expertise | [03](./03-tech-stack.md) |
+| **react-dom** | ^19.2.8 | React renderer for the browser | [03](./03-tech-stack.md) |
+| **@reduxjs/toolkit** | ^2.12.0 | State management. Thunks = the §N command layer; slices = reducers; Immer built in | [§E](./08-architecture-spec.md#e--state-management--undoredo) (revised 2026-07-28) |
+| **react-redux** | ^9.3.0 | React bindings for the RTK store | [§E](./08-architecture-spec.md#e--state-management--undoredo) |
+| **three** | ^0.185.1 | 3D rendering engine — viewport, meshes, instancing, raycasting | [03](./03-tech-stack.md), [§L](./08-architecture-spec.md#l--performance--rendering-strategy) |
+| **@react-three/fiber** | ^9.7.0 | Declarative React renderer for Three.js | [03](./03-tech-stack.md) |
+| **@react-three/drei** | ^10.7.8 | Utility components: orbit controls, gizmos, helpers | [03](./03-tech-stack.md) |
+| **tailwindcss** | ^4.3.3 | Utility-first CSS for UI styling | [03](./03-tech-stack.md) |
+| **@tailwindcss/vite** | ^4.3.3 | Tailwind v4 Vite plugin | [03](./03-tech-stack.md) |
+| **jspdf** | ^4.2.1 | Vector PDF export — scale-accurate plan output | [§I.3](./08-architecture-spec.md#i--2d-drawing--pdf-pipeline) |
+| **@radix-ui/react-tooltip** | ^1.2.16 | Tooltip primitive (M0) | [03](./03-tech-stack.md) |
+| **@radix-ui/react-dialog** | ^1.1.23 | Dialog/modal primitive (M0) | [03](./03-tech-stack.md) |
+| **@radix-ui/react-tabs** | ^1.1.21 | Tabbed panel primitive (M0) | [03](./03-tech-stack.md) |
+
+### Runtime Dependencies — Not Yet Installed
+
+| Package | Role | When | Decided in |
+| --- | --- | --- | --- |
+| **web-ifc** | IFC parsing and writing — import/export adapter | M2 (IFC round-trip) | [§D.4](./08-architecture-spec.md#d--wasm--typescript-boundary) |
+| **rbush** | R-tree spatial index — label/leader collision detection | After M4 (annotation) | [§M.2](./08-architecture-spec.md#m--annotation--labeling-strategy) |
+| **dxf-parser** | DXF import (or custom parser) | When DXF import is needed | [07](./07-browser-feasibility.md) |
+| **shadcn/ui** *(vendored)* | Pre-styled Radix + Tailwind components | When first UI component is built | [03](./03-tech-stack.md) |
 
 **Note on DXF export:** a custom writer (plain text formatting against our own vector primitives) — no library. See [07](./07-browser-feasibility.md).
 
@@ -56,17 +68,34 @@ The complete list of chosen libraries for the project, with the role of each. Th
 
 ---
 
-## Dev Dependencies (npm — future `package.json` devDependencies)
+## Dev Dependencies (npm — installed 2026-08-08)
 
-| Package | Role |
-| --- | --- |
-| **vite** | Frontend build tool and dev server |
-| **typescript** | Type safety across the stack |
-| **wasm-pack** | Rust → WASM compilation with JS (JavaScript) bindings |
-| **pnpm** | Package manager (workspace/monorepo support for future `core` package reuse in Node.js — see §N) |
-| **@types/*** | Type definitions as needed (react, three, etc.) |
+| Package | Version | Role |
+| --- | --- | --- |
+| **vite** | ^8.2.1 | Frontend build tool and dev server |
+| **typescript** | ~6.0.3 | Type safety across the stack |
+| **@vitejs/plugin-react** | ^6.0.5 | Vite React plugin (supports React Compiler if enabled later) |
+| **eslint** | ^10.8.1 | Linting |
+| **@eslint/js** | ^10.0.1 | ESLint JS config |
+| **typescript-eslint** | ^8.66.0 | ESLint + TypeScript integration |
+| **eslint-plugin-react-hooks** | ^7.1.1 | React Hooks lint rules |
+| **eslint-plugin-react-refresh** | ^0.5.3 | HMR-safe lint rules |
+| **globals** | ^17.9.0 | ESLint global definitions |
+| **@types/react** | ^19.2.18 | React type definitions |
+| **@types/react-dom** | ^19.2.4 | React DOM type definitions |
+| **@types/node** | ^24.13.3 | Node.js type definitions |
 
-**TBD at project init (not yet decided — do not assume):**
+### Dev Dependencies — Not Yet Installed
+
+| Package | Role | When |
+| --- | --- | --- |
+| **wasm-pack** (CLI) | Rust → WASM compilation with JS bindings | M0 WASM session (installed globally via cargo) |
+| **pnpm** (CLI) | Package manager | Already installed globally (v11.20.0 as of 2026-08-08) |
+
+**TBD (not yet decided — do not assume):**
+
+- Test runner (Vitest is the natural Vite companion, but not locked)
+- Formatter (Prettier or Biome — not locked)
 
 - Test runner (Vitest is the natural Vite companion, but not locked)
 - Linter/formatter (ESLint + Prettier or Biome — not locked)

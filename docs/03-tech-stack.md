@@ -141,12 +141,12 @@ Benefits kept:
 
 ## Build Tooling
 
-| Tool | Purpose |
-|---|---|
-| **Vite** | Frontend build (fast, React support) |
-| **wasm-pack** | Rust → WASM compilation |
-| **pnpm** | Package manager (monorepo support) |
-| **TypeScript** | Type safety across the stack |
+| Tool | Version | Purpose |
+| --- | --- | --- |
+| **Vite** | 8.2 | Frontend build (fast, React support) |
+| **wasm-pack** | (pending M0) | Rust → WASM compilation |
+| **pnpm** | 11.20 | Package manager |
+| **TypeScript** | 6.0 | Type safety across the stack |
 
 ---
 
