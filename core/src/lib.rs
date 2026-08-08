@@ -6,6 +6,8 @@
 
 use wasm_bindgen::prelude::*;
 
+mod mesh;
+
 /// Crate version, surfaced to the app for WASM load verification.
 #[wasm_bindgen]
 pub fn core_version() -> String {

@@ -39,16 +39,33 @@ export function wasmSelfTest(): {
   };
 }
 
-// --- M0 stubs: real implementations land in T3 (bar mesh) and T9 (section intersection) ---
+// --- §D.3 boundary functions ---
+
+/** Render mesh as Three.js-ready typed arrays (Q1-b: Float32 verts, Uint32 indices). */
+export interface BarMeshData {
+  positions: Float32Array;
+  normals: Float32Array;
+  indices: Uint32Array;
+}
 
 export interface GenerateBarMeshParams {
+  /** Flat xyz triples in mm: [x1,y1,z1, x2,y2,z2, ...] */
   pathPoints: Float64Array;
+  /** Bar diameter in mm. */
   diameter: number;
+  /** Cylinder radial resolution (§L.3 LOD: ~20 near, fewer far). */
   segments: number;
 }
 
-export function generateBarMesh(_params: GenerateBarMeshParams): Float64Array {
-  throw new Error('Not implemented — see M0 task T3');
+/** Swept-cylinder mesh for a bar polyline. Degenerate input → empty arrays. */
+export function generateBarMesh(params: GenerateBarMeshParams): BarMeshData {
+  const mesh = wasmCore.generate_bar_mesh(params.pathPoints, params.diameter, params.segments);
+  try {
+    return { positions: mesh.positions, normals: mesh.normals, indices: mesh.indices };
+  } finally {
+    // Getters copy into JS-owned arrays — release the WASM-side struct immediately.
+    mesh.free();
+  }
 }
 
 export interface SectionPlaneIntersectionParams {

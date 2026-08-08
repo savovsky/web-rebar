@@ -7,8 +7,9 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **Next task:** **T3 — `generate_bar_mesh` (Rust) + real bridge binding**; test cylinder in viewport.
+- **Next task:** **T4 — Store: project-slice reducers + ui-slice extension; typed hooks.**
 - **Done:** T1 (WASM toolchain + crate + round-trip) — `bc11f9b`; T2 (data models + steel catalog seed) — `71ecca2`.
+- **Awaiting review:** T3 (`generate_bar_mesh` + real bridge binding + viewport smoke scene).
 - **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes → **author reviews and commits** → next task.
 
 ## M0 Goal (Architecture Spec §A)
@@ -85,7 +86,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 |---|---|---|---|---|
 | T1 | wasm-pack setup: `core/` crate, `wasm:build` script, Vite wiring, round-trip probe | `pnpm build` bundles WASM; bridge call returns value | ✅ Done | `bc11f9b` |
 | T2 | Data models + steel catalog seed (`src/data/models/`, `src/data/catalog/`) | `tsc` typecheck, lint | ✅ Done | `71ecca2` |
-| T3 | `generate_bar_mesh` (Rust) + real bridge binding; test cylinder in viewport | lint/build; visual | ⬜ Pending | — |
+| T3 | `generate_bar_mesh` (Rust) + real bridge binding; test cylinder in viewport | lint/build; visual | 🟡 Review | — |
 | T4 | Store: project-slice reducers + ui-slice extension; typed hooks | typecheck | ⬜ Pending | — |
 | T5 | Commands + registry + `CommandError`; **add vitest** (Q2) | headless unit tests | ⬜ Pending | — |
 | T6 | App shell layout + toolbar (M0 tool set, §B.6) + status bar | manual | ⬜ Pending | — |
@@ -119,6 +120,16 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 **Verification:** `pnpm lint` ✅ · `pnpm build` ✅ (typecheck covers the new modules).
 
+### T3 — `generate_bar_mesh` + bridge binding + smoke scene 🟡 (2026-08-08, awaiting author commit)
+
+**Files added:** `core/src/mesh.rs` (swept-cylinder mesh: right-handed ring frames, outward-wound sides + flat end caps, mitered joints for bent paths, degenerate input → empty mesh; 5 Rust unit tests), `src/engine/bar-geometry.ts` (`createBarGeometry` + temporary `createTestBarGeometry` fixture).
+
+**Files changed:** `core/src/lib.rs` (`mod mesh;`), `src/engine/wasm-bridge.ts` (real `generateBarMesh` returning `BarMeshData` — Float32 positions/normals + Uint32 indices per Q1-b; WASM struct freed after array extraction), `src/App.tsx` (temporary R3F smoke scene — WASM-gated, drei `Bounds` auto-fit, replaced in T6/T7), `package.json` (+ `@types/three` devDep).
+
+**Verification:** `cargo test` 5/5 ✅ (counts, radius, unit radial normals, degenerate inputs, bent bar) · Node round-trip ✅ (42 verts / 240 indices for a 2-point Ø16/20-seg bar, radius error ~2e-7 mm, `free()` OK) · `pnpm lint` ✅ · `pnpm build` ✅ (WASM 27.8 kB / 12.4 kB gzip; JS bundle 1.1 MB / 302 kB gzip — three.js; code-splitting deferred to M4 performance work).
+
+**Visual check for the author:** `pnpm dev` → orbitable orange Ø16 bar. Approve = smoke scene confirmed rendering.
+
 ## Change Log
 
 | Date | Change |
@@ -127,3 +138,4 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | 2026-08-08 | T1 implemented; task tracker created |
 | 2026-08-08 | T1 committed (`bc11f9b`); T2 implemented, awaiting review |
 | 2026-08-08 | T2 committed (`71ecca2`) |
+| 2026-08-08 | T3 implemented, awaiting review |
