@@ -1,8 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Provider } from 'react-redux';
 import App from './App.tsx';
 import { initWasm, wasmSelfTest } from './engine/wasm-bridge';
 import './index.css';
+import { store } from './stores';
 
 // WASM loads in parallel with first paint; geometry calls (T3/T9) await initWasm() internally.
 initWasm()
@@ -16,6 +18,8 @@ initWasm()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <Provider store={store}>
+      <App />
+    </Provider>
   </StrictMode>,
 );

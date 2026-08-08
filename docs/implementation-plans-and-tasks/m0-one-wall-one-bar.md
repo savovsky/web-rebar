@@ -7,9 +7,9 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **Next task:** **T4 — Store: project-slice reducers + ui-slice extension; typed hooks.**
-- **Done:** T1 (WASM toolchain + crate + round-trip) — `bc11f9b`; T2 (data models + steel catalog seed) — `71ecca2`.
-- **Awaiting review:** T3 (`generate_bar_mesh` + real bridge binding + viewport smoke scene).
+- **Next task:** **T5 — Commands + registry + `CommandError`; add vitest (Q2).**
+- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author).
+- **Awaiting review:** T4 (project-slice reducers + ui-slice extension + typed hooks + Provider wiring).
 - **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes → **author reviews and commits** → next task.
 
 ## M0 Goal (Architecture Spec §A)
@@ -86,8 +86,8 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 |---|---|---|---|---|
 | T1 | wasm-pack setup: `core/` crate, `wasm:build` script, Vite wiring, round-trip probe | `pnpm build` bundles WASM; bridge call returns value | ✅ Done | `bc11f9b` |
 | T2 | Data models + steel catalog seed (`src/data/models/`, `src/data/catalog/`) | `tsc` typecheck, lint | ✅ Done | `71ecca2` |
-| T3 | `generate_bar_mesh` (Rust) + real bridge binding; test cylinder in viewport | lint/build; visual | 🟡 Review | — |
-| T4 | Store: project-slice reducers + ui-slice extension; typed hooks | typecheck | ⬜ Pending | — |
+| T3 | `generate_bar_mesh` (Rust) + real bridge binding; test cylinder in viewport | lint/build; visual | ✅ Done | `0a279e1` |
+| T4 | Store: project-slice reducers + ui-slice extension; typed hooks | typecheck | ✅ Done | (hash in follow-up) |
 | T5 | Commands + registry + `CommandError`; **add vitest** (Q2) | headless unit tests | ⬜ Pending | — |
 | T6 | App shell layout + toolbar (M0 tool set, §B.6) + status bar | manual | ⬜ Pending | — |
 | T7 | Viewport3D + Place Wall tool (click-click-Enter → `placeWall`) | wall renders | ⬜ Pending | — |
@@ -120,7 +120,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 **Verification:** `pnpm lint` ✅ · `pnpm build` ✅ (typecheck covers the new modules).
 
-### T3 — `generate_bar_mesh` + bridge binding + smoke scene 🟡 (2026-08-08, awaiting author commit)
+### T3 — `generate_bar_mesh` + bridge binding + smoke scene ✅ (2026-08-08, committed `0a279e1`)
 
 **Files added:** `core/src/mesh.rs` (swept-cylinder mesh: right-handed ring frames, outward-wound sides + flat end caps, mitered joints for bent paths, degenerate input → empty mesh; 5 Rust unit tests), `src/engine/bar-geometry.ts` (`createBarGeometry` + temporary `createTestBarGeometry` fixture).
 
@@ -129,6 +129,16 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 **Verification:** `cargo test` 5/5 ✅ (counts, radius, unit radial normals, degenerate inputs, bent bar) · Node round-trip ✅ (42 verts / 240 indices for a 2-point Ø16/20-seg bar, radius error ~2e-7 mm, `free()` OK) · `pnpm lint` ✅ · `pnpm build` ✅ (WASM 27.8 kB / 12.4 kB gzip; JS bundle 1.1 MB / 302 kB gzip — three.js; code-splitting deferred to M4 performance work).
 
 **Visual check for the author:** `pnpm dev` → orbitable orange Ø16 bar. Approve = smoke scene confirmed rendering.
+
+### T4 — Store: slices + typed hooks ✅ (2026-08-08, approved by author)
+
+**Files changed:** `src/stores/project-slice.ts` (state = `ProjectModel`; reducers `addElement/removeElement/addBar/removeBar/addSection/removeSection/resetProject`; header documents §N: reducers called by commands only, deletion cascades explicit per-bar for action-log transparency), `src/stores/ui-slice.ts` (+ `selection`, `placementDraft`, `activeSectionId`; `startDraft/addDraftPoint/clearDraft` lifecycle), `src/main.tsx` (Redux `Provider` wired), `README.md` (session state).
+
+**Files added:** `src/stores/hooks.ts` (`useAppDispatch`/`useAppSelector` via `.withTypes()`).
+
+**Deviation from plan (minor):** `placementDraft.faceId` → `hostElementId` + `faceNormal` — wall faces are not first-class entities until face sampling (M3); the pair fully determines the cover offset direction for M0.
+
+**Verification:** `pnpm lint` ✅ · `pnpm build` ✅ (typecheck). Store behavior tests arrive with vitest in T5.
 
 ## Change Log
 
@@ -139,3 +149,5 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | 2026-08-08 | T1 committed (`bc11f9b`); T2 implemented, awaiting review |
 | 2026-08-08 | T2 committed (`71ecca2`) |
 | 2026-08-08 | T3 implemented, awaiting review |
+| 2026-08-08 | T3 committed (`0a279e1`) — visual confirmed by author |
+| 2026-08-08 | T4 implemented + approved by author |

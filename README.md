@@ -8,10 +8,10 @@
 
 ## Session State
 
-> **Last session:** 2026-08-08 — GitHub repo created (`git@github.com:savovsky/web-rebar.git`); Vite 8 + React 19 + TypeScript 6 scaffolded; M0 dependencies installed (RTK, Three.js, Tailwind v4, Radix, jsPDF); full `src/` folder structure created (stores, engine, io, ui stubs); build verified  
-> **Tooling (2026-08-08):** ESLint/Prettier stack adopted from doxeek — type-checked `typescript-eslint`, custom ruleset (max-params 2 → options objects, naming conventions, complexity limits), Prettier as a lint rule with import sorting; `pnpm lint` and `pnpm build` both clean
-> **Current phase:** M0 implementation started — plan approved, task tracker live: [docs/implementation-plans-and-tasks/](./docs/implementation-plans-and-tasks/README.md)
-> **Next session:** M0 task T2 — TypeScript data models + steel catalog seed (see [M0 tracker](./docs/implementation-plans-and-tasks/m0-one-wall-one-bar.md) for task states and resume instructions)
+> **Last session:** 2026-08-08 — M0 implementation started on branch `A_MVP_Scope_M0`: T1 Rust/WASM `core/` crate + bridge round-trip (windows-gnu toolchain, wasm-pack 0.15); T2 data models + DIN/EC2 steel catalog seed; T3 `generate_bar_mesh` (swept cylinder, Float32/Uint32 typed arrays) + R3F smoke scene (visual confirmed); T4 RTK store (project-slice = ProjectModel, ui-slice + draft/selection state, typed hooks, Provider wired)  
+> **Tooling (2026-08-08):** ESLint/Prettier stack adopted from doxeek — type-checked `typescript-eslint`, custom ruleset (max-params 2 → options objects, naming conventions, complexity limits); Prettier options live in `.prettierrc.json` (shared CLI + IDE), enforced via the `prettier/prettier` lint rule; `pnpm lint` and `pnpm build` both clean
+> **Current phase:** M0 implementation — T1–T4 ✅. Task tracker: [docs/implementation-plans-and-tasks/](./docs/implementation-plans-and-tasks/README.md)
+> **Next session:** M0 task T5 — command thunks + registry + `CommandError` + vitest (see [M0 tracker](./docs/implementation-plans-and-tasks/m0-one-wall-one-bar.md) for task states and resume instructions)
 
 **Where we left off:** 14 architectural topics (A–N) are decided and locked. Both §G.2 open questions are **resolved** (2026-07-29). The **[Architecture Spec](./docs/08-architecture-spec.md)** captures every decision. The project is now **scaffolded and ready for M0**:
 
@@ -26,7 +26,7 @@
 | **PDF** | jsPDF 4.2 |
 | **Structure** | `src/stores/` (configured), `src/engine/` (stubs), `src/io/` (stubs), `src/commands/` (empty, ready for §N), `src/ui/` (empty dirs per feature), `src/data/` (dirs for models/catalog/validation) |
 
-**Still needed (M0 session):** Rust `core/` crate (WASM), first TypeScript data model interfaces, first command thunks, 3D viewport component, section-view component.
+**Still needed for M0:** command thunks (T5), app shell + toolbar (T6), 3D viewport + placement tools (T7/T8), section intersection + 2D section view (T9/T10), acceptance pass (T11).
 
 ### Tool Palette Design
 
