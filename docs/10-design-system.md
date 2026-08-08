@@ -19,7 +19,7 @@
 src/ui/styles/tokens.css          ← THE single source of truth (CSS custom properties)
         │
         ▼  mapped into
-tailwind.config.ts                ← tokens become Tailwind utilities (bg-primary, text-sm, h-control...)
+@theme block (inside tokens.css)  ← Tailwind v4 CSS-first config — tokens become utilities (bg-primary, text-sm, h-control...)
         │
         ▼  consumed by
 src/ui/components/ (shadcn/ui, vendored) + all custom components
@@ -29,6 +29,8 @@ cva (class-variance-authority)    ← component variants (size, state) in the co
 ```
 
 Changing any token in `tokens.css` propagates everywhere automatically. This is the standard shadcn/ui mechanism — we keep it and extend it with CAD-specific tokens.
+
+**Tailwind v4 note (updated 2026-08-08):** there is **no `tailwind.config.ts`** — Tailwind v4 is configured CSS-first via the `@theme` directive inside `tokens.css`. Custom CSS properties hold raw values (`:root` / `.dark` for theming); the `@theme` block maps them to Tailwind utilities.
 
 ---
 
@@ -144,20 +146,21 @@ Mixing domain tokens into the UI theme file is a classic mess — keep the famil
 ```
 src/ui/
 ├── styles/
-│   ├── tokens.css           ← ALL UI design tokens (single source of truth)
-│   └── globals.css          ← base resets, font imports, Tailwind directives
+│   ├── tokens.css           ← ALL UI design tokens (single source of truth) + Tailwind v4 @theme mapping
+│   └── globals.css          ← base resets, font imports, `@import "tailwindcss"` (currently src/index.css placeholder)
 ├── components/              ← shadcn/ui vendored components (variants via cva)
 ├── panels/                  ← app panels (consume tokens only)
 └── viewport/                ← 3D viewport (reads tokens for materials)
-tailwind.config.ts           ← maps tokens → Tailwind utilities
 ```
+
+**No `tailwind.config.ts`** — Tailwind v4 is CSS-first; the `@theme` block in `tokens.css` replaces it.
 
 ---
 
 ## Enforcement Rules (for implementation sessions & review)
 
-1. **Zero literal values:** no hex colors, no raw pixel sizes, no raw font sizes in any file under `src/ui/` except `tokens.css` and `tailwind.config.ts`. (Tailwind arbitrary values like `h-[342px]` count as literals — forbidden outside token definitions.)
+1. **Zero literal values:** no hex colors, no raw pixel sizes, no raw font sizes in any file under `src/ui/` except `tokens.css`. (Tailwind arbitrary values like `h-[342px]` count as literals — forbidden outside token definitions.)
 2. **Semantic names only:** `bg-primary`, `text-muted-foreground`, `h-control` — never `bg-blue-500`.
 3. **Variants in one file:** component variants live in the component's vendored file via cva — not scattered as conditional class strings across usage sites.
 4. **Domain ≠ theme:** drawing/pen-table/rebar styling comes from project settings (domain tokens), never from `tokens.css`.
-5. **Review check:** searching `src/ui/` for `#[0-9a-fA-F]{3,6}` and `-\[[0-9]` should return hits only in `tokens.css` / `tailwind.config.ts`.
+5. **Review check:** searching `src/ui/` for `#[0-9a-fA-F]{3,6}` and `-\[[0-9]` should return hits only in `tokens.css`.

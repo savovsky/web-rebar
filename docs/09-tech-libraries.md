@@ -72,17 +72,17 @@ The complete list of chosen libraries for the project, with the role of each. Th
 
 | Package | Version | Role |
 | --- | --- | --- |
-| **vite** | ^8.2.1 | Frontend build tool and dev server |
-| **typescript** | ~6.0.3 | Type safety across the stack |
-| **@vitejs/plugin-react** | ^6.0.5 | Vite React plugin (supports React Compiler if enabled later) |
-| **eslint** | ^10.8.1 | Linting |
+| **vite** | ^8.2.0 | Frontend build tool and dev server |
+| **typescript** | ~6.0.2 | Type safety across the stack |
+| **@vitejs/plugin-react** | ^6.0.4 | Vite React plugin (supports React Compiler if enabled later) |
+| **eslint** | ^10.8.0 | Linting |
 | **@eslint/js** | ^10.0.1 | ESLint JS config |
-| **typescript-eslint** | ^8.66.0 | ESLint + TypeScript integration |
+| **typescript-eslint** | ^8.65.0 | ESLint + TypeScript integration |
 | **eslint-plugin-react-hooks** | ^7.1.1 | React Hooks lint rules |
 | **eslint-plugin-react-refresh** | ^0.5.3 | HMR-safe lint rules |
-| **globals** | ^17.9.0 | ESLint global definitions |
-| **@types/react** | ^19.2.18 | React type definitions |
-| **@types/react-dom** | ^19.2.4 | React DOM type definitions |
+| **globals** | ^17.7.0 | ESLint global definitions |
+| **@types/react** | ^19.2.17 | React type definitions |
+| **@types/react-dom** | ^19.2.3 | React DOM type definitions |
 | **@types/node** | ^24.13.3 | Node.js type definitions |
 
 ### Dev Dependencies — Not Yet Installed
@@ -95,10 +95,7 @@ The complete list of chosen libraries for the project, with the role of each. Th
 **TBD (not yet decided — do not assume):**
 
 - Test runner (Vitest is the natural Vite companion, but not locked)
-- Formatter (Prettier or Biome — not locked)
-
-- Test runner (Vitest is the natural Vite companion, but not locked)
-- Linter/formatter (ESLint + Prettier or Biome — not locked)
+- Formatter (Prettier or Biome — not locked; ESLint is installed for linting only)
 - Vite WASM integration plugin (depends on wasm-pack output mode)
 
 ---

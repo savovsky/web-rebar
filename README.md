@@ -27,32 +27,13 @@
 
 **Still needed (M0 session):** Rust `core/` crate (WASM), first TypeScript data model interfaces, first command thunks, 3D viewport component, section-view component.
 
-Designed for M0 minimal viable tool set, extensible to full palette. Toolbar is a single vertical icon column (left edge of viewport). Figma-style auto-return to Select after single-use tools. Keyboard shortcuts configurable (defaults below).
+### Tool Palette Design
 
-**M0 tool set (minimal):**
+> **✅ Locked 2026-07-29** — canonical definition: [Architecture Spec §B.6](./docs/08-architecture-spec.md#b--user-interaction-model). Do not duplicate the tables here; update the spec.
 
-| Icon | Tool | Shortcut | Behavior |
-| ------ | ------ | ---------- | ---------- |
-| ↖️ | Select | V | Click to select, drag to marquee, Ctrl+Click to toggle, Esc to deselect. Auto-return from other tools. |
-| 🧱 | Place Wall | W | Click two points (plan: length + thickness), Enter to confirm. Property panel shows w×h×t fields. |
-| ⏹ | Place Bar | B | Click wall face, click two points for bar path, Enter to confirm. Cover auto-filled from code default. |
-| ✂️ | Section Cut | S | Click-drag across element to place section line. 2D view opens in dockable panel. |
-| ✋ | Pan | H | Click-drag to pan viewport. Also middle-mouse-drag. |
-| 🔄 | Orbit | (middle/right drag) | Right-click-drag to orbit 3D view. Scroll to zoom. |
+Summary: single vertical toolbar (left edge of viewport). Figma-style auto-return to Select after single-use tools; double-click a tool to lock it (sticky mode). Keyboard shortcuts are user-editable (JSON config, in-app editor post-M0). Status bar shows active tool and snap state.
 
-**Full palette (post-M0 expansion):**
-
-| Category | Tools |
-|----------|-------|
-| Selection | Select (V), Add-to-Selection (Ctrl+Click), Deselect (Esc) |
-| Create | Wall (W), Slab, Beam, Column, Bar Individual (B), Bar Group (G), Opening |
-| Section | Section Cut (S), Detail Cut, Elevation Marker |
-| Annotate | Dimension (D), Label (L), Leader Line, Elevation Marker (E) |
-| Modify | Move (M), Copy (Ctrl+C/V), Mirror, Array, Rotate, Trim, Extend |
-| Measure | Distance, Angle |
-| View | Pan (H), Orbit, Zoom (scroll), Fit to Screen (F), Section Toggle |
-
-Tools auto-return to Select after one use (Figma convention). User can override by double-clicking a tool to lock it (sticky mode). Status bar shows active tool and snap state.
+**M0 tool set:** Select (V), Place Wall (W), Place Bar (B), Section Cut (S), Pan (H), Orbit (right/middle-drag, scroll = zoom).
 
 ---
 
@@ -83,6 +64,7 @@ README.md                              ← YOU ARE HERE — session state & proj
 │   ├── 07-browser-feasibility.md      ← Can each requirement run in the browser?
 │   ├── 09-tech-libraries.md           ← All chosen libraries & dependencies (future package.json content)
 │   └── 10-design-system.md            ← Design tokens & one-place-change styling rules
+├── author_notebook.md                 ← ⛔ AUTHOR'S PRIVATE notes — AI sessions must NOT read or use it (contains raw, outdated ideas)
 ```
 
 ---
@@ -199,7 +181,7 @@ These topics need dedicated discussion sessions before implementation reaches th
 - [ ] WASM functions hold no state between calls; only flat arrays cross the boundary
 - [ ] Undo/redo (§E) works for every newly added command
 - [ ] Nothing in the change silently blocks a Deferred Topics entry
-- [ ] No literal style values in `src/ui/` (hex/px/font-size) outside `tokens.css` / `tailwind.config.ts` ([doc 10](./docs/10-design-system.md))
+- [ ] No literal style values in `src/ui/` (hex/px/font-size) outside `tokens.css` ([doc 10](./docs/10-design-system.md))
 
 | # | Topic | When Needed | Depends On |
 |---|---|---|---|
@@ -222,7 +204,11 @@ These topics need dedicated discussion sessions before implementation reaches th
 
 ## For AI Sessions
 
-When starting a new AI session, provide this README as context. It contains session state, links to all docs, and deferred topics. Start with:
+When starting a new AI session, provide this README as context. It contains session state, links to all docs, and deferred topics.
+
+**⛔ Do NOT read `author_notebook.md`** — it is the author's private scratchpad with raw, outdated ideas. It is not project documentation and must not be used as context for any decision.
+
+Start with:
 
 ```
 I'm working on a browser-based reinforced concrete drawing app ("web-rebar").
