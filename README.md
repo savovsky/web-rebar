@@ -8,17 +8,17 @@
 
 ## Session State
 
-> **Last session:** 2026-08-08 — M0 implementation started on branch `A_MVP_Scope_M0`: T1 Rust/WASM `core/` crate + bridge round-trip (windows-gnu toolchain, wasm-pack 0.15); T2 data models + DIN/EC2 steel catalog seed; T3 `generate_bar_mesh` (swept cylinder, Float32/Uint32 typed arrays) + R3F smoke scene (visual confirmed); T4 RTK store (project-slice = ProjectModel, ui-slice + draft/selection state, typed hooks, Provider wired)  
+> **Last session:** 2026-08-08 — M0 implementation started on branch `A_MVP_Scope_M0`: T1 Rust/WASM `core/` crate + bridge round-trip (windows-gnu toolchain, wasm-pack 0.15); T2 data models + DIN/EC2 steel catalog seed; T3 `generate_bar_mesh` (swept cylinder, Float32/Uint32 typed arrays) + R3F smoke scene (visual confirmed); T4 RTK store (project-slice = ProjectModel, ui-slice + draft/selection state, typed hooks, Provider wired); T5 §N command layer (6 command thunks + registry + `CommandError`) + vitest (23 headless tests)  
 > **Tooling (2026-08-08):** ESLint/Prettier stack adopted from doxeek — type-checked `typescript-eslint`, custom ruleset (max-params 2 → options objects, naming conventions, complexity limits); Prettier options live in `.prettierrc.json` (shared CLI + IDE), enforced via the `prettier/prettier` lint rule; `pnpm lint` and `pnpm build` both clean
-> **Current phase:** M0 implementation — T1–T4 ✅. Task tracker: [docs/implementation-plans-and-tasks/](./docs/implementation-plans-and-tasks/README.md)
-> **Next session:** M0 task T5 — command thunks + registry + `CommandError` + vitest (see [M0 tracker](./docs/implementation-plans-and-tasks/m0-one-wall-one-bar.md) for task states and resume instructions)
+> **Current phase:** M0 implementation — T1–T5 ✅. Task tracker: [docs/implementation-plans-and-tasks/](./docs/implementation-plans-and-tasks/README.md)
+> **Next session:** M0 task T6 — app shell layout + toolbar + status bar (see [M0 tracker](./docs/implementation-plans-and-tasks/m0-one-wall-one-bar.md) for task states and resume instructions)
 
 **Where we left off:** 14 architectural topics (A–N) are decided and locked. Both §G.2 open questions are **resolved** (2026-07-29). The **[Architecture Spec](./docs/08-architecture-spec.md)** captures every decision. The project is now **scaffolded and ready for M0**:
 
 **Repository:** `git@github.com:savovsky/web-rebar.git`
 
 | What | Details |
-|------|---------|
+| ------ | --------- |
 | **Build** | Vite 8.2 + TypeScript 6.0 — `pnpm dev` / `pnpm build` |
 | **UI** | React 19.2 + Tailwind v4 + Radix primitives |
 | **State** | Redux Toolkit 2.12 (thunks = §N command layer) |
@@ -26,7 +26,7 @@
 | **PDF** | jsPDF 4.2 |
 | **Structure** | `src/stores/` (configured), `src/engine/` (stubs), `src/io/` (stubs), `src/commands/` (empty, ready for §N), `src/ui/` (empty dirs per feature), `src/data/` (dirs for models/catalog/validation) |
 
-**Still needed for M0:** command thunks (T5), app shell + toolbar (T6), 3D viewport + placement tools (T7/T8), section intersection + 2D section view (T9/T10), acceptance pass (T11).
+**Still needed for M0:** app shell + toolbar (T6), 3D viewport + placement tools (T7/T8), section intersection + 2D section view (T9/T10), acceptance pass (T11).
 
 ### Tool Palette Design
 
@@ -52,7 +52,7 @@ Summary: single vertical toolbar (left edge of viewport). Figma-style auto-retur
 
 ## Document Map
 
-```
+```text
 README.md                              ← YOU ARE HERE — session state & project overview
 ├── docs/
 │   ├── 08-architecture-spec.md        ← 🔴 CURRENT — all locked architecture decisions
@@ -136,7 +136,7 @@ The reinforcement data model in [04-reinforcement-data-model.md](./docs/04-reinf
 ## Key Decisions Made (Architecture Locked)
 
 | # | Decision | Rationale | Spec |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | A | M0-M4 milestone sequence (One Wall → Full Building) | Validate architecture before building features | [§A](./docs/08-architecture-spec.md#a--mvp-scope--milestone-sequence) |
 | B | "Figma for concrete" — direct-manipulation-first UI | 10x faster than Allplan's property-grid workflow | [§B](./docs/08-architecture-spec.md#b--user-interaction-model) |
 | C | Internal data model + IFC/DXF adapters (not IFC-native) | IFC stores results, not design intent | [§C](./docs/08-architecture-spec.md#c--internal-data-model) |
@@ -187,7 +187,7 @@ These topics need dedicated discussion sessions before implementation reaches th
 - [ ] No literal style values in `src/ui/` (hex/px/font-size) outside `tokens.css` ([doc 10](./docs/10-design-system.md))
 
 | # | Topic | When Needed | Depends On |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **Layer Model** | On/off, freeze/thaw, lock/unlock, active layer per storey. User-defined layer names. | Before M4 (multi-element building) | B (interaction model) |
 | **Tool Palette Design** | Exact tool list, icons, shortcuts, workflow sequences. User-editable keyboard shortcuts. | **✅ LOCKED 2026-07-29** — M0 tool set defined (§B.6) | B |
 | **Drawing Layouts & Title Blocks** | A0-A4 + custom sheets. Predefined and custom title blocks, borders, scale settings. | Before I (2D drawing pipeline) is complete | I |
@@ -213,7 +213,7 @@ When starting a new AI session, provide this README as context. It contains sess
 
 Start with:
 
-```
+```text
 I'm working on a browser-based reinforced concrete drawing app ("web-rebar").
 Read C:\work\personal\projects\web-rebar\README.md first — it has session state.
 Then read docs/08-architecture-spec.md — it has all locked architecture decisions.
@@ -221,7 +221,7 @@ Then read docs/08-architecture-spec.md — it has all locked architecture decisi
 
 **To resume M0 implementation (current), use this:**
 
-```
+```text
 Read C:\work\personal\projects\web-rebar\README.md, docs/08-architecture-spec.md,
 and docs/implementation-plans-and-tasks/m0-one-wall-one-bar.md (task tracker — it says which task is next).
 Continue with the next pending task. Do not commit — I review and commit each task myself.
@@ -230,7 +230,7 @@ Continue with the next pending task. Do not commit — I review and commit each 
 **Session type guide:**
 
 | What you want to do | Read these docs |
-|---|---|
+| --- | --- |
 | Continue architecture discussion (deferred topics) | README → [08-architecture-spec](./docs/08-architecture-spec.md) → deferred topic list above |
 | Start implementing M0 | README → [08-architecture-spec](./docs/08-architecture-spec.md) → [03-tech-stack](./docs/03-tech-stack.md) |
 | Design data model / TypeScript interfaces | [08-architecture-spec §C+D](./docs/08-architecture-spec.md) → [04-reinforcement-data-model](./docs/04-reinforcement-data-model.md) |

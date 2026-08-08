@@ -7,9 +7,9 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **Next task:** **T5 — Commands + registry + `CommandError`; add vitest (Q2).**
-- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author).
-- **Awaiting review:** T4 (project-slice reducers + ui-slice extension + typed hooks + Provider wiring).
+- **Next task:** **T6 — App shell layout + toolbar (M0 tool set, §B.6) + status bar.**
+- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`.
+- **Awaiting review:** T5 (6 command thunks + registry + `CommandError`; vitest with 23 headless tests).
 - **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes → **author reviews and commits** → next task.
 
 ## M0 Goal (Architecture Spec §A)
@@ -22,7 +22,7 @@ Fixed wall in a 3D viewport. User places one straight bar at correct cover. One 
 ### Scope
 
 | In scope | Explicitly out (and why) |
-|---|---|
+| --- | --- |
 | WASM crate + 2 real functions | Undo/redo (M1 — reducers written undo-compatible) |
 | Data models, RTK store, 4–5 commands | Placement groups (M3), IFC (M2), OPFS persistence |
 | 3D viewport (R3F), section view (Canvas2D) | Validation UI (warnings only computed/logged, §K.4) |
@@ -33,7 +33,7 @@ Fixed wall in a 3D viewport. User places one straight bar at correct cover. One 
 ### Approved decisions (Q1–Q3)
 
 | Q | Decision |
-|---|---|
+| --- | --- |
 | Q1 — WASM return encoding | **(b)** positions/normals as `Float32Array` + indices as `Uint32Array` (Three.js wants Float32; still flat arrays per §D.3) |
 | Q2 — Test runner | **Add vitest in T5** — §N commands are designed to be headless-testable |
 | Q3 — WASM/Vite wiring | **wasm-pack `--target web` + explicit `init()`** — no Vite plugins needed (confirmed working in T1) |
@@ -83,12 +83,12 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 ## Task Tracker
 
 | # | Task | Verify by | State | Commit |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | T1 | wasm-pack setup: `core/` crate, `wasm:build` script, Vite wiring, round-trip probe | `pnpm build` bundles WASM; bridge call returns value | ✅ Done | `bc11f9b` |
 | T2 | Data models + steel catalog seed (`src/data/models/`, `src/data/catalog/`) | `tsc` typecheck, lint | ✅ Done | `71ecca2` |
 | T3 | `generate_bar_mesh` (Rust) + real bridge binding; test cylinder in viewport | lint/build; visual | ✅ Done | `0a279e1` |
 | T4 | Store: project-slice reducers + ui-slice extension; typed hooks | typecheck | ✅ Done | `4413366` |
-| T5 | Commands + registry + `CommandError`; **add vitest** (Q2) | headless unit tests | ⬜ Pending | — |
+| T5 | Commands + registry + `CommandError`; **add vitest** (Q2) | headless unit tests | ✅ Done | — |
 | T6 | App shell layout + toolbar (M0 tool set, §B.6) + status bar | manual | ⬜ Pending | — |
 | T7 | Viewport3D + Place Wall tool (click-click-Enter → `placeWall`) | wall renders | ⬜ Pending | — |
 | T8 | Place Bar tool (click face → 2 points → `placeBar`, default cover from catalog) | bar renders in wall | ⬜ Pending | — |
@@ -140,10 +140,20 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 **Verification:** `pnpm lint` ✅ · `pnpm build` ✅ (typecheck). Store behavior tests arrive with vitest in T5.
 
+### T5 — Commands + registry + `CommandError` + vitest ✅ (2026-08-08, awaiting review)
+
+**Files added:** `src/commands/` — `command-error.ts` (`CommandError`, codes `INVALID_PARAMS`/`NOT_FOUND`), `place-wall.ts`, `place-bar.ts` (catalog defaults for cover/grade resolved inside the command), `create-section.ts` (normal normalized; M0 vertical-plane guard), `delete-element.ts` (explicit per-bar cascade + selection prune), `delete-bar.ts`, `set-active-section.ts`, `index.ts` (barrel + `commandRegistry` name→thunk map, §N.2 MCP door), 5 test files + `test-utils.ts` (23 tests). `vitest.config.ts` (node env, `@` alias — commands are UI-free, no jsdom).
+
+**Files changed:** `src/stores/index.ts` (`createAppStore()` factory + `AppThunk` type — isolated stores for headless tests; singleton kept for the app), `package.json` (+ vitest 4.1.10, `test`/`test:watch` scripts), `tsconfig.node.json` (+ vitest.config.ts), `eslint.config.js` (test override: no-magic-numbers/max-lines-per-function/max-nested-callbacks off — declarative spec style).
+
+**Design notes:** all commands take one plain params object (max-params 2), validate, throw `CommandError`, return the created id for caller follow-up (selection, status bar). `deleteElement` keeps sections targeting the removed element — the T9 selector will skip missing targets.
+
+**Verification:** `pnpm test` 23/23 ✅ · `pnpm lint` ✅ · `pnpm build` ✅.
+
 ## Change Log
 
 | Date | Change |
-|---|---|
+| --- | --- |
 | 2026-08-08 | Plan written and approved (Q1-b, Q2-yes, Q3-no-plugins) |
 | 2026-08-08 | T1 implemented; task tracker created |
 | 2026-08-08 | T1 committed (`bc11f9b`); T2 implemented, awaiting review |
@@ -151,3 +161,4 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | 2026-08-08 | T3 implemented, awaiting review |
 | 2026-08-08 | T3 committed (`0a279e1`) — visual confirmed by author |
 | 2026-08-08 | T4 implemented + approved by author |
+| 2026-08-08 | T5 implemented, awaiting review |

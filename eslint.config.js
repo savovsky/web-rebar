@@ -141,6 +141,17 @@ export default defineConfig([
       '@typescript-eslint/no-magic-numbers': 'off',
     },
   },
+  // Tests: expectations are literal values by nature, and describe/it callbacks
+  // are declarative lists — magic-number and function-length limits would only
+  // force artificial file splits (decided 2026-08-08, T5)
+  {
+    files: ['**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-magic-numbers': 'off',
+      'max-lines-per-function': 'off',
+      'max-nested-callbacks': 'off', // describe > it > assertion-callback is inherent to tests
+    },
+  },
   // Plain JS files (this config): no type-aware linting
   {
     files: ['**/*.js'],
