@@ -8,8 +8,7 @@
 ## ▶️ Current State (read this first in a fresh session)
 
 - **Next task:** **T6 — App shell layout + toolbar (M0 tool set, §B.6) + status bar.**
-- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`.
-- **Awaiting review:** T5 (6 command thunks + registry + `CommandError`; vitest with 23 headless tests).
+- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`.
 - **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes → **author reviews and commits** → next task.
 
 ## M0 Goal (Architecture Spec §A)
@@ -88,7 +87,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | T2 | Data models + steel catalog seed (`src/data/models/`, `src/data/catalog/`) | `tsc` typecheck, lint | ✅ Done | `71ecca2` |
 | T3 | `generate_bar_mesh` (Rust) + real bridge binding; test cylinder in viewport | lint/build; visual | ✅ Done | `0a279e1` |
 | T4 | Store: project-slice reducers + ui-slice extension; typed hooks | typecheck | ✅ Done | `4413366` |
-| T5 | Commands + registry + `CommandError`; **add vitest** (Q2) | headless unit tests | ✅ Done | — |
+| T5 | Commands + registry + `CommandError`; **add vitest** (Q2) | headless unit tests | ✅ Done | `a7934d2` |
 | T6 | App shell layout + toolbar (M0 tool set, §B.6) + status bar | manual | ⬜ Pending | — |
 | T7 | Viewport3D + Place Wall tool (click-click-Enter → `placeWall`) | wall renders | ⬜ Pending | — |
 | T8 | Place Bar tool (click face → 2 points → `placeBar`, default cover from catalog) | bar renders in wall | ⬜ Pending | — |
@@ -140,7 +139,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 **Verification:** `pnpm lint` ✅ · `pnpm build` ✅ (typecheck). Store behavior tests arrive with vitest in T5.
 
-### T5 — Commands + registry + `CommandError` + vitest ✅ (2026-08-08, awaiting review)
+### T5 — Commands + registry + `CommandError` + vitest ✅ (2026-08-08, committed `a7934d2`)
 
 **Files added:** `src/commands/` — `command-error.ts` (`CommandError`, codes `INVALID_PARAMS`/`NOT_FOUND`), `place-wall.ts`, `place-bar.ts` (catalog defaults for cover/grade resolved inside the command), `create-section.ts` (normal normalized; M0 vertical-plane guard), `delete-element.ts` (explicit per-bar cascade + selection prune), `delete-bar.ts`, `set-active-section.ts`, `index.ts` (barrel + `commandRegistry` name→thunk map, §N.2 MCP door), 5 test files + `test-utils.ts` (23 tests). `vitest.config.ts` (node env, `@` alias — commands are UI-free, no jsdom).
 
@@ -161,4 +160,4 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | 2026-08-08 | T3 implemented, awaiting review |
 | 2026-08-08 | T3 committed (`0a279e1`) — visual confirmed by author |
 | 2026-08-08 | T4 implemented + approved by author |
-| 2026-08-08 | T5 implemented, awaiting review |
+| 2026-08-08 | T5 implemented + approved by author, committed (`a7934d2`) |
