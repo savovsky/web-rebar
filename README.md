@@ -8,7 +8,8 @@
 
 ## Session State
 
-> **Last session:** 2026-08-08 — GitHub repo created (`git@github.com:savovsky/web-rebar.git`); Vite 8 + React 19 + TypeScript 6 scaffolded; M0 dependencies installed (RTK, Three.js, Tailwind v4, Radix, jsPDF); full `src/` folder structure created (stores, engine, io, ui stubs); build verified
+> **Last session:** 2026-08-08 — GitHub repo created (`git@github.com:savovsky/web-rebar.git`); Vite 8 + React 19 + TypeScript 6 scaffolded; M0 dependencies installed (RTK, Three.js, Tailwind v4, Radix, jsPDF); full `src/` folder structure created (stores, engine, io, ui stubs); build verified  
+> **Tooling (2026-08-08):** ESLint/Prettier stack adopted from doxeek — type-checked `typescript-eslint`, custom ruleset (max-params 2 → options objects, naming conventions, complexity limits), Prettier as a lint rule with import sorting; `pnpm lint` and `pnpm build` both clean
 > **Current phase:** Pre-development — project scaffold ready; ~2-month exploration gate (see [Project Vision → Project Strategy](./docs/01-project-vision.md))
 > **Next session:** M0 implementation planning (One Wall, One Bar) — WASM function signatures, data model interfaces, RTK store shape, section-view component design, milestone task breakdown
 
@@ -175,6 +176,7 @@ These topics need dedicated discussion sessions before implementation reaches th
 
 ### Review Checklist (for the author)
 
+- [ ] `pnpm lint` and `pnpm build` pass (lint includes Prettier formatting + type-checked rules)
 - [ ] Search component files (`src/ui/`) for direct store mutation calls — expected result: **zero** (only command invocations)
 - [ ] Component files contain no domain math, validation, or geometry computation
 - [ ] Every new user action has a corresponding named command with a plain params object

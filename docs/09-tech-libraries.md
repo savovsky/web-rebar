@@ -84,6 +84,9 @@ The complete list of chosen libraries for the project, with the role of each. Th
 | **@types/react** | ^19.2.17 | React type definitions |
 | **@types/react-dom** | ^19.2.3 | React DOM type definitions |
 | **@types/node** | ^24.13.3 | Node.js type definitions |
+| **prettier** | ^3.9.6 | Formatter — runs as an ESLint rule (`prettier/prettier`), options embedded in `eslint.config.js` (no standalone config file) |
+| **eslint-plugin-prettier** | ^5.5.6 | Bridges Prettier into ESLint |
+| **@trivago/prettier-plugin-sort-imports** | ^6.0.2 | Deterministic import ordering: react → third-party → `@/` alias → relative |
 
 ### Dev Dependencies — Not Yet Installed
 
@@ -95,8 +98,9 @@ The complete list of chosen libraries for the project, with the role of each. Th
 **TBD (not yet decided — do not assume):**
 
 - Test runner (Vitest is the natural Vite companion, but not locked)
-- Formatter (Prettier or Biome — not locked; ESLint is installed for linting only)
 - Vite WASM integration plugin (depends on wasm-pack output mode)
+
+**Locked 2026-08-08:** the formatter question is resolved — **Prettier** (not Biome), enforced as an ESLint rule so `pnpm lint` is the single gate. The whole lint/format stack (type-checked `typescript-eslint` via `recommendedTypeChecked`, custom ruleset, Prettier options, import sorting) was adapted from the author's doxeek project config — see `eslint.config.js` header comment.
 
 ---
 

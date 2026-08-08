@@ -1,10 +1,10 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice } from '@reduxjs/toolkit';
 
 interface ProjectState {
-  elements: Record<string, unknown>
-  bars: Record<string, unknown>
-  placementGroups: Record<string, unknown>
-  undoStack: string[]
+  elements: Record<string, unknown>;
+  bars: Record<string, unknown>;
+  placementGroups: Record<string, unknown>;
+  undoStack: string[];
 }
 
 const initialState: ProjectState = {
@@ -12,7 +12,7 @@ const initialState: ProjectState = {
   bars: {},
   placementGroups: {},
   undoStack: [],
-}
+};
 
 const projectSlice = createSlice({
   name: 'project',
@@ -20,10 +20,10 @@ const projectSlice = createSlice({
   reducers: {
     // §N: slice reducers are called by command thunks only — never from UI directly
     resetProject() {
-      return initialState
+      return initialState;
     },
   },
-})
+});
 
-export const { resetProject } = projectSlice.actions
-export default projectSlice.reducer
+export const { resetProject } = projectSlice.actions;
+export default projectSlice.reducer;
