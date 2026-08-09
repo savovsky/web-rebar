@@ -34,21 +34,38 @@ Example:
 - Strech
 - ...
 
-1. Reinforcemnt Module
+2. Reinforcemnt Module
 
 2.1. Create shape
 2.2. Place shape
 2.3. Find/Display shape, placment
 
-1. Layout Module (Creating a layout for plot/print/export...)
+3. Layout Module (Creating a layout for plot/print/export...)
 
 3.1. Define paper format
 3.2. Select view (draw frame to identify what needs to be included)
+
+4. Option for different bar colors
+
+4.1. By mark
+4.2. By diameter
+
+5. Bars collisions check button
+
+5.1. Some report in modal... ?!
+5.2. Heighlight bars with conflicts
+5.3. Option to accept th econflict and marked it in the report and stop higglithing.
+
+6. Search bars - by diameter, by mark
+5.1. Some report in modal... ?!
+5.2. Heighlight founded bars
 
 /////////////
 Option to choose the sclale in 2D views (M 1:0, 1:25, 1:50, 1: 100, etc..)
 
 3D viewport is the primary interaction surface - not sure!?
+
+Double mouse scroll click => Zoom fit(all?!)
 
 ## App layout
 

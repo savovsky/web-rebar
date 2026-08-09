@@ -2,12 +2,20 @@
 // Rust functions are stateless and pure; geometry crosses the boundary as flat arrays (§D.3).
 // Regenerate the glue with `pnpm wasm:build` (output: src/core/pkg/, gitignored).
 import initModule, * as wasmCore from '@/core/pkg/web_rebar_core';
+import type { Vec3 } from '@/data/models';
 
 let initPromise: Promise<void> | null = null;
 
+export interface InitWasmOptions {
+  /** Pre-loaded .wasm bytes — required under Node/vitest, where the glue's
+   *  default `fetch(new URL(...))` cannot read file:// URLs. Browsers omit
+   *  this and fetch the bundled asset. */
+  wasmBytes?: BufferSource;
+}
+
 /** Loads and initializes the WASM module exactly once. Safe to call from anywhere. */
-export function initWasm(): Promise<void> {
-  initPromise ??= initModule().then(() => undefined);
+export function initWasm(options?: InitWasmOptions): Promise<void> {
+  initPromise ??= initModule(options?.wasmBytes).then(() => undefined);
   return initPromise;
 }
 
@@ -76,12 +84,25 @@ export function generateBarMesh(params: GenerateBarMeshParams): BarMeshData {
   }
 }
 
-export interface SectionPlaneIntersectionParams {
-  planeOrigin: [number, number, number];
-  planeNormal: [number, number, number];
-  elementVertices: Float64Array;
+export interface PlanePolylineIntersectionParams {
+  /** A point on the cutting plane (mm). */
+  planeOrigin: Vec3;
+  /** Plane normal — normalized defensively on the Rust side (§D). */
+  planeNormal: Vec3;
+  /** Bar centerline as flat xyz triples (mm): [x1,y1,z1, x2,y2,z2, ...]. */
+  pathPoints: Float64Array;
 }
 
-export function sectionPlaneIntersection(_params: SectionPlaneIntersectionParams): Float64Array {
-  throw new Error('Not implemented — see M0 task T9');
+/**
+ * §G.1 Tier 1: points where one bar's stored path crosses the section plane
+ * (flat xyz triples, empty when nothing crosses). One call per bar; a bent
+ * bar can cross 0..n times and each crossing becomes a section dot.
+ */
+export function planePolylineIntersection(params: PlanePolylineIntersectionParams): Float64Array {
+  const { planeOrigin, planeNormal, pathPoints } = params;
+  return wasmCore.plane_polyline_intersection(
+    new Float64Array([planeOrigin.x, planeOrigin.y, planeOrigin.z]),
+    new Float64Array([planeNormal.x, planeNormal.y, planeNormal.z]),
+    pathPoints,
+  );
 }

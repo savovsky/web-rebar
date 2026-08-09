@@ -8,10 +8,10 @@
 
 ## Session State
 
-> **Last session:** 2026-08-09 — M0 implementation on branch `A_MVP_Scope_M0`: T1 Rust/WASM `core/` crate + bridge round-trip (windows-gnu toolchain, wasm-pack 0.15); T2 data models + DIN/EC2 steel catalog seed; T3 `generate_bar_mesh` (swept cylinder, Float32/Uint32 typed arrays) + R3F smoke scene (visual confirmed); T4 RTK store (project-slice = ProjectModel, ui-slice + draft/selection state, typed hooks, Provider wired); T5 §N command layer (6 command thunks + registry + `CommandError`) + vitest (23 headless tests); T6 §B.2 app shell (top bar, tool palette with shortcuts + sticky mode, Building/Properties tabs, status bar) + doc 10 token system live (`tokens.css` → Tailwind v4 `@theme`, dark default); T7 Viewport3D (R3F canvas, §B.6 mouse mapping, token-driven grid, live status-bar coordinates) + Place Wall tool (chained click-click placement, Esc exits → `placeWall`, crosshair snap markers + translucent draft preview); T8 Place Bar tool (click a wall face → chained clicks build ONE bar with bending places — `placeBar` + `extendBar`, cover/diameter from the DIN/EC2 catalog seed, on-face grid snapping, cover kept from ALL wall faces — edges/start/end included, bends rendered with the DIN/EC2 mandrel radius per diameter (parallel-transported ring frames — no surface twist), WASM bar meshes visible through §L.2-transparent concrete)  
+> **Last session:** 2026-08-09 — M0 implementation on branch `A_MVP_Scope_M0`: T1 Rust/WASM `core/` crate + bridge round-trip (windows-gnu toolchain, wasm-pack 0.15); T2 data models + DIN/EC2 steel catalog seed; T3 `generate_bar_mesh` (swept cylinder, Float32/Uint32 typed arrays) + R3F smoke scene (visual confirmed); T4 RTK store (project-slice = ProjectModel, ui-slice + draft/selection state, typed hooks, Provider wired); T5 §N command layer (6 command thunks + registry + `CommandError`) + vitest (23 headless tests); T6 §B.2 app shell (top bar, tool palette with shortcuts + sticky mode, Building/Properties tabs, status bar) + doc 10 token system live (`tokens.css` → Tailwind v4 `@theme`, dark default); T7 Viewport3D (R3F canvas, §B.6 mouse mapping, token-driven grid, live status-bar coordinates) + Place Wall tool (chained click-click placement, Esc exits → `placeWall`, crosshair snap markers + translucent draft preview); T8 Place Bar tool (click a wall face → chained clicks build ONE bar with bending places — `placeBar` + `extendBar`, cover/diameter from the DIN/EC2 catalog seed, on-face grid snapping, cover kept from ALL wall faces — edges/start/end included, bends rendered with the DIN/EC2 mandrel radius per diameter (parallel-transported ring frames — no surface twist), WASM bar meshes visible through §L.2-transparent concrete); T9 section intersection + §G.1 Tier 1 sectioning orchestration (headless): Rust `plane_polyline_intersection` (0..n crossings per bar, on-plane vertices counted once) + `src/engine/sectioning.ts` — parametric wall outline at the cut plane (chord × height, not a mesh slice), cut-bar dots with true diameters (§M.4), convention-based background within viewDepth (§G.2.3), memoized `selectSectionPrimitives` selector — 83 vitest + 19 cargo tests green  
 > **Tooling (2026-08-08):** ESLint/Prettier stack adopted from doxeek — type-checked `typescript-eslint`, custom ruleset (max-params 2 → options objects, naming conventions, complexity limits); Prettier options live in `.prettierrc.json` (shared CLI + IDE), enforced via the `prettier/prettier` lint rule; `pnpm lint` and `pnpm build` both clean
-> **Current phase:** M0 implementation — T1–T8 ✅. Task tracker: [docs/implementation-plans-and-tasks/](./docs/implementation-plans-and-tasks/README.md)
-> **Next session:** M0 task T9 — section intersection + sectioning orchestration (see [M0 tracker](./docs/implementation-plans-and-tasks/m0-one-wall-one-bar.md) for task states and resume instructions)
+> **Current phase:** M0 implementation — T1–T9 ✅ (T9 awaiting author review). Task tracker: [docs/implementation-plans-and-tasks/](./docs/implementation-plans-and-tasks/README.md)
+> **Next session:** M0 task T10 — Section Cut tool + SectionView panel (Canvas2D, auto-fit) rendering `selectSectionPrimitives` (see [M0 tracker](./docs/implementation-plans-and-tasks/m0-one-wall-one-bar.md) for task states and resume instructions)
 
 **Where we left off:** 14 architectural topics (A–N) are decided and locked. Both §G.2 open questions are **resolved** (2026-07-29). The **[Architecture Spec](./docs/08-architecture-spec.md)** captures every decision. The project is now **scaffolded and ready for M0**:
 
@@ -26,7 +26,7 @@
 | **PDF** | jsPDF 4.2 |
 | **Structure** | `src/stores/` (configured), `src/engine/` (stubs), `src/io/` (stubs), `src/commands/` (empty, ready for §N), `src/ui/` (empty dirs per feature), `src/data/` (dirs for models/catalog/validation) |
 
-**Still needed for M0:** section intersection + 2D section view (T9/T10), acceptance pass (T11).
+**Still needed for M0:** 2D section view (T10), acceptance pass (T11).
 
 ### Tool Palette Design
 
@@ -65,8 +65,9 @@ README.md                              ← YOU ARE HERE — session state & proj
 │   ├── 07-browser-feasibility.md      ← Can each requirement run in the browser?
 │   ├── 09-tech-libraries.md           ← All chosen libraries & dependencies (future package.json content)
 │   ├── 10-design-system.md            ← Design tokens & one-place-change styling rules
-│   └── implementation-plans-and-tasks/ ← 🔵 LIVE — approved milestone plans + task state (M0 active)
-├── author_notebook.md                 ← ⛔ AUTHOR'S PRIVATE notes — AI sessions must NOT read or use it (contains raw, outdated ideas)
+│   ├── implementation-plans-and-tasks/ ← 🔵 LIVE — approved milestone plans + task state (M0 active)
+│   ├── test-scenarios/                ← 🟢 LIVE — behavioral test scenarios per milestone (manual now, Playwright post-POC)
+│   └── author_notebook.md             ← ⛔ AUTHOR'S PRIVATE notes — AI sessions must NOT read or use it (raw future UI/UX ideas)
 ```
 
 ---
@@ -174,6 +175,8 @@ These topics need dedicated discussion sessions before implementation reaches th
 4. **Data model first:** TypeScript interfaces in `src/data/models/` are defined before UI code that consumes them.
 5. **Doors stay open:** Before any structural decision, check the Deferred Topics table above and §N.
 6. **Design tokens only ([doc 10](./docs/10-design-system.md)):** No literal colors, pixel sizes, or font sizes in components — semantic tokens from `tokens.css` only. Domain styling (pen table, rebar colors) comes from project settings, not the UI theme.
+7. **Manual test list (added 2026-08-09):** Every task report ends with a list of what the author must test manually. After the author approves the task, the list is persisted as structured scenarios in [docs/test-scenarios/](./docs/test-scenarios/README.md) — behavior-focused Given/When/Then, stable IDs, updated in the same commit whenever behavior changes.
+8. **Author works in parallel — commit everything on approval (added 2026-08-09):** The author may edit any file (including `docs/author_notebook.md`) while a task is in progress; avoiding collisions is the author's responsibility. When the author approves a task, the task commit includes ALL working-tree changes, not just the session's files. If an exact-match edit fails because of a parallel edit, re-read the file and adapt — never revert the author's changes.
 
 ### Review Checklist (for the author)
 
@@ -209,7 +212,7 @@ These topics need dedicated discussion sessions before implementation reaches th
 
 When starting a new AI session, provide this README as context. It contains session state, links to all docs, and deferred topics.
 
-**⛔ Do NOT read `author_notebook.md`** — it is the author's private scratchpad with raw, outdated ideas. It is not project documentation and must not be used as context for any decision.
+**⛔ Do NOT read `docs/author_notebook.md`** — it is the author's private scratchpad with raw, unstructured future UI/UX ideas. It is not project documentation and must not be used as context for any decision.
 
 Start with:
 

@@ -7,10 +7,11 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **Next task:** **T9 — `plane_polyline_intersection` (Rust) + `sectioning.ts` (parametric outline + dots + projection).**
+- **Next task:** **T10 — Section Cut tool + SectionView panel (Canvas2D, auto-fit) rendering `selectSectionPrimitives`.**
 - **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author); T7 — `41fe548`; T8 — `13bdee4` (visual confirmed by author).
-- **Awaiting review:** —
-- **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes → **author reviews and commits** → next task.
+- **Awaiting review:** T9 (headless — unit-tested; visual confirmation happens with T10's panel).
+- **Manual test scenarios:** [../test-scenarios/m0-one-wall-one-bar.md](../test-scenarios/m0-one-wall-one-bar.md) (M0-S01…S15; updated after every approved task — root README rule 7).
+- **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
 
 ## M0 Goal (Architecture Spec §A)
 
@@ -92,7 +93,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | T6 | App shell layout + toolbar (M0 tool set, §B.6) + status bar | manual | ✅ Done | `20fe9b6` |
 | T7 | Viewport3D + Place Wall tool (click-click, chained → `placeWall`) | wall renders | ✅ Done | `41fe548` |
 | T8 | Place Bar tool (click face → 2 points → `placeBar`, default cover from catalog) | bar renders in wall | ✅ Done | `13bdee4` |
-| T9 | `plane_polyline_intersection` (Rust) + `sectioning.ts` (parametric outline + dots + projection) | unit tests | ⬜ Pending | — |
+| T9 | `plane_polyline_intersection` (Rust) + `sectioning.ts` (parametric outline + dots + projection) | unit tests | 🟡 Awaiting review | — |
 | T10 | Section Cut tool + SectionView panel (Canvas2D, auto-fit) | dot at correct cover | ⬜ Pending | — |
 | T11 | Acceptance pass against root README review checklist | zero store imports in `src/ui/`, lint+build clean | ⬜ Pending | — |
 
@@ -204,6 +205,18 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 **Review fix #4 (2026-08-09, author screenshot) — surface kink at bends:** the bend arcs exposed a latent mesh bug — `ring_basis` picked its reference axis PER RING and flipped it when the path direction crossed the 0.9 Y-component threshold, which happens mid-arc on vertical→horizontal bends; the cross-section twisted ~90° between two adjacent rings, shearing the surface into a visible pinch. Fixed with **parallel-transported ring frames** (`ring_frames`/`transport_basis` in mesh.rs): heuristic basis only for the first ring, each subsequent frame is the previous one minimally rotated to the new direction (Rodrigues) — no reference flips, no twist, anywhere on the path. Rust test added (`ring_frames_do_not_twist_across_a_vertical_bend`: consecutive frame dot > 0.9 across a vertical bend). Rust 10/10, TS 61/61, WASM 32.7 kB / 14.7 kB gzip.
 
+### T9 — `plane_polyline_intersection` (Rust) + `sectioning.ts` ✅ (2026-08-09, implemented — awaiting author review)
+
+**Files added:** `core/src/section.rs` (plane–polyline intersection + 9 Rust unit tests), `src/engine/sectioning.test.ts` (18 tests), `src/engine/wasm-bridge.test.ts` (4 boundary round-trip tests), `src/engine/wasm-test-init.ts` (vitest helper — node env can't fetch the pkg's file:// URL, so the .wasm bytes are read from disk and handed to the bridge init).
+
+**Files changed:** `core/src/lib.rs` (+ `mod section`), `src/engine/wasm-bridge.ts` (`initWasm` accepts optional pre-loaded bytes for Node/tests; the wrong-signature T1 stub `sectionPlaneIntersection` replaced by `planePolylineIntersection`: plane origin/normal + flat path → flat crossing points), `src/engine/sectioning.ts` (stub → full §G.1 Tier 1 orchestration). `pnpm wasm:build` re-run (pkg regenerated: 34.9 kB raw / 15.6 kB gzip, was 32.7/14.7).
+
+**Design notes:** **Rust rules** — one point per strictly-crossing segment; a vertex exactly on the plane is reported once (as the START of the segment leaving it — shared vertices never double-count); segments lying IN the plane yield no dot (a bar in the cut plane is drawn as a line); invalid input → empty; the normal is normalized defensively (§D pure functions don't trust callers). **View frame** — forward = plane normal (depth direction), up = +Y, right = forward × up; never degenerates for M0's vertical planes (createSection guard). **Concrete outline** — a parametric query, NOT a mesh slice (§G.1 Tier 1): the plane's chord through the wall's plan footprint (corner-on-plane hits + strict edge crossings, deduped, farthest pair), extruded over the wall height → a rectangle in section coords; oblique cuts widen it correctly. **Cut bars** — one WASM call per bar; a bent bar's 0..n crossings each become a dot; the diameter travels into the primitives (true relative dot diameters, §M.4). **Background (§G.2.3 convention-based, no occlusion)** — wall corner verticals strictly behind the plane within viewDepth, minus edges coincident with the outline sides (a perpendicular cut's far-end edges would double the line; near/far ends sharing a u are deduped — a wall fully behind the plane draws as 2 elevation edges), plus bar segments clipped to the depth slab; segments running along the view direction project to a point and are dropped (the cut dot represents them). Documented M0 simplifications: no horizontal concrete background edges (they always land on the outline's v extremes), no end-on dots for bars within depth. **Selector** — `selectSectionPrimitives`: memoized reselect selector over (project slice, sectionId); derived data never stored (§E/§H.2); null for unknown sections; missing target elements skipped (sections survive target deletion, T5 note).
+
+**Verification:** `cargo test` 19/19 ✅ (9 new) · `pnpm test` 83/83 ✅ (61 → 83: +4 WASM round-trip incl. multi-crossing + shared-vertex, +18 orchestration incl. oblique cut, depth-slab clipping, selector memoization) · `pnpm lint` ✅ (incl. prettier) · `pnpm build` ✅.
+
+**Headless task — manual checks arrive with T10 (persisted as scenarios M0-S13…S15 in [../test-scenarios/](../test-scenarios/m0-one-wall-one-bar.md)):** perpendicular mid-wall cut → thickness×height outline + bar dot at u = cover+radius from the outline side (Ø12 @ 25 mm cover → 31 mm) and v = bar height; oblique cut → wider outline + end edge; a bar continuing behind the plane → dashed continuation clipped at viewDepth; dot sizes scale with Ø (§M.4).
+
 ## Change Log
 
 | Date | Change |
@@ -229,3 +242,4 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | 2026-08-09 | T8 review fix #4: bend surface kink — per-ring frame reference flip replaced with parallel-transported ring frames (Rust mesh) |
 | 2026-08-09 | T8 approved by author — visual pass confirmed (chaining, all-faces cover, smooth bends) |
 | 2026-08-09 | T8 committed (`13bdee4`) — pushed to `A_MVP_Scope_M0` |
+| 2026-08-09 | T9 implemented (Rust plane–polyline intersection + §G.1 Tier 1 sectioning orchestration + memoized selector), awaiting author review |
