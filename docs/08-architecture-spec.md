@@ -119,7 +119,7 @@ Selection priority: smallest entity wins (bar > wall).
 | Icon | Tool | Shortcut | Behavior |
 |------|------|----------|----------|
 | ↖️ | Select | V | Click to select, drag to marquee, Ctrl+Click to toggle, Esc to deselect. Auto-return from other tools. |
-| 🧱 | Place Wall | W | Click two points (plan: length × thickness), Enter to confirm. Property panel shows w×h×t fields. |
+| 🧱 | Place Wall | W | Click the start point, click the end point — the wall is created on the second click and the next wall chains from it (chained placement, revised 2026-08-08). Esc exits. Property panel shows w×h×t fields. |
 | ⏹ | Place Bar | B | Click wall face, click two points for bar path, Enter to confirm. Cover auto-filled from code default. |
 | ✂️ | Section Cut | S | Click-drag across element to place section line. 2D view opens in dockable panel. |
 | ✋ | Pan | H | Click-drag to pan viewport. Also middle-mouse-drag. |
@@ -139,7 +139,7 @@ Selection priority: smallest entity wins (bar > wall).
 
 #### Tool Behavior Rules
 
-1. **Auto-return:** Every tool (except Select, Pan, Orbit) returns to Select after one successful use. This matches Figma convention and prevents accidental repeated operations.
+1. **Auto-return:** Single-shot tools (e.g., Section Cut) return to Select after one successful use. This matches Figma convention and prevents accidental repeated operations. **Revised 2026-08-08 (author feedback):** drawing tools (Place Wall, Place Bar — click-click tools) do NOT auto-return and need no Enter: the second click creates the element and immediately chains the next one from that point; the tool exits only on Esc (or another tool). Sticky mode (rule 2) is therefore moot for chaining tools and remains for single-shot tools.
 2. **Sticky mode:** Double-click a tool to lock it. It stays active after use until another tool or Esc is pressed. Visual indicator (e.g., thicker border around tool icon) shows sticky state.
 3. **Keyboard shortcuts:** Defined in a JSON config file (`src/ui/toolbar/shortcuts.json`). User-editable in-app via Settings → Keyboard Shortcuts (post-M0).
 4. **Status bar feedback:** When a tool is active, the status bar shows tool name, hint (e.g., "Click first point for wall start"), and active snap constraints.

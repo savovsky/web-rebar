@@ -1,0 +1,19 @@
+# pnpm project config (pnpm 11 reads this instead of the package.json "pnpm" field).
+# Not a monorepo — no `packages:` globs needed; this file exists for overrides.
+
+overrides:
+  # Supply-chain fix (2026-08-08): browserslist@4.28.8 was published the same day
+  # it was resolved into pnpm-lock.yaml, so pnpm 11's minimumReleaseAge policy
+  # rejects the lockfile and blocks install/dev/lint. Pin to the previous release
+  # (4.28.7, published 2026-07-21) which passes the policy.
+  # TODO: remove this override once 4.28.8 (or newer) is older than the cutoff —
+  # it is a transitive dep of @babel/helper-compilation-targets + update-browserslist-db.
+  browserslist: 4.28.7
+
+# pnpm 11's strictDepBuilds default hard-fails installs over unreviewed
+# dependency build scripts (ERR_PNPM_IGNORED_BUILDS); pnpm auto-seeds an
+# `allowBuilds` placeholder here for each flagged package. core-js (via canvg →
+# jsPDF's optional SVG path) ships only a funding-banner postinstall —
+# reviewed 2026-08-08, explicitly disallowed from running build scripts.
+allowBuilds:
+  core-js: false

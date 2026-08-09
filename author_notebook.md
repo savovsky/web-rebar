@@ -34,13 +34,13 @@ Example:
 - Strech
 - ...
 
-2. Reinforcemnt Module
+1. Reinforcemnt Module
 
 2.1. Create shape
 2.2. Place shape
 2.3. Find/Display shape, placment
 
-3. Layout Module (Creating a layout for plot/print/export...)
+1. Layout Module (Creating a layout for plot/print/export...)
 
 3.1. Define paper format
 3.2. Select view (draw frame to identify what needs to be included)
@@ -56,3 +56,6 @@ Option to choose the sclale in 2D views (M 1:0, 1:25, 1:50, 1: 100, etc..)
 
 1.1. Tab - Structure Elevation Schema
 1.2. Tab - Selection Properties
+
+****************
+Ask for Rust linters...

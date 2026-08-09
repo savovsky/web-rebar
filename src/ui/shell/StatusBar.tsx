@@ -1,9 +1,15 @@
 // Status bar (§B.2, §B.6 rule 4): active tool + hint on the left, snap state /
 // grid / cursor coordinates on the right (monospace — doc 10 §2). Coordinates
-// are placeholders until the viewport reports pointer positions (T7).
+// stream from the viewport's transient cursor module (§E — outside Redux).
+import { useSyncExternalStore } from 'react';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { toggleSnap } from '@/stores/ui-slice';
 import { TOOL_BY_ID } from '@/ui/toolbar/tools';
+import {
+  formatCursorPosition,
+  getCursorSnapshot,
+  subscribeCursorPosition,
+} from '@/ui/viewport/cursor-position';
 
 export function StatusBar() {
   const dispatch = useAppDispatch();
@@ -11,6 +17,7 @@ export function StatusBar() {
   const cursorHint = useAppSelector((state) => state.ui.cursorHint);
   const isSnapEnabled = useAppSelector((state) => state.ui.snapEnabled);
   const gridSpacingMm = useAppSelector((state) => state.ui.gridSpacingMm);
+  const cursorPosition = useSyncExternalStore(subscribeCursorPosition, getCursorSnapshot);
   const tool = TOOL_BY_ID.get(activeTool)!; // map covers every ToolId
   return (
     <footer className='flex h-statusbar items-center gap-3 border-t border-border bg-panel px-panel text-xs'>
@@ -26,7 +33,7 @@ export function StatusBar() {
           Snap: {isSnapEnabled ? 'ON' : 'OFF'}
         </button>
         <span>Grid: {gridSpacingMm} mm</span>
-        <span>X: — Y: —</span>
+        <span className='whitespace-pre'>{formatCursorPosition(cursorPosition)}</span>
       </span>
     </footer>
   );

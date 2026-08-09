@@ -3,6 +3,10 @@ import type { AppThunk } from '@/stores';
 import { addElement } from '@/stores/project-slice';
 import { CommandError } from './command-error';
 
+/** M0 wall cross-section defaults (mm) — the property panel makes these
+ *  user-editable post-M0 (§B.6). */
+export const DEFAULT_WALL_DIMENSIONS = { thickness: 200, height: 2800 } as const;
+
 export interface PlaceWallParams {
   /** Axis start point in plan (X/Z); y ignored — see WallElement.baseElevation. */
   startPoint: Vec3;

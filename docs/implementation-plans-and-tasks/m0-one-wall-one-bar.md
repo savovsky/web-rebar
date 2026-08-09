@@ -7,8 +7,9 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **Next task:** **T7 — Viewport3D + Place Wall tool (click-click-Enter → `placeWall`).**
+- **Next task:** **T8 — Place Bar tool (click face → 2 points → `placeBar`, default cover from catalog).**
 - **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author).
+- **Awaiting review:** T7 — Viewport3D + Place Wall tool implemented (lint/test/build green; visual check pending).
 - **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes → **author reviews and commits** → next task.
 
 ## M0 Goal (Architecture Spec §A)
@@ -89,7 +90,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | T4 | Store: project-slice reducers + ui-slice extension; typed hooks | typecheck | ✅ Done | `4413366` |
 | T5 | Commands + registry + `CommandError`; **add vitest** (Q2) | headless unit tests | ✅ Done | `a7934d2` |
 | T6 | App shell layout + toolbar (M0 tool set, §B.6) + status bar | manual | ✅ Done | `20fe9b6` |
-| T7 | Viewport3D + Place Wall tool (click-click-Enter → `placeWall`) | wall renders | ⬜ Pending | — |
+| T7 | Viewport3D + Place Wall tool (click-click, chained → `placeWall`) | wall renders | 🟨 Awaiting review | — |
 | T8 | Place Bar tool (click face → 2 points → `placeBar`, default cover from catalog) | bar renders in wall | ⬜ Pending | — |
 | T9 | `plane_polyline_intersection` (Rust) + `sectioning.ts` (parametric outline + dots + projection) | unit tests | ⬜ Pending | — |
 | T10 | Section Cut tool + SectionView panel (Canvas2D, auto-fit) | dot at correct cover | ⬜ Pending | — |
@@ -165,6 +166,22 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 **Verification:** `pnpm test` 23/23 ✅ · `pnpm lint` ✅ · `pnpm build` ✅.
 
+### T7 — Viewport3D + Place Wall tool ✅ (2026-08-08, implemented — awaiting author review)
+
+**Files added:** `src/engine/wall-geometry.ts` (pure `getWallTransform`: box center/yaw/length from wall params; atan2 −π/−0 normalized) + `src/engine/snapping.ts` (`snapPointToGrid`, §B.3) + 10 unit tests. `src/data/appearance.ts` (domain appearance seed — concrete viewport color; doc 10 §5 keeps domain styling out of the UI theme). `src/ui/viewport/` — `Viewport3D.tsx` (R3F Canvas, mm/Y-up scene, transparent canvas so `bg-viewport` shows through), `ViewportControls.tsx` (§B.6 mouse mapping: right-drag orbit, middle pan, scroll zoom; LEFT = pan only while the Pan tool is active), `ViewportGrid.tsx` (drei infinite grid, spacing from ui-slice, 1 mm below y=0 against z-fighting), `GroundPlane.tsx` (opacity-0 hit plane: cursor tracking + per-tool click routing; drag-vs-click via R3F `event.delta`), `WallsLayer.tsx` / `WallMesh.tsx` (box per wall; click-select under the Select tool only, §B.5), `WallDraftPreview.tsx` (snap marker + translucent preview box + committed-point markers; live cursor applied via refs in `useFrame`, §E), `use-place-wall-confirm.ts` (Enter → `placeWall` command → select new wall → auto-return to Select unless sticky, §B.6 rules 1–2; `CommandError` → draft dropped + status-bar explanation), `constants.ts` (world-space scene config), `cursor-position.ts` (transient cursor module: raw ref for `useFrame` + rounded `useSyncExternalStore` snapshot for the status bar), `viewport-theme.ts` (reads `--guide-line`/`--primary`/`--selection`/`--snap-target` tokens → CSS colors for three.js — doc 10: no viewport palette of its own). `src/ui/is-editable-target.ts` (shared keyboard guard, extracted from use-tool-shortcuts).
+
+**Files changed:** `src/commands/place-wall.ts` (+ `DEFAULT_WALL_DIMENSIONS` 200×2800 mm seed — property-panel-editable post-M0), `src/ui/shell/AppShell.tsx` (placeholder → `Viewport3D`), `src/ui/shell/StatusBar.tsx` (live X/Z plan coordinates via the cursor module; placeholder was scheduled for T7), `src/ui/toolbar/use-tool-shortcuts.ts` (uses the shared guard). `ViewportPlaceholder.tsx` deleted.
+
+**Design notes:** snap applies at event time (snap toggle + Shift held, §B.3) to both committed clicks and the live cursor — what you see is what you get. Status bar shows plan X/Z (model space), not the §B.2 mockup's generic X/Y. Wall clicks during placement tools fall through to the ground plane; Select-tool-only selection keeps placement unambiguous. Frameloop stays `always` in M0 (demand mode + damping is M4 performance work, §L).
+
+**Verification:** `pnpm lint` ✅ (incl. prettier; two justified magic-number disables for camera/light position triples) · `pnpm test` 33/33 ✅ · `pnpm build` ✅ (JS 1.2 MB / 336 kB gzip — three.js returns with the viewport; code-splitting deferred to M4 per T3) · doc 10 review check: zero hex/arbitrary-value literals in `src/ui` outside `tokens.css`, zero project-slice imports in `src/ui` ✅.
+
+**Visual check for the author:** `pnpm dev` → grid + orbit (right-drag)/pan (middle-drag)/zoom; **W** → snap marker follows cursor, click-click-Enter places a 200×2800 wall (selected, blue); status bar shows live coordinates, hints advance per click; Esc cancels a draft; double-click **W** (sticky) keeps placing after Enter.
+
+**Review feedback changes (2026-08-08, author):** (1) Markers are now **crosshairs** (one grid cell per arm, tracks `gridSpacingMm`, drawn as an always-on-top overlay) instead of spheres. (2) **Chained placement**: click 1 starts the axis, click 2 creates the wall and immediately starts the next wall from that point; **Esc exits** — no Enter, no auto-return (§B.6 rule 1 revised in the spec). Zero-length click now keeps the draft and shows the error in the status bar. Files: `place-wall-draft.ts` added (click flow + command dispatch), `use-place-wall-confirm.ts` deleted, GroundPlane delegates; tools.ts hint + spec §B.6 (Place Wall row, rule 1) updated.
+
+**Infra fix (same review batch, 2026-08-08):** pnpm 11.20 supply-chain defaults blocked `pnpm dev`/`install` — (1) `minimumReleaseAge` rejected the lockfile: `browserslist@4.28.8` (transitive via `@babel/helper-compilation-targets` + `update-browserslist-db`) was published the same day it was resolved; fixed with an **override pin to 4.28.7** in the new `pnpm-workspace.yaml` (TODO comment: remove once 4.28.8+ ages past the cutoff). Lockfile diff: 8+/5− (override block + 4.28.8→4.28.7); one cosmetic leftover — the `update-browserslist-db@1.3.0(browserslist@4.28.8)` peer-suffix *key* (its dependency correctly points to 4.28.7; pnpm normalizes the key on a future re-resolution). (2) `strictDepBuilds` (v11 default) hard-failed on core-js's unreviewed build script (funding-banner postinstall, via canvg → jsPDF); explicitly disallowed via `allowBuilds: { core-js: false }`. Note: pnpm 11 removed `ignoredBuiltDependencies` (v10 key) — the reviewed-decision mechanism is now the `allowBuilds` map; `pnpm approve-builds` seeds placeholders into `pnpm-workspace.yaml`. Verified: `pnpm install` / `dev` / `lint` / `test` / `build` all pass with zero policy bypass flags.
+
 ## Change Log
 
 | Date | Change |
@@ -179,3 +196,6 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | 2026-08-08 | T5 implemented + approved by author, committed (`a7934d2`) |
 | 2026-08-08 | T6 implemented; author visual pass — two review fixes (sticky ring contrast, focus-visible token) |
 | 2026-08-08 | T6 committed (`20fe9b6`) — visual confirmed by author |
+| 2026-08-08 | T7 implemented, awaiting author review |
+| 2026-08-08 | pnpm 11 supply-chain policies fixed (`pnpm-workspace.yaml`: browserslist pin + core-js allowBuilds) — `pnpm dev` unblocked |
+| 2026-08-08 | T7 review feedback: crosshair markers + chained placement (spec §B.6 rule 1 revised) |

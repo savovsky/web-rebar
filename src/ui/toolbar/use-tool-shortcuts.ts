@@ -3,18 +3,12 @@
 import { useEffect } from 'react';
 import { useAppDispatch } from '@/stores/hooks';
 import { type ToolId, clearSelection, setTool } from '@/stores/ui-slice';
+import { isEditableTarget } from '@/ui/is-editable-target';
 import shortcuts from './shortcuts.json';
 
 const KEY_TO_TOOL = new Map<string, ToolId>(
   Object.entries(shortcuts).map(([toolId, key]): [string, ToolId] => [key, toolId as ToolId]),
 );
-
-function isEditableTarget(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
-  );
-}
 
 export function useToolShortcuts() {
   const dispatch = useAppDispatch();

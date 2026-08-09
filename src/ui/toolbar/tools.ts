@@ -29,7 +29,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     id: 'placeWall',
     label: 'Place Wall',
-    hint: 'Click two points for the wall axis, Enter to confirm',
+    hint: 'Click the start point · each further click completes a wall and starts the next · Esc to finish',
     shortcut: SHORTCUT_BY_TOOL.placeWall ?? null,
     icon: IconPlaceWall,
   },
