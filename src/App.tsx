@@ -1,10 +1,8 @@
-// Placeholder shell — real layout lands in M0 (tokens from src/ui/styles/tokens.css per doc 10)
+// The T3 smoke scene is gone — the §B.2 app shell owns the screen from T6 on.
+import { AppShell } from './ui/shell/AppShell';
+
 function App() {
-  return (
-    <div className='w-screen h-screen flex items-center justify-center'>
-      <h1>Web Rebar</h1>
-    </div>
-  );
+  return <AppShell />;
 }
 
 export default App;

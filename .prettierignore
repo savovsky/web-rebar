@@ -1,0 +1,5 @@
+# Hand-authored prose and markdown tables — IDE format-on-save must not reflow these.
+# Formatting is enforced on code via `pnpm lint` (prettier/prettier rule) instead.
+*.md
+# Generated lockfile
+pnpm-lock.yaml

@@ -147,7 +147,7 @@ Mixing domain tokens into the UI theme file is a classic mess — keep the famil
 src/ui/
 ├── styles/
 │   ├── tokens.css           ← ALL UI design tokens (single source of truth) + Tailwind v4 @theme mapping
-│   └── globals.css          ← base resets, font imports, `@import "tailwindcss"` (currently src/index.css placeholder)
+│   └── globals.css          ← base resets, font imports, `@import "tailwindcss"`
 ├── components/              ← shadcn/ui vendored components (variants via cva)
 ├── panels/                  ← app panels (consume tokens only)
 └── viewport/                ← 3D viewport (reads tokens for materials)

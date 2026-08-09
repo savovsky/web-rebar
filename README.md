@@ -8,25 +8,25 @@
 
 ## Session State
 
-> **Last session:** 2026-08-08 — GitHub repo created (`git@github.com:savovsky/web-rebar.git`); Vite 8 + React 19 + TypeScript 6 scaffolded; M0 dependencies installed (RTK, Three.js, Tailwind v4, Radix, jsPDF); full `src/` folder structure created (stores, engine, io, ui stubs); build verified  
-> **Tooling (2026-08-08):** ESLint/Prettier stack adopted from doxeek — type-checked `typescript-eslint`, custom ruleset (max-params 2 → options objects, naming conventions, complexity limits), Prettier as a lint rule with import sorting; `pnpm lint` and `pnpm build` both clean
-> **Current phase:** Pre-development — project scaffold ready; ~2-month exploration gate (see [Project Vision → Project Strategy](./docs/01-project-vision.md))
-> **Next session:** M0 implementation planning (One Wall, One Bar) — WASM function signatures, data model interfaces, RTK store shape, section-view component design, milestone task breakdown
+> **Last session:** 2026-08-09 — M0 implementation on branch `A_MVP_Scope_M0`: T1 Rust/WASM `core/` crate + bridge round-trip (windows-gnu toolchain, wasm-pack 0.15); T2 data models + DIN/EC2 steel catalog seed; T3 `generate_bar_mesh` (swept cylinder, Float32/Uint32 typed arrays) + R3F smoke scene (visual confirmed); T4 RTK store (project-slice = ProjectModel, ui-slice + draft/selection state, typed hooks, Provider wired); T5 §N command layer (6 command thunks + registry + `CommandError`) + vitest (23 headless tests); T6 §B.2 app shell (top bar, tool palette with shortcuts + sticky mode, Building/Properties tabs, status bar) + doc 10 token system live (`tokens.css` → Tailwind v4 `@theme`, dark default); T7 Viewport3D (R3F canvas, §B.6 mouse mapping, token-driven grid, live status-bar coordinates) + Place Wall tool (chained click-click placement, Esc exits → `placeWall`, crosshair snap markers + translucent draft preview); T8 Place Bar tool (click a wall face → chained clicks build ONE bar with bending places — `placeBar` + `extendBar`, cover/diameter from the DIN/EC2 catalog seed, on-face grid snapping, cover kept from ALL wall faces — edges/start/end included, bends rendered with the DIN/EC2 mandrel radius per diameter (parallel-transported ring frames — no surface twist), WASM bar meshes visible through §L.2-transparent concrete); T9 section intersection + §G.1 Tier 1 sectioning orchestration (headless): Rust `plane_polyline_intersection` (0..n crossings per bar, on-plane vertices counted once) + `src/engine/sectioning.ts` — parametric wall outline at the cut plane (chord × height, not a mesh slice), cut-bar dots with true diameters (§M.4), convention-based background within viewDepth (§G.2.3), memoized `selectSectionPrimitives` selector — 83 vitest + 19 cargo tests green; T10 Section Cut tool (S — drag the line across an element, third click sets view depth/look direction, §B.6 single-shot auto-return) + resizable dockable SectionView panel (§B.2 bottom-right, opens at ¼ viewport): Canvas2D render of `selectSectionPrimitives` with a pure engine auto-fit transform (mm→px, Y-flip), dashed convention-based background, cut-bar dots at true relative diameters (§M.4), ink from design tokens + domain pen-table seed; sections show in 3D as interactive wireframe volumes (move body, stretch corner handles → `reshapeSection` command recomputes plane/depth/targets) — 127 vitest green; T11 acceptance pass against the root README review checklist — every rule verified ✅ across T1–T10 (verdict table in the M0 tracker), the §A acceptance sentence captured as a headless command-layer test (`m0-acceptance.test.ts`), findings F1/F2 report-only — **M0 ✅ COMPLETE** (128 vitest + 19 cargo green)  
+> **Tooling (2026-08-08):** ESLint/Prettier stack adopted from doxeek — type-checked `typescript-eslint`, custom ruleset (max-params 2 → options objects, naming conventions, complexity limits); Prettier options live in `.prettierrc.json` (shared CLI + IDE), enforced via the `prettier/prettier` lint rule; `pnpm lint` and `pnpm build` both clean
+> **Current phase:** M0 ✅ complete (T1–T11, 2026-08-09). Task tracker: [docs/implementation-plans-and-tasks/](./docs/implementation-plans-and-tasks/README.md)
+> **Next session:** M1 planning (Architecture Spec §A — Edit + Reactivity: move wall → section updates, undo/redo per §E) — new milestone plan file, author-approved before coding
 
-**Where we left off:** 14 architectural topics (A–N) are decided and locked. Both §G.2 open questions are **resolved** (2026-07-29). The **[Architecture Spec](./docs/08-architecture-spec.md)** captures every decision. The project is now **scaffolded and ready for M0**:
+**Where we left off:** 14 architectural topics (A–N) are decided and locked. Both §G.2 open questions are **resolved** (2026-07-29). The **[Architecture Spec](./docs/08-architecture-spec.md)** captures every decision. The project has **M0 behind it** — the stack below is proven end to end:
 
 **Repository:** `git@github.com:savovsky/web-rebar.git`
 
 | What | Details |
-|------|---------|
+| ------ | --------- |
 | **Build** | Vite 8.2 + TypeScript 6.0 — `pnpm dev` / `pnpm build` |
 | **UI** | React 19.2 + Tailwind v4 + Radix primitives |
 | **State** | Redux Toolkit 2.12 (thunks = §N command layer) |
 | **3D** | Three.js 0.185 + React Three Fiber 9.7 + Drei 10.7 |
 | **PDF** | jsPDF 4.2 |
-| **Structure** | `src/stores/` (configured), `src/engine/` (stubs), `src/io/` (stubs), `src/commands/` (empty, ready for §N), `src/ui/` (empty dirs per feature), `src/data/` (dirs for models/catalog/validation) |
+| **Structure** | `src/stores/` (project + ui slices, typed hooks), `src/engine/` (WASM bridge + placement/sectioning/section-cut/transform math), `src/io/` (stubs), `src/commands/` (8 §N commands + registry), `src/ui/` (shell, toolbar, viewport, section-view, panels), `src/data/` (models + DIN/EC2 catalog seed + domain appearance) |
 
-**Still needed (M0 session):** Rust `core/` crate (WASM), first TypeScript data model interfaces, first command thunks, 3D viewport component, section-view component.
+M0 (One Wall, One Bar) is **✅ complete** — all milestone risks probed: WASM bundle is 34.9 kB raw / 15.6 kB gzip, the §G.1 Tier 1 section algorithm is correct (dot at u = 31 mm for Ø12 @ 25 mm cover), Rust↔TS data passing runs on flat typed arrays end to end.
 
 ### Tool Palette Design
 
@@ -52,7 +52,7 @@ Summary: single vertical toolbar (left edge of viewport). Figma-style auto-retur
 
 ## Document Map
 
-```
+```text
 README.md                              ← YOU ARE HERE — session state & project overview
 ├── docs/
 │   ├── 08-architecture-spec.md        ← 🔴 CURRENT — all locked architecture decisions
@@ -64,8 +64,10 @@ README.md                              ← YOU ARE HERE — session state & proj
 │   ├── 06-reference-data.md           ← Extracted reference data (steel grades, country DB)
 │   ├── 07-browser-feasibility.md      ← Can each requirement run in the browser?
 │   ├── 09-tech-libraries.md           ← All chosen libraries & dependencies (future package.json content)
-│   └── 10-design-system.md            ← Design tokens & one-place-change styling rules
-├── author_notebook.md                 ← ⛔ AUTHOR'S PRIVATE notes — AI sessions must NOT read or use it (contains raw, outdated ideas)
+│   ├── 10-design-system.md            ← Design tokens & one-place-change styling rules
+│   ├── implementation-plans-and-tasks/ ← 🔵 LIVE — approved milestone plans + task state (M0 active)
+│   ├── test-scenarios/                ← 🟢 LIVE — behavioral test scenarios per milestone (manual now, Playwright post-POC)
+│   └── author_notebook.md             ← ⛔ AUTHOR'S PRIVATE notes — AI sessions must NOT read or use it (raw future UI/UX ideas)
 ```
 
 ---
@@ -135,7 +137,7 @@ The reinforcement data model in [04-reinforcement-data-model.md](./docs/04-reinf
 ## Key Decisions Made (Architecture Locked)
 
 | # | Decision | Rationale | Spec |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | A | M0-M4 milestone sequence (One Wall → Full Building) | Validate architecture before building features | [§A](./docs/08-architecture-spec.md#a--mvp-scope--milestone-sequence) |
 | B | "Figma for concrete" — direct-manipulation-first UI | 10x faster than Allplan's property-grid workflow | [§B](./docs/08-architecture-spec.md#b--user-interaction-model) |
 | C | Internal data model + IFC/DXF adapters (not IFC-native) | IFC stores results, not design intent | [§C](./docs/08-architecture-spec.md#c--internal-data-model) |
@@ -161,32 +163,8 @@ These topics need dedicated discussion sessions before implementation reaches th
 
 **⚠️ Implementation planning rule:** Every milestone plan (M0+) must review this table and Architecture Spec §N before writing code. No implementation decision may silently close a door listed here — if a conflict is discovered, raise it explicitly and update the spec.
 
----
-
-## Rules for Implementation Sessions (M0+)
-
-> **Non-negotiable coding rules.** The code-writing AI must follow them; the author reviews against them. When starting an implementation session, tell the model: *"Read README → Rules for Implementation Sessions and Architecture Spec §N before writing any code."*
-
-1. **Command layer (§N):** Every mutation of the project model goes through a named command function in `src/commands/`. UI (User Interface) event handlers contain **no business logic** and **never touch the store directly**.
-2. **Dumb components:** React components render and dispatch commands only. No domain math, no validation, no geometry logic inside components.
-3. **Stateless WASM (§D):** Rust/WASM (WebAssembly) functions are pure — no state held across calls; geometry crosses the boundary as flat arrays.
-4. **Data model first:** TypeScript interfaces in `src/data/models/` are defined before UI code that consumes them.
-5. **Doors stay open:** Before any structural decision, check the Deferred Topics table above and §N.
-6. **Design tokens only ([doc 10](./docs/10-design-system.md)):** No literal colors, pixel sizes, or font sizes in components — semantic tokens from `tokens.css` only. Domain styling (pen table, rebar colors) comes from project settings, not the UI theme.
-
-### Review Checklist (for the author)
-
-- [ ] `pnpm lint` and `pnpm build` pass (lint includes Prettier formatting + type-checked rules)
-- [ ] Search component files (`src/ui/`) for direct store mutation calls — expected result: **zero** (only command invocations)
-- [ ] Component files contain no domain math, validation, or geometry computation
-- [ ] Every new user action has a corresponding named command with a plain params object
-- [ ] WASM functions hold no state between calls; only flat arrays cross the boundary
-- [ ] Undo/redo (§E) works for every newly added command
-- [ ] Nothing in the change silently blocks a Deferred Topics entry
-- [ ] No literal style values in `src/ui/` (hex/px/font-size) outside `tokens.css` ([doc 10](./docs/10-design-system.md))
-
 | # | Topic | When Needed | Depends On |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **Layer Model** | On/off, freeze/thaw, lock/unlock, active layer per storey. User-defined layer names. | Before M4 (multi-element building) | B (interaction model) |
 | **Tool Palette Design** | Exact tool list, icons, shortcuts, workflow sequences. User-editable keyboard shortcuts. | **✅ LOCKED 2026-07-29** — M0 tool set defined (§B.6) | B |
 | **Drawing Layouts & Title Blocks** | A0-A4 + custom sheets. Predefined and custom title blocks, borders, scale settings. | Before I (2D drawing pipeline) is complete | I |
@@ -204,34 +182,62 @@ These topics need dedicated discussion sessions before implementation reaches th
 
 ---
 
+## Rules for Implementation Sessions (M0+)
+
+> **Non-negotiable coding rules.** The code-writing AI must follow them; the author reviews against them. When starting an implementation session, tell the model: *"Read README → Rules for Implementation Sessions and Architecture Spec §N before writing any code."*
+
+1. **Command layer (§N):** Every mutation of the project model goes through a named command function in `src/commands/`. UI (User Interface) event handlers contain **no business logic** and **never touch the store directly**.
+2. **Dumb components:** React components render and dispatch commands only. No domain math, no validation, no geometry logic inside components.
+3. **Stateless WASM (§D):** Rust/WASM (WebAssembly) functions are pure — no state held across calls; geometry crosses the boundary as flat arrays.
+4. **Data model first:** TypeScript interfaces in `src/data/models/` are defined before UI code that consumes them.
+5. **Doors stay open:** Before any structural decision, check the Deferred Topics table above and §N.
+6. **Design tokens only ([doc 10](./docs/10-design-system.md)):** No literal colors, pixel sizes, or font sizes in components — semantic tokens from `tokens.css` only. Domain styling (pen table, rebar colors) comes from project settings, not the UI theme.
+7. **Manual test list (added 2026-08-09):** Every task report ends with a list of what the author must test manually. After the author approves the task, the list is persisted as structured scenarios in [docs/test-scenarios/](./docs/test-scenarios/README.md) — behavior-focused Given/When/Then, stable IDs, updated in the same commit whenever behavior changes.
+8. **Author works in parallel — commit everything on approval (added 2026-08-09):** The author may edit any file (including `docs/author_notebook.md`) while a task is in progress; avoiding collisions is the author's responsibility. When the author approves a task, the task commit includes ALL working-tree changes, not just the session's files. If an exact-match edit fails because of a parallel edit, re-read the file and adapt — never revert the author's changes.
+
+### Review Checklist (for the author)
+
+- [ ] `pnpm lint` and `pnpm build` pass (lint includes Prettier formatting + type-checked rules)
+- [ ] Search component files (`src/ui/`) for direct store mutation calls — expected result: **zero** (only command invocations)
+- [ ] Component files contain no domain math, validation, or geometry computation
+- [ ] Every new user action has a corresponding named command with a plain params object
+- [ ] WASM functions hold no state between calls; only flat arrays cross the boundary
+- [ ] Undo/redo (§E) works for every newly added command
+- [ ] Nothing in the change silently blocks a Deferred Topics entry
+- [ ] No literal style values in `src/ui/` (hex/px/font-size) outside `tokens.css` ([doc 10](./docs/10-design-system.md))
+
+---
+
 ## For AI Sessions
 
 When starting a new AI session, provide this README as context. It contains session state, links to all docs, and deferred topics.
 
-**⛔ Do NOT read `author_notebook.md`** — it is the author's private scratchpad with raw, outdated ideas. It is not project documentation and must not be used as context for any decision.
+**⛔ Do NOT read `docs/author_notebook.md`** — it is the author's private scratchpad with raw, unstructured future UI/UX ideas. It is not project documentation and must not be used as context for any decision.
 
 Start with:
 
-```
+```text
 I'm working on a browser-based reinforced concrete drawing app ("web-rebar").
 Read C:\work\personal\projects\web-rebar\README.md first — it has session state.
 Then read docs/08-architecture-spec.md — it has all locked architecture decisions.
 ```
 
-**To resume M0 implementation planning (current), use this:**
+**To start M1 planning (current), use this:**
 
-```
-Read C:\work\personal\projects\web-rebar\README.md and docs/08-architecture-spec.md.
-Then let's plan M0: One Wall, One Bar — WASM function signatures, data model interfaces,
-RTK store shape, command thunks, 3D viewport component, section-view component.
+```text
+Read C:\work\personal\projects\web-rebar\README.md, docs/08-architecture-spec.md,
+and docs/implementation-plans-and-tasks/README.md (M0 is complete — its tracker has the full history).
+Draft the M1 implementation plan (Architecture Spec §A — Edit + Reactivity:
+move wall → section updates, undo/redo per §E) as a new file in
+docs/implementation-plans-and-tasks/ for my approval. Do not commit.
 ```
 
 **Session type guide:**
 
 | What you want to do | Read these docs |
-|---|---|
+| --- | --- |
 | Continue architecture discussion (deferred topics) | README → [08-architecture-spec](./docs/08-architecture-spec.md) → deferred topic list above |
-| Start implementing M0 | README → [08-architecture-spec](./docs/08-architecture-spec.md) → [03-tech-stack](./docs/03-tech-stack.md) |
+| Start implementing the next milestone (M0 ✅ done — M1 next) | README → [08-architecture-spec](./docs/08-architecture-spec.md) → [03-tech-stack](./docs/03-tech-stack.md) → [M0 tracker](./docs/implementation-plans-and-tasks/m0-one-wall-one-bar.md) (patterns to reuse) |
 | Design data model / TypeScript interfaces | [08-architecture-spec §C+D](./docs/08-architecture-spec.md) → [04-reinforcement-data-model](./docs/04-reinforcement-data-model.md) |
 | Work on reinforcement algorithms | [08-architecture-spec §F+K](./docs/08-architecture-spec.md) → [04-reinforcement-data-model](./docs/04-reinforcement-data-model.md) → [06-reference-data](./docs/06-reference-data.md) |
 | Understand Allplan for comparison | [02-allplan-analysis](./docs/02-allplan-analysis.md) → [05-module-architecture](./docs/05-module-architecture.md) |

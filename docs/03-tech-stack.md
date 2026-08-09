@@ -7,7 +7,7 @@
 
 ## Architecture Overview
 
-```
+```text
 ┌──────────────────────────────────────────────────────┐
 │                    BROWSER (PWA)                      │
 │                                                       │
@@ -43,7 +43,7 @@
 ## Frontend
 
 | Technology | Version | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | **React** | 19 | UI framework (author's expertise) |
 | **Redux Toolkit (RTK)** | Latest | State management — thunks = §N command layer, Immer built in (revised 2026-07-28) |
 | **React Three Fiber** | Latest | Declarative Three.js in React |
@@ -62,6 +62,7 @@
 ### SPA (Single Page Application) Shape
 
 The app is a desktop-class SPA: long-lived session, large in-memory state, continuous rendering — no server rendering involved. Implications:
+
 - Accept a 2–5 MB initial load (Three.js + WASM) with a proper loading state
 - Memory discipline matters (meshes excluded from undo snapshots — Architecture Spec §E)
 - A future marketing/landing page is a separate server-rendered site, never mixed into the app
@@ -72,6 +73,7 @@ The app is a desktop-class SPA: long-lived session, large in-memory state, conti
 **Locked 2026-07-28: custom layout, no docking library.** The §B.2 screen layout is fixed regions (left toolbar, center viewport, right tabbed panel) plus ONE floatable/dockable 2D section view. CSS grid for the fixed regions + a custom floating panel (pointer-event dragging, ~150 lines) covers this — no need for IDE-style tiling libraries (react-mosaic-component rejected: sparsely maintained, class-component era).
 
 Panels:
+
 - **3D Viewport** — main working area
 - **2D Plan View** — section/plan display (dockable or floating)
 - **Property Panel** — edit selected element properties
@@ -83,7 +85,7 @@ Panels:
 ## Geometry & Solver Engine
 
 | Component | Technology | Why |
-|---|---|---|
+| --- | --- | --- |
 | **Language** | Rust | Type-safe, zero-cost abstractions, excellent WASM support |
 | **WASM build** | wasm-pack | Compiles Rust to .wasm + JS bindings |
 | **Linear algebra** | nalgebra | Comprehensive math library |
@@ -102,6 +104,7 @@ Panels:
 ### Why Not OpenCASCADE.js for the Core?
 
 OpenCASCADE.js is a full BREP kernel compiled to WASM:
+
 - **Pros:** Complete solid modeling, section generation (HlrBRep)
 - **Cons:** 30+ MB WASM file, slow startup, overkill for extrusion-based modeling
 
@@ -112,7 +115,7 @@ OpenCASCADE.js is a full BREP kernel compiled to WASM:
 ## Data Storage
 
 | Layer | Technology | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | **Runtime** | RTK store (in-memory) | Application state, undo/redo snapshots |
 | **Persistence** | OPFS (Origin Private File System) | `project.json` — one self-contained file per project |
 | **App state** | IndexedDB (Indexed Database) | Settings, UI layout, recent-project list, autosave checkpoints |

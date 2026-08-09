@@ -8,11 +8,12 @@ import tseslint from 'typescript-eslint';
 
 // Adapted from doxeek's ESLint setup (2026-08-08). Dropped: Convex plugin (no backend here),
 // MUI/@ocome import-order groups, dead 'react/*' rules (plugin never registered in doxeek).
-// Prettier runs as an ESLint rule — formatting options live in 'prettier/prettier' below.
+// Prettier runs as an ESLint rule; formatting options live in .prettierrc.json so that the
+// CLI and IDE Prettier extensions share one source of truth (moved out of this file 2026-08-08).
 const MAX_CYCLOMATIC_COMPLEXITY = 15;
 const MAX_LINES_PER_FUNCTION = 115;
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'core', 'src/core/pkg']), // core = Rust crate; pkg = generated wasm-bindgen glue
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {
@@ -29,7 +30,9 @@ export default defineConfig([
       },
     },
     plugins: {
-      'react-hooks': reactHooks,
+      // Cast through unknown: eslint-plugin-react-hooks@7 (latest) ships a `configs.flat` type
+      // that predates ESLint 10's Plugin['configs'] index signature — type-level only, runtime fine.
+      'react-hooks': /** @type {import('eslint').ESLint.Plugin} */ (/** @type {unknown} */ (reactHooks)),
       prettier,
     },
     extends: [reactRefresh.configs.vite],
@@ -126,24 +129,8 @@ export default defineConfig([
           prefix: ['can', 'did', 'has', 'is', 'must', 'needs', 'should', 'will'],
         },
       ],
-      'prettier/prettier': [
-        // Prettier formatting + import ordering, enforced as a lint rule
-        'error',
-        {
-          tabWidth: 2,
-          singleQuote: true,
-          jsxSingleQuote: true,
-          semi: true,
-          printWidth: 110,
-          arrowParens: 'always',
-          trailingComma: 'all',
-          endOfLine: 'auto',
-          importOrder: ['^react(.*)$', '<THIRD_PARTY_MODULES>', '^@/(.*)$', '^[./]'],
-          importOrderSeparation: false,
-          importOrderSortSpecifiers: true,
-          plugins: ['@trivago/prettier-plugin-sort-imports'],
-        },
-      ],
+      // Prettier formatting + import ordering, enforced as a lint rule; options: .prettierrc.json
+      'prettier/prettier': 'error',
     },
   },
   // Geometry math: bare numbers allowed — angles, factors, and conversions are self-evident
@@ -152,6 +139,17 @@ export default defineConfig([
     files: ['src/engine/**/*.ts', 'src/core/**/*.ts'],
     rules: {
       '@typescript-eslint/no-magic-numbers': 'off',
+    },
+  },
+  // Tests: expectations are literal values by nature, and describe/it callbacks
+  // are declarative lists — magic-number and function-length limits would only
+  // force artificial file splits (decided 2026-08-08, T5)
+  {
+    files: ['**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-magic-numbers': 'off',
+      'max-lines-per-function': 'off',
+      'max-nested-callbacks': 'off', // describe > it > assertion-callback is inherent to tests
     },
   },
   // Plain JS files (this config): no type-aware linting
