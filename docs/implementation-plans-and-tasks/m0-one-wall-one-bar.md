@@ -7,9 +7,8 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **Next task:** **T11 — Acceptance pass against the root README review checklist.**
-- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author); T7 — `41fe548`; T8 — `13bdee4` (visual confirmed by author); T9 — `d7f6df4`; T10 — `ab2007d` (visual confirmed by author).
-- **Awaiting review:** —
+- **M0: ✅ COMPLETE (2026-08-09)** — all 11 tasks done; the T11 acceptance pass against the root README review checklist is green (verdict table in the task log below). Next: **M1 planning** (Architecture Spec §A — Edit + Reactivity) as a new milestone plan file, author-approved before coding.
+- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author); T7 — `41fe548`; T8 — `13bdee4` (visual confirmed by author); T9 — `d7f6df4`; T10 — `ab2007d` (visual confirmed by author); T11 — author adds hash on commit.
 - **Manual test scenarios:** [../test-scenarios/m0-one-wall-one-bar.md](../test-scenarios/m0-one-wall-one-bar.md) (M0-S01…S18; updated after every approved task — root README rule 7).
 - **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
 
@@ -95,7 +94,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | T8 | Place Bar tool (click face → 2 points → `placeBar`, default cover from catalog) | bar renders in wall | ✅ Done | `13bdee4` |
 | T9 | `plane_polyline_intersection` (Rust) + `sectioning.ts` (parametric outline + dots + projection) | unit tests | ✅ Done | `d7f6df4` |
 | T10 | Section Cut tool + SectionView panel (Canvas2D, auto-fit) | dot at correct cover | ✅ Done | `ab2007d` |
-| T11 | Acceptance pass against root README review checklist | zero store imports in `src/ui/`, lint+build clean | ⬜ Pending | — |
+| T11 | Acceptance pass against root README review checklist | zero store imports in `src/ui/`, lint+build clean | ✅ Done | — |
 
 ---
 
@@ -240,6 +239,42 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 **Model change:** `SectionDefinition` gains `lineStart`/`lineEnd` (the stored design intent the wireframe edits; invariant `plane.origin === lineStart`). Tests 108 → 127 (engine drag/volume math, reshaped command suites, 3-step draft flow). `pnpm lint` / `pnpm test` / `pnpm build` ✅.
 
+### T11 — Acceptance pass ✅ (2026-08-09, awaiting author commit)
+
+Not a feature task — a rule-by-rule audit of T1–T10 against the root README "Rules for Implementation Sessions" + Review Checklist, plus the M0 acceptance sentence captured as a durable headless test.
+
+**Verification run:** `pnpm lint` ✅ · `pnpm test` 128/128 ✅ (127 + 1 new acceptance test) · `pnpm build` ✅ · `cargo test` 19/19 ✅ · `pnpm-workspace.yaml` supply-chain policies untouched (override pin + allowBuilds exactly as fixed in T7) ✅.
+
+**Checklist verdict (rule → status → evidence):**
+
+| Rule | Status | Evidence |
+| --- | --- | --- |
+| 1 — Command layer (§N) | ✅ | Zero `project-slice` imports in `src/ui/` (grep); the only dispatches in `src/ui/` are the 8 registry commands + ui-slice actions (`setTool`/`toggleSnap`/selection/draft lifecycle) — the §B.6-sanctioned UI-state exception, applied consistently |
+| 2 — Dumb components | ✅ | No `Math.*` beyond `Math.PI`/rounding in `src/ui/`; all geometry/projection math lives in `src/engine/` (wall-geometry, placement, snapping, sectioning, section-cut, section-view-transform). Spot-checked: Viewport3D, WallMesh, GroundPlane, SectionVolumesLayer, SectionView, section-canvas-renderer — components route events, delegate math, dispatch commands |
+| 3 — Stateless WASM (§D) | ✅ | No `static`/`OnceCell`/`RefCell`/`Mutex`/`thread_local` in `core/src/`; flat slices in (`&[f64]`), flat arrays out (`Vec<f64>` / `MeshData` Float32+Uint32 getters per Q1-b) |
+| 4 — Data model first | ✅ | T2 models + catalog seed landed two tasks before the first UI (T6) |
+| 5 — Doors stay open | ✅ | Command registry = MCP/scripting door (§N.2); project state is plain serializable JSON (§H cloud door); catalog JSON-shaped (§K.5 multi-country door); pen table seed in `src/data/` (§M.4). No Deferred Topics entry blocked |
+| 6 — Design tokens only | ✅ | Zero hex/arbitrary-value literals in `src/ui/` outside `tokens.css` (doc 10 rule 5 grep). The two `*_PX` constants are behavior parameters, not styles (R3F `event.delta` px threshold; canvas fit margin); `px-panel`/`py-1.5`-style hits are Tailwind scale utilities, not literals. Domain styling (concrete/rebar colors, pen table) in `src/data/appearance.ts` |
+| 7 — Manual test list per task | ✅ | Every task report T6–T10 ended with one; persisted as M0-S01…S18, all ✅ manual |
+| 8 — Parallel edits / commit sweep | ✅ | Working tree clean at session start; exact-match edits only |
+| Checklist — undo/redo for every command | N/A (M1) | Undo itself is M1; verified the M0 half of §E instead: reducers operate on plain JSON, no derived data stored (meshes/section primitives are memoized-selector derivations, §H.2) — every reducer is snapshot-safe |
+
+**Durable artifact:** `src/commands/m0-acceptance.test.ts` — the §A acceptance sentence end-to-end through the §N commands and the real WASM boundary: `placeWall` → tool-identical face-click resolution (`resolveBarCenterline`, same call the Place Bar draft makes) → `placeBar` at 25 mm cover → `createSection` (line + depth-click form) → `setActiveSection` → `selectSectionPrimitives` shows one 200×2800 outline + one Ø12 dot at u = 31 mm from the covered side, v = bar height, empty background for the perpendicular mid-wall cut.
+
+**Findings (report-only, not implemented):**
+
+- **F1** — `deleteElement`/`deleteBar` have no UI entry point in M0 (no delete tool/keybinding). By design (M0 scope table: edit tools arrive in M1); the commands exist and are unit-tested, so M1 edit work starts from a ready base. No action.
+- **F2** — `SectionVolumesLayer` imports `DEFAULT_WALL_DIMENSIONS` from the command module as the fallback wireframe height. Not a rule violation (read-only constant; command modules owning their default seeds is the established T8 pattern with `DEFAULT_BAR_DIAMETER_MM`). If a second consumer ever appears, move the seed to `src/data/` (rule 4 spirit). No action needed now.
+
+**Small doc fixes made in place (uncontroversial):**
+
+- Root README: the Deferred Topics table sat under the Review Checklist heading while the ⚠️ planning rule above it references "the Deferred Topics table **above**" — table moved into its own section. Structure table updated (commands/ui/data populated since T5–T8; `src/io/` stubs remain). Session state → M0 ✅ complete, next: M1 planning.
+- Doc 10 File Layout: dropped the stale "currently src/index.css placeholder" note — `src/ui/styles/globals.css` is live since T6.
+- Plans index: M0 row → ✅ complete.
+- Scenario M0-S13: noted the headless counterpart (`m0-acceptance.test.ts`).
+
+**Manual test list for the author (rule 7):** full M0 regression walkthrough = M0-S01…S18 as persisted in [../test-scenarios/m0-one-wall-one-bar.md](../test-scenarios/m0-one-wall-one-bar.md) (all previously verified — re-run as a fast regression pass), ending with the milestone acceptance sentence (§A): place wall → place bar at 25 mm cover → cut section → 2D view shows the wall outline + bar dot at the correct offset (31 mm centerline from the covered face). On approval, M0 is done.
+
 ## Change Log
 
 | Date | Change |
@@ -271,3 +306,5 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | 2026-08-09 | T10 implemented (Section Cut drag tool + dockable Canvas2D SectionView with auto-fit), awaiting author review — verifies M0-S13…S15 (the M0 acceptance check) |
 | 2026-08-09 | T10 review feedback (6 UX points): resizable ¼-viewport panel, third-click view depth (look-toward-click), 3D wireframe volume with move + corner-stretch handles (`reshapeSection` command), no section counter in Building tab — spec §B.6 revised, awaiting author re-review |
 | 2026-08-09 | T10 approved by author — scenarios M0-S13…S15 verified + M0-S16…S18 added ([../test-scenarios/](../test-scenarios/m0-one-wall-one-bar.md)) |
+| 2026-08-09 | T10 committed (`ab2007d`) — pushed to `A_MVP_Scope_M0` |
+| 2026-08-09 | T11 acceptance pass implemented — checklist verdict green on all rules; durable artifact `src/commands/m0-acceptance.test.ts` (the §A acceptance sentence through the §N commands + real WASM boundary); small doc fixes in place (root README deferred-topics table placement + structure table, doc 10 stale placeholder note, plans index); findings F1/F2 recorded report-only — awaiting author review/commit |

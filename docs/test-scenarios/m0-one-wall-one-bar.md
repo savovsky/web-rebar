@@ -103,7 +103,7 @@
 
 ### M0-S13 — Perpendicular section shows bar dot at correct offset
 
-**Covers:** T9 + T10 · **Status:** ✅ manual 2026-08-09
+**Covers:** T9 + T10 · **Status:** ✅ manual 2026-08-09 · **Headless counterpart:** `src/commands/m0-acceptance.test.ts` (T11 — the same flow driven through the §N command layer + real WASM boundary)
 
 - **Given:** a wall with a bar placed at 25 mm cover (Ø12)
 - **When:** the Section Cut tool (S) is used — drag a line perpendicular to the wall axis through the bar, then a third click sets the view depth on the side the view should look toward

@@ -8,12 +8,12 @@
 
 ## Session State
 
-> **Last session:** 2026-08-09 — M0 implementation on branch `A_MVP_Scope_M0`: T1 Rust/WASM `core/` crate + bridge round-trip (windows-gnu toolchain, wasm-pack 0.15); T2 data models + DIN/EC2 steel catalog seed; T3 `generate_bar_mesh` (swept cylinder, Float32/Uint32 typed arrays) + R3F smoke scene (visual confirmed); T4 RTK store (project-slice = ProjectModel, ui-slice + draft/selection state, typed hooks, Provider wired); T5 §N command layer (6 command thunks + registry + `CommandError`) + vitest (23 headless tests); T6 §B.2 app shell (top bar, tool palette with shortcuts + sticky mode, Building/Properties tabs, status bar) + doc 10 token system live (`tokens.css` → Tailwind v4 `@theme`, dark default); T7 Viewport3D (R3F canvas, §B.6 mouse mapping, token-driven grid, live status-bar coordinates) + Place Wall tool (chained click-click placement, Esc exits → `placeWall`, crosshair snap markers + translucent draft preview); T8 Place Bar tool (click a wall face → chained clicks build ONE bar with bending places — `placeBar` + `extendBar`, cover/diameter from the DIN/EC2 catalog seed, on-face grid snapping, cover kept from ALL wall faces — edges/start/end included, bends rendered with the DIN/EC2 mandrel radius per diameter (parallel-transported ring frames — no surface twist), WASM bar meshes visible through §L.2-transparent concrete); T9 section intersection + §G.1 Tier 1 sectioning orchestration (headless): Rust `plane_polyline_intersection` (0..n crossings per bar, on-plane vertices counted once) + `src/engine/sectioning.ts` — parametric wall outline at the cut plane (chord × height, not a mesh slice), cut-bar dots with true diameters (§M.4), convention-based background within viewDepth (§G.2.3), memoized `selectSectionPrimitives` selector — 83 vitest + 19 cargo tests green; T10 Section Cut tool (S — drag the line across an element, third click sets view depth/look direction, §B.6 single-shot auto-return) + resizable dockable SectionView panel (§B.2 bottom-right, opens at ¼ viewport): Canvas2D render of `selectSectionPrimitives` with a pure engine auto-fit transform (mm→px, Y-flip), dashed convention-based background, cut-bar dots at true relative diameters (§M.4), ink from design tokens + domain pen-table seed; sections show in 3D as interactive wireframe volumes (move body, stretch corner handles → `reshapeSection` command recomputes plane/depth/targets) — 127 vitest green  
+> **Last session:** 2026-08-09 — M0 implementation on branch `A_MVP_Scope_M0`: T1 Rust/WASM `core/` crate + bridge round-trip (windows-gnu toolchain, wasm-pack 0.15); T2 data models + DIN/EC2 steel catalog seed; T3 `generate_bar_mesh` (swept cylinder, Float32/Uint32 typed arrays) + R3F smoke scene (visual confirmed); T4 RTK store (project-slice = ProjectModel, ui-slice + draft/selection state, typed hooks, Provider wired); T5 §N command layer (6 command thunks + registry + `CommandError`) + vitest (23 headless tests); T6 §B.2 app shell (top bar, tool palette with shortcuts + sticky mode, Building/Properties tabs, status bar) + doc 10 token system live (`tokens.css` → Tailwind v4 `@theme`, dark default); T7 Viewport3D (R3F canvas, §B.6 mouse mapping, token-driven grid, live status-bar coordinates) + Place Wall tool (chained click-click placement, Esc exits → `placeWall`, crosshair snap markers + translucent draft preview); T8 Place Bar tool (click a wall face → chained clicks build ONE bar with bending places — `placeBar` + `extendBar`, cover/diameter from the DIN/EC2 catalog seed, on-face grid snapping, cover kept from ALL wall faces — edges/start/end included, bends rendered with the DIN/EC2 mandrel radius per diameter (parallel-transported ring frames — no surface twist), WASM bar meshes visible through §L.2-transparent concrete); T9 section intersection + §G.1 Tier 1 sectioning orchestration (headless): Rust `plane_polyline_intersection` (0..n crossings per bar, on-plane vertices counted once) + `src/engine/sectioning.ts` — parametric wall outline at the cut plane (chord × height, not a mesh slice), cut-bar dots with true diameters (§M.4), convention-based background within viewDepth (§G.2.3), memoized `selectSectionPrimitives` selector — 83 vitest + 19 cargo tests green; T10 Section Cut tool (S — drag the line across an element, third click sets view depth/look direction, §B.6 single-shot auto-return) + resizable dockable SectionView panel (§B.2 bottom-right, opens at ¼ viewport): Canvas2D render of `selectSectionPrimitives` with a pure engine auto-fit transform (mm→px, Y-flip), dashed convention-based background, cut-bar dots at true relative diameters (§M.4), ink from design tokens + domain pen-table seed; sections show in 3D as interactive wireframe volumes (move body, stretch corner handles → `reshapeSection` command recomputes plane/depth/targets) — 127 vitest green; T11 acceptance pass against the root README review checklist — every rule verified ✅ across T1–T10 (verdict table in the M0 tracker), the §A acceptance sentence captured as a headless command-layer test (`m0-acceptance.test.ts`), findings F1/F2 report-only — **M0 ✅ COMPLETE** (128 vitest + 19 cargo green)  
 > **Tooling (2026-08-08):** ESLint/Prettier stack adopted from doxeek — type-checked `typescript-eslint`, custom ruleset (max-params 2 → options objects, naming conventions, complexity limits); Prettier options live in `.prettierrc.json` (shared CLI + IDE), enforced via the `prettier/prettier` lint rule; `pnpm lint` and `pnpm build` both clean
-> **Current phase:** M0 implementation — T1–T10 ✅. Task tracker: [docs/implementation-plans-and-tasks/](./docs/implementation-plans-and-tasks/README.md)
-> **Next session:** M0 task T11 — acceptance pass against the root README review checklist (see [M0 tracker](./docs/implementation-plans-and-tasks/m0-one-wall-one-bar.md) for task states and resume instructions)
+> **Current phase:** M0 ✅ complete (T1–T11, 2026-08-09). Task tracker: [docs/implementation-plans-and-tasks/](./docs/implementation-plans-and-tasks/README.md)
+> **Next session:** M1 planning (Architecture Spec §A — Edit + Reactivity: move wall → section updates, undo/redo per §E) — new milestone plan file, author-approved before coding
 
-**Where we left off:** 14 architectural topics (A–N) are decided and locked. Both §G.2 open questions are **resolved** (2026-07-29). The **[Architecture Spec](./docs/08-architecture-spec.md)** captures every decision. The project is now **scaffolded and ready for M0**:
+**Where we left off:** 14 architectural topics (A–N) are decided and locked. Both §G.2 open questions are **resolved** (2026-07-29). The **[Architecture Spec](./docs/08-architecture-spec.md)** captures every decision. The project has **M0 behind it** — the stack below is proven end to end:
 
 **Repository:** `git@github.com:savovsky/web-rebar.git`
 
@@ -24,9 +24,9 @@
 | **State** | Redux Toolkit 2.12 (thunks = §N command layer) |
 | **3D** | Three.js 0.185 + React Three Fiber 9.7 + Drei 10.7 |
 | **PDF** | jsPDF 4.2 |
-| **Structure** | `src/stores/` (configured), `src/engine/` (stubs), `src/io/` (stubs), `src/commands/` (empty, ready for §N), `src/ui/` (empty dirs per feature), `src/data/` (dirs for models/catalog/validation) |
+| **Structure** | `src/stores/` (project + ui slices, typed hooks), `src/engine/` (WASM bridge + placement/sectioning/section-cut/transform math), `src/io/` (stubs), `src/commands/` (8 §N commands + registry), `src/ui/` (shell, toolbar, viewport, section-view, panels), `src/data/` (models + DIN/EC2 catalog seed + domain appearance) |
 
-**Still needed for M0:** acceptance pass (T11).
+M0 (One Wall, One Bar) is **✅ complete** — all milestone risks probed: WASM bundle is 34.9 kB raw / 15.6 kB gzip, the §G.1 Tier 1 section algorithm is correct (dot at u = 31 mm for Ø12 @ 25 mm cover), Rust↔TS data passing runs on flat typed arrays end to end.
 
 ### Tool Palette Design
 
@@ -163,6 +163,23 @@ These topics need dedicated discussion sessions before implementation reaches th
 
 **⚠️ Implementation planning rule:** Every milestone plan (M0+) must review this table and Architecture Spec §N before writing code. No implementation decision may silently close a door listed here — if a conflict is discovered, raise it explicitly and update the spec.
 
+| # | Topic | When Needed | Depends On |
+| --- | --- | --- | --- |
+| **Layer Model** | On/off, freeze/thaw, lock/unlock, active layer per storey. User-defined layer names. | Before M4 (multi-element building) | B (interaction model) |
+| **Tool Palette Design** | Exact tool list, icons, shortcuts, workflow sequences. User-editable keyboard shortcuts. | **✅ LOCKED 2026-07-29** — M0 tool set defined (§B.6) | B |
+| **Drawing Layouts & Title Blocks** | A0-A4 + custom sheets. Predefined and custom title blocks, borders, scale settings. | Before I (2D drawing pipeline) is complete | I |
+| **Dimension & Annotation System** | Associative dimensions, elevation markers, leader lines, bar labels. Strategy locked in §M — remains: detailed design + implementation. Prototype early (2D-only, no 3D stack needed). | Early — it is the differentiator; after the first 2D view exists | G, J, M |
+| **BVBS Export** | Export bar schedule to BVBS format for bending machines. | After J (schedule) works | J |
+| **Parametric Reinforcement Blocks** | JSON-defined parametric objects (like Allplan PythonParts). Custom block editor. | Phase 2 | F |
+| **Multi-Country Steel Catalogs** | Extract and load country-specific steel grade files from Allplan data. | After K (validation) with DIN/EC2 working | K, [06](./docs/06-reference-data.md) |
+| **DWG Import** | Native DWG support. Currently DXF-only as workaround. | When user demand requires it | C (IO adapters) |
+| **Junction Section Handling** | Beam-column-slab joints: view-composition rules vs. CSG union of touching solids. | **✅ RESOLVED 2026-07-29** — 2D polygon union (§G.2.2); impl at M4 | G |
+| **Cloud Storage & Accounts** | BaaS (Backend as a Service) for project sync. v1 = upload/download of project.json (Supabase-leaning, §H.4). Only after product value is proven. | Phase 2 | H |
+| **MCP (Model Context Protocol) Server** | External AI (Artificial Intelligence) agents drive the app via the command layer exposed as MCP tools. Core engine packaged for Node.js; MCP server = thin wrapper (a browser app cannot host a server — separate companion process; remote MCP endpoint possible once backend exists, §H.4). **Bring-your-own-AI model (2026-07-28):** users drive the app with their OWN AI subscription (Claude Desktop etc.) — zero inference cost for the product, no API-key management, strong privacy story. Direction validated by FreeCAD+Claude Desktop MCP integrations. | Phase 2+, after the tool is proven | N |
+| **Natural-Language Detailing Input** | LLM (Large Language Model) translates text ("Beam 30×60, 2 spans, stirrups Ø8/15") → command params → validate against catalog/code rules → user confirms → engine executes. LLM gives intent, never geometry (§N.2). **Note (2026-07-28):** an external AI via MCP may serve as the FIRST natural-language front-end (bring-your-own-AI) — an in-app assistant becomes optional/complementary rather than a prerequisite. | Phase 2, after schemas stabilize | N, F, K |
+| **Sketch Underlay + Freehand-to-Rebar** | Image/PDF (Portable Document Format) underlay placed at scale (standard CAD (Computer-Aided Design) feature); freehand stroke with mouse/stylus snaps into a proper parametric rebar path. Stage A of sketch input — deterministic, no AI risk. | Phase 2 | B, G |
+| **AI Vision Sketch Recognition** | Recognize hand-sketched reinforcement on scanned printouts (Stage B of sketch input). Human-in-the-loop confirmation mandatory — reinforcement documentation tolerates zero misreads. **Note (2026-07-28):** via MCP, the user's own multimodal AI (e.g., Claude Desktop with a photo of the sketch) can do the vision interpretation and drive commands — outsourcing the riskiest part to the user's AI subscription; the app only validates + asks for confirmation. Research-grade; test against many real hand sketches. | Phase 3 experiment | Sketch underlay, N |
+
 ---
 
 ## Rules for Implementation Sessions (M0+)
@@ -189,23 +206,6 @@ These topics need dedicated discussion sessions before implementation reaches th
 - [ ] Nothing in the change silently blocks a Deferred Topics entry
 - [ ] No literal style values in `src/ui/` (hex/px/font-size) outside `tokens.css` ([doc 10](./docs/10-design-system.md))
 
-| # | Topic | When Needed | Depends On |
-| --- | --- | --- | --- |
-| **Layer Model** | On/off, freeze/thaw, lock/unlock, active layer per storey. User-defined layer names. | Before M4 (multi-element building) | B (interaction model) |
-| **Tool Palette Design** | Exact tool list, icons, shortcuts, workflow sequences. User-editable keyboard shortcuts. | **✅ LOCKED 2026-07-29** — M0 tool set defined (§B.6) | B |
-| **Drawing Layouts & Title Blocks** | A0-A4 + custom sheets. Predefined and custom title blocks, borders, scale settings. | Before I (2D drawing pipeline) is complete | I |
-| **Dimension & Annotation System** | Associative dimensions, elevation markers, leader lines, bar labels. Strategy locked in §M — remains: detailed design + implementation. Prototype early (2D-only, no 3D stack needed). | Early — it is the differentiator; after the first 2D view exists | G, J, M |
-| **BVBS Export** | Export bar schedule to BVBS format for bending machines. | After J (schedule) works | J |
-| **Parametric Reinforcement Blocks** | JSON-defined parametric objects (like Allplan PythonParts). Custom block editor. | Phase 2 | F |
-| **Multi-Country Steel Catalogs** | Extract and load country-specific steel grade files from Allplan data. | After K (validation) with DIN/EC2 working | K, [06](./docs/06-reference-data.md) |
-| **DWG Import** | Native DWG support. Currently DXF-only as workaround. | When user demand requires it | C (IO adapters) |
-| **Junction Section Handling** | Beam-column-slab joints: view-composition rules vs. CSG union of touching solids. | **✅ RESOLVED 2026-07-29** — 2D polygon union (§G.2.2); impl at M4 | G |
-| **Cloud Storage & Accounts** | BaaS (Backend as a Service) for project sync. v1 = upload/download of project.json (Supabase-leaning, §H.4). Only after product value is proven. | Phase 2 | H |
-| **MCP (Model Context Protocol) Server** | External AI (Artificial Intelligence) agents drive the app via the command layer exposed as MCP tools. Core engine packaged for Node.js; MCP server = thin wrapper (a browser app cannot host a server — separate companion process; remote MCP endpoint possible once backend exists, §H.4). **Bring-your-own-AI model (2026-07-28):** users drive the app with their OWN AI subscription (Claude Desktop etc.) — zero inference cost for the product, no API-key management, strong privacy story. Direction validated by FreeCAD+Claude Desktop MCP integrations. | Phase 2+, after the tool is proven | N |
-| **Natural-Language Detailing Input** | LLM (Large Language Model) translates text ("Beam 30×60, 2 spans, stirrups Ø8/15") → command params → validate against catalog/code rules → user confirms → engine executes. LLM gives intent, never geometry (§N.2). **Note (2026-07-28):** an external AI via MCP may serve as the FIRST natural-language front-end (bring-your-own-AI) — an in-app assistant becomes optional/complementary rather than a prerequisite. | Phase 2, after schemas stabilize | N, F, K |
-| **Sketch Underlay + Freehand-to-Rebar** | Image/PDF (Portable Document Format) underlay placed at scale (standard CAD (Computer-Aided Design) feature); freehand stroke with mouse/stylus snaps into a proper parametric rebar path. Stage A of sketch input — deterministic, no AI risk. | Phase 2 | B, G |
-| **AI Vision Sketch Recognition** | Recognize hand-sketched reinforcement on scanned printouts (Stage B of sketch input). Human-in-the-loop confirmation mandatory — reinforcement documentation tolerates zero misreads. **Note (2026-07-28):** via MCP, the user's own multimodal AI (e.g., Claude Desktop with a photo of the sketch) can do the vision interpretation and drive commands — outsourcing the riskiest part to the user's AI subscription; the app only validates + asks for confirmation. Research-grade; test against many real hand sketches. | Phase 3 experiment | Sketch underlay, N |
-
 ---
 
 ## For AI Sessions
@@ -222,12 +222,14 @@ Read C:\work\personal\projects\web-rebar\README.md first — it has session stat
 Then read docs/08-architecture-spec.md — it has all locked architecture decisions.
 ```
 
-**To resume M0 implementation (current), use this:**
+**To start M1 planning (current), use this:**
 
 ```text
 Read C:\work\personal\projects\web-rebar\README.md, docs/08-architecture-spec.md,
-and docs/implementation-plans-and-tasks/m0-one-wall-one-bar.md (task tracker — it says which task is next).
-Continue with the next pending task. Do not commit — I review and commit each task myself.
+and docs/implementation-plans-and-tasks/README.md (M0 is complete — its tracker has the full history).
+Draft the M1 implementation plan (Architecture Spec §A — Edit + Reactivity:
+move wall → section updates, undo/redo per §E) as a new file in
+docs/implementation-plans-and-tasks/ for my approval. Do not commit.
 ```
 
 **Session type guide:**
@@ -235,7 +237,7 @@ Continue with the next pending task. Do not commit — I review and commit each 
 | What you want to do | Read these docs |
 | --- | --- |
 | Continue architecture discussion (deferred topics) | README → [08-architecture-spec](./docs/08-architecture-spec.md) → deferred topic list above |
-| Start implementing M0 | README → [08-architecture-spec](./docs/08-architecture-spec.md) → [03-tech-stack](./docs/03-tech-stack.md) |
+| Start implementing the next milestone (M0 ✅ done — M1 next) | README → [08-architecture-spec](./docs/08-architecture-spec.md) → [03-tech-stack](./docs/03-tech-stack.md) → [M0 tracker](./docs/implementation-plans-and-tasks/m0-one-wall-one-bar.md) (patterns to reuse) |
 | Design data model / TypeScript interfaces | [08-architecture-spec §C+D](./docs/08-architecture-spec.md) → [04-reinforcement-data-model](./docs/04-reinforcement-data-model.md) |
 | Work on reinforcement algorithms | [08-architecture-spec §F+K](./docs/08-architecture-spec.md) → [04-reinforcement-data-model](./docs/04-reinforcement-data-model.md) → [06-reference-data](./docs/06-reference-data.md) |
 | Understand Allplan for comparison | [02-allplan-analysis](./docs/02-allplan-analysis.md) → [05-module-architecture](./docs/05-module-architecture.md) |
