@@ -15,9 +15,11 @@ interface SelectionState {
  * In-progress placement tool input (§B.6). M0 deviation from the plan:
  * `faceId` became `hostElementId` + `faceNormal` — wall faces are not
  * first-class entities until face sampling arrives (M3).
+ * A 'section' draft carries only the Section Cut drag start in
+ * committedPoints[0] (single-shot pointer-down → pointer-up gesture, §B.6).
  */
 export interface PlacementDraft {
-  kind: 'wall' | 'bar' | null;
+  kind: 'wall' | 'bar' | 'section' | null;
   committedPoints: Vec3[];
   hostElementId: string | null;
   /** Outward normal of the clicked wall face — defines the cover offset direction. */
@@ -87,7 +89,7 @@ const uiSlice = createSlice({
     },
     startDraft(
       state,
-      action: PayloadAction<{ kind: 'wall' | 'bar'; hostElementId?: string; faceNormal?: Vec3 }>,
+      action: PayloadAction<{ kind: 'wall' | 'bar' | 'section'; hostElementId?: string; faceNormal?: Vec3 }>,
     ) {
       state.placementDraft = {
         kind: action.payload.kind,

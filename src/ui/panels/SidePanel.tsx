@@ -11,8 +11,10 @@ const TRIGGER_CLASS =
 export function SidePanel() {
   const elementCount = useAppSelector((state) => Object.keys(state.project.elements).length);
   const barCount = useAppSelector((state) => Object.keys(state.project.reinforcement).length);
-  const sectionCount = useAppSelector((state) => Object.keys(state.project.sections).length);
-  const isEmpty = elementCount === 0 && barCount === 0 && sectionCount === 0;
+  // Sections are deliberately NOT counted here (author call, T10 review) —
+  // they are view definitions, not building content; the 3D wireframe volume
+  // is their presence.
+  const isEmpty = elementCount === 0 && barCount === 0;
   return (
     <Root defaultValue='building' className='flex w-panel-right flex-col border-l border-border bg-panel'>
       <List aria-label='Project panels' className='flex shrink-0 border-b border-border'>
@@ -37,10 +39,6 @@ export function SidePanel() {
             <div className='flex justify-between'>
               <dt>Bars</dt>
               <dd className='font-mono text-foreground'>{barCount}</dd>
-            </div>
-            <div className='flex justify-between'>
-              <dt>Sections</dt>
-              <dd className='font-mono text-foreground'>{sectionCount}</dd>
             </div>
           </dl>
         )}

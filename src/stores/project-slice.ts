@@ -4,7 +4,14 @@
 // dispatches removeBar per hosted bar, so the action log shows every change
 // (matters for undo (§E) and the future MCP door (§N.2)).
 import { type PayloadAction, createSlice } from '@reduxjs/toolkit';
-import type { ConcreteElement, ProjectModel, ReinforcementBar, SectionDefinition, Vec3 } from '@/data/models';
+import type {
+  ConcreteElement,
+  Plane,
+  ProjectModel,
+  ReinforcementBar,
+  SectionDefinition,
+  Vec3,
+} from '@/data/models';
 
 /** Project state IS the persisted model. Meshes and section primitives are
  *  derived via selectors and never stored (§E, §H.2). */
@@ -49,6 +56,27 @@ const projectSlice = createSlice({
     addSection(state, action: PayloadAction<SectionDefinition>) {
       state.sections[action.payload.id] = action.payload;
     },
+    /** Wireframe move/stretch (§B.6) — the reshapeSection command recomputes
+     *  plane/viewDepth/targets; this only applies them. */
+    updateSectionGeometry(
+      state,
+      action: PayloadAction<{
+        id: string;
+        lineStart: Vec3;
+        lineEnd: Vec3;
+        plane: Plane;
+        viewDepth: number;
+        targetElementIds: string[];
+      }>,
+    ) {
+      const section = state.sections[action.payload.id];
+      if (!section) return;
+      section.lineStart = action.payload.lineStart;
+      section.lineEnd = action.payload.lineEnd;
+      section.plane = action.payload.plane;
+      section.viewDepth = action.payload.viewDepth;
+      section.targetElementIds = action.payload.targetElementIds;
+    },
     removeSection(state, action: PayloadAction<{ id: string }>) {
       delete state.sections[action.payload.id];
     },
@@ -67,5 +95,6 @@ export const {
   removeElement,
   removeSection,
   resetProject,
+  updateSectionGeometry,
 } = projectSlice.actions;
 export default projectSlice.reducer;

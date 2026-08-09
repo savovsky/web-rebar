@@ -11,7 +11,7 @@
 import { createSelector } from '@reduxjs/toolkit';
 import type { ConcreteElement, Plane, ReinforcementBar, SectionDefinition, Vec3 } from '@/data/models';
 import type { RootState } from '@/stores';
-import { type WallGeometryParams, getWallTransform } from './wall-geometry';
+import { type WallGeometryParams, wallFootprintCorners } from './wall-geometry';
 import { planePolylineIntersection } from './wasm-bridge';
 
 const UNIT_Y: Vec3 = { x: 0, y: 1, z: 0 };
@@ -104,22 +104,6 @@ export function projectToSection(worldPoint: Vec3, frame: SectionFrame): Section
 }
 
 // --- concrete outline (§G.1 Tier 1 parametric query — not a mesh slice) ---
-
-/** Plan footprint corners of the wall box (at baseElevation), in order. */
-function wallFootprintCorners(wall: WallGeometryParams): Vec3[] {
-  const transform = getWallTransform(wall);
-  const axis: Vec3 = { x: Math.cos(transform.rotationY), y: 0, z: -Math.sin(transform.rotationY) };
-  const across: Vec3 = { x: Math.sin(transform.rotationY), y: 0, z: Math.cos(transform.rotationY) };
-  const halfLength = transform.lengthMm / 2;
-  const halfThickness = wall.thickness / 2;
-  const base: Vec3 = { x: transform.center.x, y: wall.baseElevation, z: transform.center.z };
-  return [
-    add(add(base, scale(axis, halfLength)), scale(across, halfThickness)),
-    add(add(base, scale(axis, halfLength)), scale(across, -halfThickness)),
-    add(add(base, scale(axis, -halfLength)), scale(across, -halfThickness)),
-    add(add(base, scale(axis, -halfLength)), scale(across, halfThickness)),
-  ];
-}
 
 const dedupePoints = (points: Vec3[]): Vec3[] =>
   points.filter((point, index) =>

@@ -30,6 +30,9 @@ This folder collects **behavioral test scenarios**, captured session by session 
 | [M0-S10](./m0-one-wall-one-bar.md#m0-s10--cover-kept-from-all-wall-faces) | Cover kept from ALL wall faces | T8 | ✅ manual 2026-08-09 |
 | [M0-S11](./m0-one-wall-one-bar.md#m0-s11--rounded-bends-with-code-mandrel-radius) | Rounded bends with code mandrel radius | T8 | ✅ manual 2026-08-09 |
 | [M0-S12](./m0-one-wall-one-bar.md#m0-s12--bar-preview-visibility-and-draft-guards) | Bar preview, visibility and draft guards | T8 | ✅ manual 2026-08-09 |
-| [M0-S13](./m0-one-wall-one-bar.md#m0-s13--perpendicular-section-shows-bar-dot-at-correct-offset) | Perpendicular section shows bar dot at correct offset | T9+T10 | ⬜ manual pending |
-| [M0-S14](./m0-one-wall-one-bar.md#m0-s14--section-dots-keep-true-relative-diameters) | Section dots keep true relative diameters | T9+T10 | ⬜ manual pending |
-| [M0-S15](./m0-one-wall-one-bar.md#m0-s15--oblique-cut-background-and-view-depth) | Oblique cut, background and view depth | T9+T10 | ⬜ manual pending |
+| [M0-S13](./m0-one-wall-one-bar.md#m0-s13--perpendicular-section-shows-bar-dot-at-correct-offset) | Perpendicular section shows bar dot at correct offset | T9+T10 | ✅ manual 2026-08-09 |
+| [M0-S14](./m0-one-wall-one-bar.md#m0-s14--section-dots-keep-true-relative-diameters) | Section dots keep true relative diameters | T9+T10 | ✅ manual 2026-08-09 |
+| [M0-S15](./m0-one-wall-one-bar.md#m0-s15--oblique-cut-background-and-view-depth) | Oblique cut, background and view depth | T9+T10 | ✅ manual 2026-08-09 |
+| [M0-S16](./m0-one-wall-one-bar.md#m0-s16--section-view-panel-sizing-resize-and-close) | Section view panel sizing, resize and close | T10 | ✅ manual 2026-08-09 |
+| [M0-S17](./m0-one-wall-one-bar.md#m0-s17--section-wireframe-volume-in-the-3d-viewport) | Section wireframe volume in the 3D viewport | T10 | ✅ manual 2026-08-09 |
+| [M0-S18](./m0-one-wall-one-bar.md#m0-s18--section-cut-guards-and-sticky-mode) | Section Cut guards and sticky mode | T10 | ✅ manual 2026-08-09 |

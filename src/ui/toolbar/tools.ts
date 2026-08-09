@@ -43,7 +43,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     id: 'sectionCut',
     label: 'Section Cut',
-    hint: 'Click-drag across an element to place the section line',
+    hint: 'Drag the section line across an element, then click to set the view depth · Esc to cancel',
     shortcut: SHORTCUT_BY_TOOL.sectionCut ?? null,
     icon: IconSectionCut,
   },

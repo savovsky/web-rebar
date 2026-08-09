@@ -46,6 +46,11 @@
   --panel-width-right: 280px;
   --topbar-height: 32px;
   --statusbar-height: 24px;
+
+  /* Dockable 2D section view (§B.2 bottom-right) — MINIMUM sizes; the panel
+   * opens at ½ × ½ of the viewport and resizes via its native corner grip. */
+  --panel-width-section: 320px;
+  --section-view-height: 220px;
 }
 
 .dark {
@@ -111,6 +116,8 @@
   --spacing-panel-right: var(--panel-width-right);
   --spacing-topbar: var(--topbar-height);
   --spacing-statusbar: var(--statusbar-height);
+  --spacing-panel-section: var(--panel-width-section);
+  --spacing-section-view: var(--section-view-height);
 
   --radius-md: var(--radius);
 }

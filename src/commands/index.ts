@@ -12,6 +12,7 @@ import { deleteElement } from './delete-element';
 import { extendBar } from './extend-bar';
 import { placeBar } from './place-bar';
 import { placeWall } from './place-wall';
+import { reshapeSection } from './reshape-section';
 import { setActiveSection } from './set-active-section';
 
 export { CommandError } from './command-error';
@@ -21,6 +22,7 @@ export { deleteElement } from './delete-element';
 export { extendBar } from './extend-bar';
 export { placeBar } from './place-bar';
 export { placeWall } from './place-wall';
+export { reshapeSection } from './reshape-section';
 export { setActiveSection } from './set-active-section';
 export type { CommandErrorCode } from './command-error';
 export type { CreateSectionParams } from './create-section';
@@ -29,6 +31,7 @@ export type { DeleteElementParams } from './delete-element';
 export type { ExtendBarParams } from './extend-bar';
 export type { PlaceBarParams } from './place-bar';
 export type { PlaceWallParams } from './place-wall';
+export type { ReshapeSectionParams } from './reshape-section';
 export type { SetActiveSectionParams } from './set-active-section';
 
 /** Name → thunk map. Names are the stable external API (MCP tools, scripting). */
@@ -39,6 +42,7 @@ export const commandRegistry = {
   extendBar: { name: 'extendBar', thunk: extendBar },
   placeBar: { name: 'placeBar', thunk: placeBar },
   placeWall: { name: 'placeWall', thunk: placeWall },
+  reshapeSection: { name: 'reshapeSection', thunk: reshapeSection },
   setActiveSection: { name: 'setActiveSection', thunk: setActiveSection },
 } as const;
 

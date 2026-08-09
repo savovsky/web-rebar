@@ -1,23 +1,34 @@
-import type { Plane, SectionDefinition } from '@/data/models';
+import type { SectionDefinition, Vec3 } from '@/data/models';
+import { sectionGeometryFromDepthPoint } from '@/engine/section-cut';
 import type { AppThunk } from '@/stores';
 import { addSection } from '@/stores/project-slice';
 import { CommandError } from './command-error';
 
+/** 'S-1', 'S-2', … — count-based; a duplicate after deletions is harmless in M0. */
+export function resolveNextSectionName(sections: Record<string, SectionDefinition>): string {
+  return `S-${Object.keys(sections).length + 1}`;
+}
+
 export interface CreateSectionParams {
   /** Display name, e.g. 'S-1'. */
   name: string;
-  /** Cutting plane. M0: vertical planes only (normal.y === 0); the normal is normalized here. */
-  plane: Plane;
-  /** View depth behind the plane (mm) for convention-based background (§G.2.3). */
-  viewDepth: number;
+  /** Section line start in plan (y ignored) — see SectionDefinition. */
+  lineStart: Vec3;
+  /** Section line end in plan (y ignored). */
+  lineEnd: Vec3;
+  /** A point on the viewed side: its side decides the view direction, its
+   *  perpendicular distance from the line becomes the view depth (§B.6 —
+   *  the third click of the Section Cut tool). */
+  depthPoint: Vec3;
   /** Elements contributing concrete outlines. Must all exist. */
   targetElementIds: string[];
 }
 
 /**
- * §N command: define a section view. The definition is a stored query — the 2D
- * primitives are derived from it on demand (§G, §H.2), so this command only
- * validates and stores. Returns the new section id.
+ * §N command: define a section view from its line + depth point. The plane
+ * (vertical, through the line, looking toward the depth point) and view depth
+ * are derived here — the definition is a stored query; the 2D primitives are
+ * derived from it on demand (§G, §H.2). Returns the new section id.
  */
 export const createSection =
   (params: CreateSectionParams): AppThunk<string> =>
@@ -33,33 +44,21 @@ export const createSection =
     if (missingId !== undefined) {
       throw new CommandError('NOT_FOUND', `createSection: target element not found: ${missingId}`);
     }
-    if (params.viewDepth <= 0) {
+    const geometry = sectionGeometryFromDepthPoint(params);
+    if (geometry === null) {
       throw new CommandError(
         'INVALID_PARAMS',
-        `createSection: viewDepth must be > 0, got ${params.viewDepth}`,
+        'createSection: zero-length section line or depth point on the line',
       );
-    }
-
-    const { normal } = params.plane;
-    if (normal.y !== 0) {
-      throw new CommandError(
-        'INVALID_PARAMS',
-        'createSection: M0 supports vertical planes only (normal.y must be 0)',
-      );
-    }
-    const normalLength = Math.hypot(normal.x, normal.y, normal.z);
-    if (normalLength === 0) {
-      throw new CommandError('INVALID_PARAMS', 'createSection: plane normal must not be the zero vector');
     }
 
     const section: SectionDefinition = {
       id: crypto.randomUUID(),
       name,
-      plane: {
-        origin: params.plane.origin,
-        normal: { x: normal.x / normalLength, y: 0, z: normal.z / normalLength },
-      },
-      viewDepth: params.viewDepth,
+      lineStart: { x: params.lineStart.x, y: 0, z: params.lineStart.z },
+      lineEnd: { x: params.lineEnd.x, y: 0, z: params.lineEnd.z },
+      plane: geometry.plane,
+      viewDepth: geometry.viewDepthMm,
       targetElementIds: [...params.targetElementIds],
     };
     dispatch(addSection(section));

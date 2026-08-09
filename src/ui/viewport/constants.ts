@@ -26,3 +26,9 @@ export const CLICK_DRAG_TOLERANCE_PX = 5;
 /** Shorter drafts render no preview box (zero-length axis guard). */
 export const MIN_PREVIEW_LENGTH_MM = 1;
 export const PREVIEW_OPACITY = 0.35;
+
+/** Grab-fill opacity of the ACTIVE section wireframe volume (inactive volumes
+ *  keep an invisible fill so they stay clickable). */
+export const SECTION_VOLUME_FILL_OPACITY = 0.08;
+/** Corner handle size (mm) on the active section wireframe volume. */
+export const SECTION_HANDLE_SIZE_MM = 150;

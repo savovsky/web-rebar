@@ -38,3 +38,24 @@ export function getWallTransform(wall: WallGeometryParams): WallTransform {
     lengthMm: Math.hypot(dx, dz),
   };
 }
+
+/** Plan footprint corners of the wall box (at baseElevation), in order. */
+export function wallFootprintCorners(wall: WallGeometryParams): Vec3[] {
+  const transform = getWallTransform(wall);
+  const axis: Vec3 = { x: Math.cos(transform.rotationY), y: 0, z: -Math.sin(transform.rotationY) };
+  const across: Vec3 = { x: Math.sin(transform.rotationY), y: 0, z: Math.cos(transform.rotationY) };
+  const halfLength = transform.lengthMm / 2;
+  const halfThickness = wall.thickness / 2;
+  const base: Vec3 = { x: transform.center.x, y: wall.baseElevation, z: transform.center.z };
+  const offset = (alongAxis: number, acrossAxis: number): Vec3 => ({
+    x: base.x + axis.x * alongAxis + across.x * acrossAxis,
+    y: base.y,
+    z: base.z + axis.z * alongAxis + across.z * acrossAxis,
+  });
+  return [
+    offset(halfLength, halfThickness),
+    offset(halfLength, -halfThickness),
+    offset(-halfLength, -halfThickness),
+    offset(-halfLength, halfThickness),
+  ];
+}

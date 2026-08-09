@@ -7,10 +7,10 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **Next task:** **T10 — Section Cut tool + SectionView panel (Canvas2D, auto-fit) rendering `selectSectionPrimitives`.**
-- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author); T7 — `41fe548`; T8 — `13bdee4` (visual confirmed by author); T9 — `d7f6df4` (headless — unit-tested; visual confirmation happens with T10's panel).
+- **Next task:** **T11 — Acceptance pass against the root README review checklist.**
+- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author); T7 — `41fe548`; T8 — `13bdee4` (visual confirmed by author); T9 — `d7f6df4`; T10 — (hash below; visual confirmed by author).
 - **Awaiting review:** —
-- **Manual test scenarios:** [../test-scenarios/m0-one-wall-one-bar.md](../test-scenarios/m0-one-wall-one-bar.md) (M0-S01…S15; updated after every approved task — root README rule 7).
+- **Manual test scenarios:** [../test-scenarios/m0-one-wall-one-bar.md](../test-scenarios/m0-one-wall-one-bar.md) (M0-S01…S18; updated after every approved task — root README rule 7).
 - **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
 
 ## M0 Goal (Architecture Spec §A)
@@ -94,7 +94,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | T7 | Viewport3D + Place Wall tool (click-click, chained → `placeWall`) | wall renders | ✅ Done | `41fe548` |
 | T8 | Place Bar tool (click face → 2 points → `placeBar`, default cover from catalog) | bar renders in wall | ✅ Done | `13bdee4` |
 | T9 | `plane_polyline_intersection` (Rust) + `sectioning.ts` (parametric outline + dots + projection) | unit tests | ✅ Done | `d7f6df4` |
-| T10 | Section Cut tool + SectionView panel (Canvas2D, auto-fit) | dot at correct cover | ⬜ Pending | — |
+| T10 | Section Cut tool + SectionView panel (Canvas2D, auto-fit) | dot at correct cover | ✅ Done | (see log) |
 | T11 | Acceptance pass against root README review checklist | zero store imports in `src/ui/`, lint+build clean | ⬜ Pending | — |
 
 ---
@@ -217,6 +217,29 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 **Headless task — manual checks arrive with T10 (persisted as scenarios M0-S13…S15 in [../test-scenarios/](../test-scenarios/m0-one-wall-one-bar.md)):** perpendicular mid-wall cut → thickness×height outline + bar dot at u = cover+radius from the outline side (Ø12 @ 25 mm cover → 31 mm) and v = bar height; oblique cut → wider outline + end edge; a bar continuing behind the plane → dashed continuation clipped at viewDepth; dot sizes scale with Ø (§M.4).
 
+### T10 — Section Cut tool + SectionView panel ✅ (2026-08-09, visual confirmed by author)
+
+**Files added:** `src/engine/section-cut.ts` (+8 tests — drag line → vertical cut plane with the plan-clockwise normal convention; plan segment vs. footprint chord crossing detection incl. endpoint-inside, fully-inside, grazing-touch rejection, yawed/multi-wall), `src/engine/section-view-transform.ts` (+8 tests — bounds with dot-radius extension, uniform auto-fit, centering, padding, Y-flip, degenerate-content guard), `src/ui/viewport/section-cut-draft.ts` (+6 headless flow tests) + `SectionCutPreview.tsx` (crosshair + section-line overlay, refs/useFrame per §E), `src/ui/section-view/` — `SectionView.tsx` (dockable panel §B.2 bottom-right, ResizeObserver + DPR-scaled Canvas2D, empty-state text, ✕ close via the setActiveSection command), `section-canvas-renderer.ts` (pure drawing; dashed muted background §G.2.3, solid concrete outlines, filled dots at true relative diameters §M.4), `section-view-theme.ts` (ink colors from `--foreground`/`--muted-foreground` tokens), `constants.ts` (fit padding), `src/ui/read-hsl-token.ts` (token reader shared with the 3D viewport).
+
+**Files changed:** `src/ui/viewport/GroundPlane.tsx` (Section Cut pointer routing: pointer-down begins the drag + pointer capture so moves/ups keep flowing over walls; pointer-up finishes; pointer-leave keeps the cursor alive mid-drag), `src/ui/viewport/Viewport3D.tsx` (+ SectionCutPreview), `src/ui/shell/AppShell.tsx` (SectionView docked inside the viewport area), `src/ui/viewport/viewport-theme.ts` (shared token reader), `src/stores/ui-slice.ts` (draft kind `'section'` — carries only the drag start; single-shot gesture), `src/commands/create-section.ts` (+ `DEFAULT_SECTION_VIEW_DEPTH_MM` 10 m seed, + `resolveNextSectionName` S-1/S-2/…), `src/engine/wall-geometry.ts` (+ `wallFootprintCorners`, moved from sectioning.ts — wall geometry, reused by the cut tool), `src/engine/sectioning.ts` (imports it), `src/data/appearance.ts` (+ `DEFAULT_SECTION_PEN_TABLE` domain seed: outline width, background width/dash — §M.4 pen-table, screen-space px at M0's auto-fit zoom), `src/ui/styles/tokens.css` (+ section panel size tokens), `src/ui/toolbar/tools.ts` (Section Cut hint).
+
+**Design notes:** the drag line defines a VERTICAL plane through it; view-direction convention = drag direction rotated 90° clockwise in plan (drag +X → look +Z). Targets = every wall the line crosses with a real chord (grazing touches rejected); a failed drag (zero-length / no crossing) keeps the tool active with a status-bar explanation. Single-shot per §B.6 rule 1: a successful cut auto-returns to Select (sticky lock keeps the tool). The section plane origin is the drag start on the ground (y=0), so section v = absolute height — the acceptance check reads v directly as bar height. Auto-fit transform + bounds live in a pure three-free engine module (rule 2); the panel component only selects state and delegates drawing. Canvas2D colors are design tokens (rule 6, same mechanism as viewport-theme); line weights/dash are the domain pen table (§M.4) in `src/data/appearance.ts`, never the UI theme.
+
+**Verification:** `pnpm lint` ✅ · `pnpm test` 108/108 ✅ (83 → 108: +8 section-cut, +8 transform, +6 draft flow, +3 moved-footprint regression coverage via existing suites) · `pnpm build` ✅ · doc 10 review check: zero hex/arbitrary-value literals in `src/ui` outside `tokens.css`, zero project-slice imports in `src/ui` ✅ · built CSS contains `w-panel-section`/`h-section-view` ✅.
+
+**Visual check for the author (the M0 acceptance check + M0-S13…S15):** see the manual test list in the session report.
+
+**Review feedback changes (2026-08-09, author) — six UX points, all implemented:**
+
+1. **Resizable panel** — the SectionView dock now resizes via the native CSS corner grip (`resize: both`), down to the token minimums (`--panel-width-section`/`--section-view-height` redefined as minimums).
+2. **Initial size ≈ ¼ of the 3D view** — the dock opens at ½ × ½ of the viewport area.
+3. **No section counter in the Building tab** — removed; sections are view definitions, not building content (their presence is the 3D wireframe).
+4. **View depth via a third click** — the cut flow is now: drag the line (it must cross an element) → a third click sets the view depth, and the section LOOKS TOWARD that click (side decides the view direction; `sectionGeometryFromDepthPoint`). A depth click on the line keeps the committed line for a re-click. Spec §B.6 Section Cut row + rule 1 revised. `createSection` now takes `lineStart`/`lineEnd`/`depthPoint` and derives plane + depth; `DEFAULT_SECTION_VIEW_DEPTH_MM` is gone (depth is always the user's click).
+5. **3D wireframe volume** — every section renders in the viewport as a wireframe box (cut line × view depth × tallest target height): `SectionVolumesLayer`, engine helpers (`sectionVolumeCorners`/`…Transform`/`…HeightMm`, `SECTION_VOLUME_EDGE_INDICES`). Clicking a volume under Select activates it (opens the panel).
+6. **Interactive wireframe** — the ACTIVE volume (Select tool) shows 8 corner handles: dragging any handle stretches the plan shape (front corners re-form the line, back corners slide the line endpoint AND re-set depth — past the line flips the view side); dragging the body moves the section. Live drag stays in component state (§E); the new §N command `reshapeSection` (registry now 8 commands, reducer `updateSectionGeometry`) commits on pointer-up and RECOMPUTES the crossed targets — a section moved off all elements shows the panel's empty state. Handles are Select-tool-only so placement tools never hit them.
+
+**Model change:** `SectionDefinition` gains `lineStart`/`lineEnd` (the stored design intent the wireframe edits; invariant `plane.origin === lineStart`). Tests 108 → 127 (engine drag/volume math, reshaped command suites, 3-step draft flow). `pnpm lint` / `pnpm test` / `pnpm build` ✅.
+
 ## Change Log
 
 | Date | Change |
@@ -245,3 +268,6 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | 2026-08-09 | T9 implemented (Rust plane–polyline intersection + §G.1 Tier 1 sectioning orchestration + memoized selector), awaiting author review |
 | 2026-08-09 | Workflow additions (author): author_notebook.md moved to `docs/` (still ⛔ for AI sessions); root README rules 7–8 (manual test list per task → persisted scenarios; parallel edits — approval commit sweeps all working-tree changes); `docs/test-scenarios/` created, M0-S01…S15 backfilled |
 | 2026-08-09 | T9 approved by author — committed (`d7f6df4`) — pushed to `A_MVP_Scope_M0` |
+| 2026-08-09 | T10 implemented (Section Cut drag tool + dockable Canvas2D SectionView with auto-fit), awaiting author review — verifies M0-S13…S15 (the M0 acceptance check) |
+| 2026-08-09 | T10 review feedback (6 UX points): resizable ¼-viewport panel, third-click view depth (look-toward-click), 3D wireframe volume with move + corner-stretch handles (`reshapeSection` command), no section counter in Building tab — spec §B.6 revised, awaiting author re-review |
+| 2026-08-09 | T10 approved by author — scenarios M0-S13…S15 verified + M0-S16…S18 added ([../test-scenarios/](../test-scenarios/m0-one-wall-one-bar.md)) |

@@ -6,6 +6,8 @@ import { Canvas } from '@react-three/fiber';
 import { BarDraftPreview } from './BarDraftPreview';
 import { BarsLayer } from './BarsLayer';
 import { GroundPlane } from './GroundPlane';
+import { SectionCutPreview } from './SectionCutPreview';
+import { SectionVolumesLayer } from './SectionVolumesLayer';
 import { ViewportControls } from './ViewportControls';
 import { ViewportGrid } from './ViewportGrid';
 import { WallDraftPreview } from './WallDraftPreview';
@@ -41,6 +43,8 @@ export function Viewport3D() {
         <BarsLayer />
         <WallDraftPreview />
         <BarDraftPreview />
+        <SectionCutPreview />
+        <SectionVolumesLayer />
       </Canvas>
     </div>
   );

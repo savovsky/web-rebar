@@ -103,24 +103,48 @@
 
 ### M0-S13 — Perpendicular section shows bar dot at correct offset
 
-**Covers:** T9 + T10 · **Status:** ⬜ manual pending (verifiable once the T10 SectionView panel exists)
+**Covers:** T9 + T10 · **Status:** ✅ manual 2026-08-09
 
-- **Given:** a wall with a bar placed at 25 mm cover (Ø12), and a section cut perpendicular to the wall axis through the bar (S tool, T10)
-- **When:** the 2D section view is open
-- **Then:** the concrete outline is the thickness × height rectangle, and the bar appears as a dot at u = cover + radius (31 mm) from the corresponding outline side and v = bar height — the M0 acceptance check
+- **Given:** a wall with a bar placed at 25 mm cover (Ø12)
+- **When:** the Section Cut tool (S) is used — drag a line perpendicular to the wall axis through the bar, then a third click sets the view depth on the side the view should look toward
+- **Then:** the 2D section view opens showing the concrete outline as the thickness × height rectangle, and the bar appears as a dot at u = cover + radius (31 mm) from the corresponding outline side and v = bar height — the M0 acceptance check; the tool auto-returns to Select after the depth click
 
 ### M0-S14 — Section dots keep true relative diameters
 
-**Covers:** T9 + T10 · **Status:** ⬜ manual pending
+**Covers:** T9 + T10 · **Status:** ✅ manual 2026-08-09
 
-- **Given:** a section cutting two bars of different diameters (e.g. Ø8 and Ø20)
+- **Given:** a section cutting bars (M0 places Ø12 by default)
 - **When:** the 2D section view is open
-- **Then:** the dots keep true relative diameters (§M.4) — the Ø20 dot is visibly larger than the Ø8 dot
+- **Then:** dots render at true relative diameters (§M.4) — the dot's size reads against the concrete outline thickness (Ø12 dot = 6% of a 200 mm outline width); a Ø20 dot would be visibly larger than a Ø8 dot
 
 ### M0-S15 — Oblique cut, background and view depth
 
-**Covers:** T9 + T10 · **Status:** ⬜ manual pending
+**Covers:** T9 + T10 · **Status:** ✅ manual 2026-08-09
 
 - **Given:** (a) a section cut oblique to the wall axis near its end, (b) a bar continuing behind the cut plane, (c) a wall fully behind the plane within view depth
 - **When:** the 2D section view is open
 - **Then:** (a) the outline is wider than the thickness and the genuine end edge appears as a background line; (b) the behind-plane continuation is drawn dashed and clipped at the view depth; (c) the far wall shows as dashed elevation edges with no filled outline
+
+### M0-S16 — Section view panel sizing, resize and close
+
+**Covers:** T10 · **Status:** ✅ manual 2026-08-09
+
+- **Given:** a section has been cut
+- **When:** the 2D section view panel is open and its bottom-right corner grip is dragged
+- **Then:** the panel opens at roughly a quarter of the viewport area (half width × half height), resizes smoothly via the grip (down to a sensible minimum), and the drawing re-fits to the new size; the ✕ button closes the panel; the Building tab shows only Elements and Bars counts (no section counter)
+
+### M0-S17 — Section wireframe volume in the 3D viewport
+
+**Covers:** T10 · **Status:** ✅ manual 2026-08-09
+
+- **Given:** at least one section exists
+- **When:** inspecting the 3D viewport with the Select tool active
+- **Then:** every section shows as a wireframe box (cut line × view depth × target height) — the active one highlighted with a subtle fill, inactive ones faint; clicking a wireframe opens its 2D panel; dragging the active volume's body moves the section (the 2D view updates); dragging any of the 8 corner handles stretches the shape — front handles re-form the line, back handles slide the line end and change the depth, dragging a back handle past the cut line flips the view side; moving the section off all elements shows the panel's empty state until it is moved back; handles respond only under the Select tool
+
+### M0-S18 — Section Cut guards and sticky mode
+
+**Covers:** T10 · **Status:** ✅ manual 2026-08-09
+
+- **Given:** the Section Cut tool is active (S)
+- **When:** (a) dragging a zero-length line, (b) dragging a line that crosses no element, (c) clicking the depth point exactly on the committed line, (d) pressing Esc at any stage, (e) cutting with the tool sticky-locked, (f) cutting a second section
+- **Then:** (a) and (b) reject with a status-bar explanation and keep the tool active; (c) keeps the committed line and waits for a valid depth click; (d) cancels the draft; (e) the tool stays active after the cut; (f) sections are named sequentially (S-1, S-2, …)

@@ -1,7 +1,7 @@
 // Viewport colors come from the design tokens (doc 10 — the 3D viewport must
-// not have its own hardcoded palette). Tokens store raw HSL channels; three.js
-// wants a CSS color string, so the channels are re-joined with commas.
+// not have its own hardcoded palette).
 import { useMemo } from 'react';
+import { readHslToken } from '@/ui/read-hsl-token';
 
 export interface ViewportTheme {
   gridCell: string;
@@ -9,11 +9,6 @@ export interface ViewportTheme {
   selection: string;
   snapTarget: string;
   preview: string;
-}
-
-function readHslToken(tokenName: string): string {
-  const channels = getComputedStyle(document.documentElement).getPropertyValue(tokenName).trim();
-  return `hsl(${channels.split(/\s+/).join(', ')})`;
 }
 
 /** Resolved once per mount — live theme switching arrives with the settings UI. */

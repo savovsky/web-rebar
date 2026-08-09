@@ -29,6 +29,8 @@ const WALL: WallElement = {
 const makeSection = (overrides?: Partial<SectionDefinition>): SectionDefinition => ({
   id: 'sec-1',
   name: 'S-1',
+  lineStart: { x: 2000, y: 0, z: -500 },
+  lineEnd: { x: 2000, y: 0, z: 500 },
   plane: { origin: { x: 2000, y: 0, z: 0 }, normal: { x: 1, y: 0, z: 0 } },
   viewDepth: 5000,
   targetElementIds: [WALL.id],
@@ -312,8 +314,9 @@ describe('selectSectionPrimitives (memoized selector)', () => {
     const sectionId = store.dispatch(
       createSection({
         name: 'S-1',
-        plane: { origin: { x: 2000, y: 0, z: 0 }, normal: { x: 10, y: 0, z: 0 } }, // normalized by the command
-        viewDepth: 5000,
+        lineStart: { x: 2000, y: 0, z: 0 }, // starts inside the footprint — still a crossing
+        lineEnd: { x: 2000, y: 0, z: 500 },
+        depthPoint: { x: 7000, y: 0, z: 0 }, // view along +X, 5000 mm deep
         targetElementIds: [wallId],
       }),
     );
