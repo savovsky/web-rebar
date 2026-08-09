@@ -120,7 +120,7 @@ Selection priority: smallest entity wins (bar > wall).
 |------|------|----------|----------|
 | ↖️ | Select | V | Click to select, drag to marquee, Ctrl+Click to toggle, Esc to deselect. Auto-return from other tools. |
 | 🧱 | Place Wall | W | Click the start point, click the end point — the wall is created on the second click and the next wall chains from it (chained placement, revised 2026-08-08). Esc exits. Property panel shows w×h×t fields. |
-| ⏹ | Place Bar | B | Click wall face, click two points for bar path, Enter to confirm. Cover auto-filled from code default. |
+| ⏹ | Place Bar | B | Click a wall face (sets the cover side), then click the bar path point by point — the bar is created on the second click and each further click EXTENDS the same bar: the chain is ONE bar with bending places, a single position for the schedule (§J) and bar counts (revised 2026-08-08). Esc finishes the bar and exits. Cover and diameter auto-filled from catalog defaults; cover is kept from ALL element faces — clicks on/near an edge are offset from both planes forming the edge, and the bar start/end keep cover from the faces they terminate at; bends render with the code mandrel radius per diameter (DIN/EC2 catalog seed, revised 2026-08-08). |
 | ✂️ | Section Cut | S | Click-drag across element to place section line. 2D view opens in dockable panel. |
 | ✋ | Pan | H | Click-drag to pan viewport. Also middle-mouse-drag. |
 | 🔄 | Orbit | (middle/right drag) | Right-click-drag to orbit 3D view. Scroll to zoom. |
@@ -139,7 +139,7 @@ Selection priority: smallest entity wins (bar > wall).
 
 #### Tool Behavior Rules
 
-1. **Auto-return:** Single-shot tools (e.g., Section Cut) return to Select after one successful use. This matches Figma convention and prevents accidental repeated operations. **Revised 2026-08-08 (author feedback):** drawing tools (Place Wall, Place Bar — click-click tools) do NOT auto-return and need no Enter: the second click creates the element and immediately chains the next one from that point; the tool exits only on Esc (or another tool). Sticky mode (rule 2) is therefore moot for chaining tools and remains for single-shot tools.
+1. **Auto-return:** Single-shot tools (e.g., Section Cut) return to Select after one successful use. This matches Figma convention and prevents accidental repeated operations. **Revised 2026-08-08 (author feedback):** drawing tools (Place Wall, Place Bar — click-click tools) do NOT auto-return and need no Enter: the second click creates the element and immediately chains the next one from that point; the tool exits only on Esc (or another tool). Sticky mode (rule 2) is therefore moot for chaining tools and remains for single-shot tools. **Chaining semantics differ per tool (author feedback, same revision):** Place Wall chains produce separate walls; Place Bar chains EXTEND one bar — intermediate clicks are bending places, so the chain stays a single bar/position (§J) and counts as one bar.
 2. **Sticky mode:** Double-click a tool to lock it. It stays active after use until another tool or Esc is pressed. Visual indicator (e.g., thicker border around tool icon) shows sticky state.
 3. **Keyboard shortcuts:** Defined in a JSON config file (`src/ui/toolbar/shortcuts.json`). User-editable in-app via Settings → Keyboard Shortcuts (post-M0).
 4. **Status bar feedback:** When a tool is active, the status bar shows tool name, hint (e.g., "Click first point for wall start"), and active snap constraints.

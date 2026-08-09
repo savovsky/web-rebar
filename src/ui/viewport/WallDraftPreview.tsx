@@ -4,27 +4,15 @@
 // via refs in useFrame — it never touches React state or the store (§E).
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { BufferGeometry, Float32BufferAttribute, type Group, type LineSegments } from 'three';
+import type { Group, LineSegments } from 'three';
 import { DEFAULT_WALL_DIMENSIONS } from '@/commands/place-wall';
 import type { Vec3 } from '@/data/models';
 import { getWallTransform } from '@/engine/wall-geometry';
 import { useAppSelector } from '@/stores/hooks';
 import { MIN_PREVIEW_LENGTH_MM, PREVIEW_OPACITY } from './constants';
 import { getCursorRawPoint } from './cursor-position';
+import { CROSSHAIR_RENDER_ORDER, createCrosshairGeometry } from './draft-crosshair';
 import { useViewportTheme } from './viewport-theme';
-
-const CROSSHAIR_COMPONENTS = 3;
-const CROSSHAIR_RENDER_ORDER = 1;
-
-/** Unit crosshair on the ground plane (±1 in X/Z) — scaled by the grid spacing. */
-function createCrosshairGeometry(): BufferGeometry {
-  const geometry = new BufferGeometry();
-  geometry.setAttribute(
-    'position',
-    new Float32BufferAttribute([-1, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 1], CROSSHAIR_COMPONENTS),
-  );
-  return geometry;
-}
 
 interface PreviewTargets {
   preview: Group | null;

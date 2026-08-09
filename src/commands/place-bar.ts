@@ -1,15 +1,27 @@
 import { DEFAULT_DIAMETERS, DEFAULT_STEEL_CATALOG } from '@/data/catalog/steel';
-import type { ReinforcementBar, Vec3 } from '@/data/models';
+import type { ElementKind, ReinforcementBar, Vec3 } from '@/data/models';
 import type { AppThunk } from '@/stores';
 import { addBar } from '@/stores/project-slice';
 import { CommandError } from './command-error';
+
+/** M0 bar diameter default (mm) — the property panel makes this
+ *  user-editable post-M0 (§B.6). */
+export const DEFAULT_BAR_DIAMETER_MM = 12;
+
+/** Default cover (mm) for a host kind from the catalog seed — the same value
+ *  the placeBar command stores when no cover is given. The Place Bar tool
+ *  needs it up front to offset the centerline inward from the clicked face. */
+export function resolveDefaultCover(hostKind: ElementKind): number {
+  return DEFAULT_STEEL_CATALOG.defaultCover[hostKind];
+}
 
 export interface PlaceBarParams {
   /** Element the bar belongs to (M0: a wall). Must exist. */
   hostElementId: string;
   /** Bar diameter (mm) — must exist in the steel catalog (§K.3). */
   diameter: number;
-  /** Centerline path in model space. M0: exactly 2 points (straight bar). */
+  /** Centerline path in model space. 2+ points; intermediate points are
+   *  bending places (chained placement extends one bar — see extendBar). */
   path: Vec3[];
   /** Concrete cover (mm); defaults to the catalog default for the host kind. */
   coverDistance?: number;
@@ -17,10 +29,12 @@ export interface PlaceBarParams {
   steelGrade?: string;
 }
 
-const isZeroLengthPath = (path: Vec3[]): boolean => {
-  const [first, last] = [path[0], path[path.length - 1]];
-  return first.x === last.x && first.y === last.y && first.z === last.z;
-};
+const hasZeroLengthSegment = (path: Vec3[]): boolean =>
+  path.some((point, index) => {
+    if (index === 0) return false;
+    const previous = path[index - 1];
+    return point.x === previous.x && point.y === previous.y && point.z === previous.z;
+  });
 
 /**
  * §N command: place one straight bar in a host element. Cover and steel grade
@@ -37,17 +51,14 @@ export const placeBar =
     if (!DEFAULT_DIAMETERS.includes(params.diameter)) {
       throw new CommandError('INVALID_PARAMS', `placeBar: Ø${params.diameter} not in steel catalog`);
     }
-    if (params.path.length !== 2) {
-      throw new CommandError(
-        'INVALID_PARAMS',
-        'placeBar: M0 places straight bars only — path must be 2 points',
-      );
+    if (params.path.length < 2) {
+      throw new CommandError('INVALID_PARAMS', 'placeBar: path needs at least 2 points');
     }
-    if (isZeroLengthPath(params.path)) {
-      throw new CommandError('INVALID_PARAMS', 'placeBar: zero-length bar path');
+    if (hasZeroLengthSegment(params.path)) {
+      throw new CommandError('INVALID_PARAMS', 'placeBar: zero-length segment in bar path');
     }
 
-    const coverDistance = params.coverDistance ?? DEFAULT_STEEL_CATALOG.defaultCover[host.kind];
+    const coverDistance = params.coverDistance ?? resolveDefaultCover(host.kind);
     if (coverDistance <= 0) {
       throw new CommandError('INVALID_PARAMS', `placeBar: cover must be > 0, got ${coverDistance}`);
     }

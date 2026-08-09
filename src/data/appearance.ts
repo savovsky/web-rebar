@@ -6,4 +6,8 @@
 export const DEFAULT_ELEMENT_APPEARANCE = {
   /** Concrete element fill in the 3D viewport (theme-independent domain gray). */
   concreteColor: 'hsl(210, 14%, 55%)',
+  /** Concrete opacity (§L.2): reinforcement must stay visible inside elements. */
+  concreteOpacity: 0.35,
+  /** Reinforcement bar fill in the 3D viewport (classic rebar orange). */
+  rebarColor: 'hsl(24, 95%, 53%)',
 } as const;

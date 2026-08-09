@@ -12,8 +12,9 @@ export interface ReinforcementBar {
   /** Bar diameter (mm) — must exist in the active steel catalog (§K.3). */
   diameter: number;
   /**
-   * Centerline path in model space. M0: exactly 2 points (straight bar).
-   * Bent bars (more points) arrive with bending shapes (§M.4).
+   * Centerline path in model space. Chained placement (§B.6) produces ONE bar
+   * with several segments — intermediate points are bending places, and the
+   * bar stays a single position for the schedule (§J) and bar counts.
    */
   path: Vec3[];
   /** Concrete cover this bar was placed with (mm) — stored intent, not derived. */

@@ -36,7 +36,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     id: 'placeBar',
     label: 'Place Bar',
-    hint: 'Click a wall face, then two points for the bar path',
+    hint: 'Click a wall face, then the bar path — each click adds a segment to one bar · Esc to finish',
     shortcut: SHORTCUT_BY_TOOL.placeBar ?? null,
     icon: IconPlaceBar,
   },

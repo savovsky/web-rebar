@@ -16,12 +16,15 @@ interface SelectionState {
  * `faceId` became `hostElementId` + `faceNormal` — wall faces are not
  * first-class entities until face sampling arrives (M3).
  */
-interface PlacementDraft {
+export interface PlacementDraft {
   kind: 'wall' | 'bar' | null;
   committedPoints: Vec3[];
   hostElementId: string | null;
   /** Outward normal of the clicked wall face — defines the cover offset direction. */
   faceNormal: Vec3 | null;
+  /** The bar the chained flow keeps extending (§B.6) — null until the 2nd path
+   *  click creates it. One draft chain = ONE bar with bending places. */
+  barId: string | null;
 }
 
 interface UiState {
@@ -44,6 +47,7 @@ const emptyDraft: PlacementDraft = {
   committedPoints: [],
   hostElementId: null,
   faceNormal: null,
+  barId: null,
 };
 
 const initialState: UiState = {
@@ -90,8 +94,12 @@ const uiSlice = createSlice({
         committedPoints: [],
         hostElementId: action.payload.hostElementId ?? null,
         faceNormal: action.payload.faceNormal ?? null,
+        barId: null,
       };
       state.isInProgress = true;
+    },
+    setDraftBarId(state, action: PayloadAction<string>) {
+      state.placementDraft.barId = action.payload;
     },
     addDraftPoint(state, action: PayloadAction<Vec3>) {
       state.placementDraft.committedPoints.push(action.payload);
@@ -115,6 +123,7 @@ export const {
   clearSelection,
   setActiveSection,
   setCursorHint,
+  setDraftBarId,
   setInProgress,
   setSelection,
   setTool,

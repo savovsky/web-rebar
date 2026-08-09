@@ -3,6 +3,8 @@
 // useViewportTheme (doc 10). The transparent canvas lets the bg-viewport token
 // surface through from the shell.
 import { Canvas } from '@react-three/fiber';
+import { BarDraftPreview } from './BarDraftPreview';
+import { BarsLayer } from './BarsLayer';
 import { GroundPlane } from './GroundPlane';
 import { ViewportControls } from './ViewportControls';
 import { ViewportGrid } from './ViewportGrid';
@@ -36,7 +38,9 @@ export function Viewport3D() {
         <ViewportControls />
         <GroundPlane />
         <WallsLayer />
+        <BarsLayer />
         <WallDraftPreview />
+        <BarDraftPreview />
       </Canvas>
     </div>
   );

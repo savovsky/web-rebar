@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { commandRegistry } from '@/commands';
 
 describe('commandRegistry', () => {
-  it('exposes all six M0 commands under names matching their keys', () => {
+  it('exposes all seven M0 commands under names matching their keys', () => {
     expect(Object.keys(commandRegistry).sort()).toEqual([
       'createSection',
       'deleteBar',
       'deleteElement',
+      'extendBar',
       'placeBar',
       'placeWall',
       'setActiveSection',

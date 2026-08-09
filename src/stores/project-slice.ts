@@ -4,7 +4,7 @@
 // dispatches removeBar per hosted bar, so the action log shows every change
 // (matters for undo (§E) and the future MCP door (§N.2)).
 import { type PayloadAction, createSlice } from '@reduxjs/toolkit';
-import type { ConcreteElement, ProjectModel, ReinforcementBar, SectionDefinition } from '@/data/models';
+import type { ConcreteElement, ProjectModel, ReinforcementBar, SectionDefinition, Vec3 } from '@/data/models';
 
 /** Project state IS the persisted model. Meshes and section primitives are
  *  derived via selectors and never stored (§E, §H.2). */
@@ -40,6 +40,12 @@ const projectSlice = createSlice({
     removeBar(state, action: PayloadAction<{ id: string }>) {
       delete state.reinforcement[action.payload.id];
     },
+    /** Chained placement (§B.6): grow one bar's path — the bar stays a single
+     *  position with bending places (see the extendBar command). */
+    appendBarPoint(state, action: PayloadAction<{ id: string; point: Vec3 }>) {
+      const bar = state.reinforcement[action.payload.id];
+      if (bar) bar.path.push(action.payload.point);
+    },
     addSection(state, action: PayloadAction<SectionDefinition>) {
       state.sections[action.payload.id] = action.payload;
     },
@@ -52,6 +58,14 @@ const projectSlice = createSlice({
   },
 });
 
-export const { addBar, addElement, addSection, removeBar, removeElement, removeSection, resetProject } =
-  projectSlice.actions;
+export const {
+  addBar,
+  addElement,
+  addSection,
+  appendBarPoint,
+  removeBar,
+  removeElement,
+  removeSection,
+  resetProject,
+} = projectSlice.actions;
 export default projectSlice.reducer;

@@ -58,11 +58,17 @@ describe('placeBar', () => {
     );
   });
 
-  it('rejects non-straight paths in M0', () => {
+  it('accepts multi-segment (bent) paths — one bar with bending places', () => {
     const { store, wallId } = createStoreWithWall();
     const bent = [...barParams(wallId).path, { x: 4000, y: 900, z: 87 }];
+    const barId = store.dispatch(placeBar({ ...barParams(wallId), path: bent }));
+    expect(store.getState().project.reinforcement[barId].path).toHaveLength(3);
+  });
+
+  it('rejects a single-point path', () => {
+    const { store, wallId } = createStoreWithWall();
     expectCommandError(
-      () => store.dispatch(placeBar({ ...barParams(wallId), path: bent })),
+      () => store.dispatch(placeBar({ ...barParams(wallId), path: [{ x: 0, y: 500, z: 87 }] })),
       'INVALID_PARAMS',
     );
   });
@@ -74,6 +80,13 @@ describe('placeBar', () => {
       () => store.dispatch(placeBar({ ...barParams(wallId), path: [point, point] })),
       'INVALID_PARAMS',
     );
+  });
+
+  it('rejects a zero-length middle segment', () => {
+    const { store, wallId } = createStoreWithWall();
+    const point = { x: 100, y: 500, z: 87 };
+    const path = [{ x: 0, y: 500, z: 87 }, point, point];
+    expectCommandError(() => store.dispatch(placeBar({ ...barParams(wallId), path })), 'INVALID_PARAMS');
   });
 
   it('rejects non-positive cover and unknown steel grades', () => {

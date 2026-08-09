@@ -55,11 +55,19 @@ export interface GenerateBarMeshParams {
   diameter: number;
   /** Cylinder radial resolution (§L.3 LOD: ~20 near, fewer far). */
   segments: number;
+  /** Centerline arc radius at bends in mm (catalog mandrel radius + bar
+   *  radius); 0 = sharp mitered joints. */
+  bendRadiusMm: number;
 }
 
 /** Swept-cylinder mesh for a bar polyline. Degenerate input → empty arrays. */
 export function generateBarMesh(params: GenerateBarMeshParams): BarMeshData {
-  const mesh = wasmCore.generate_bar_mesh(params.pathPoints, params.diameter, params.segments);
+  const mesh = wasmCore.generate_bar_mesh(
+    params.pathPoints,
+    params.diameter,
+    params.segments,
+    params.bendRadiusMm,
+  );
   try {
     return { positions: mesh.positions, normals: mesh.normals, indices: mesh.indices };
   } finally {
