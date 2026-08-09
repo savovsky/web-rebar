@@ -24,7 +24,7 @@ From root README → "Rules for Implementation Sessions": command layer only (§
 
 | Milestone | File | Status |
 |---|---|---|
-| M0: One Wall, One Bar | [m0-one-wall-one-bar.md](./m0-one-wall-one-bar.md) | 🔵 In progress — T1–T8 ✅, T9 🟡 review, next: T10 |
+| M0: One Wall, One Bar | [m0-one-wall-one-bar.md](./m0-one-wall-one-bar.md) | 🔵 In progress — T1–T9 ✅, next: T10 |
 | M1: Edit + Reactivity | — | ⬜ Not planned |
 | M2: IFC Round-Trip | — | ⬜ Not planned |
 | M3: Real Bar Placement | — | ⬜ Not planned |

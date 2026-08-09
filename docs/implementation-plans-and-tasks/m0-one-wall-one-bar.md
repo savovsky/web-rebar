@@ -8,8 +8,8 @@
 ## ▶️ Current State (read this first in a fresh session)
 
 - **Next task:** **T10 — Section Cut tool + SectionView panel (Canvas2D, auto-fit) rendering `selectSectionPrimitives`.**
-- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author); T7 — `41fe548`; T8 — `13bdee4` (visual confirmed by author).
-- **Awaiting review:** T9 (headless — unit-tested; visual confirmation happens with T10's panel).
+- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author); T7 — `41fe548`; T8 — `13bdee4` (visual confirmed by author); T9 — `d7f6df4` (headless — unit-tested; visual confirmation happens with T10's panel).
+- **Awaiting review:** —
 - **Manual test scenarios:** [../test-scenarios/m0-one-wall-one-bar.md](../test-scenarios/m0-one-wall-one-bar.md) (M0-S01…S15; updated after every approved task — root README rule 7).
 - **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
 
@@ -93,7 +93,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | T6 | App shell layout + toolbar (M0 tool set, §B.6) + status bar | manual | ✅ Done | `20fe9b6` |
 | T7 | Viewport3D + Place Wall tool (click-click, chained → `placeWall`) | wall renders | ✅ Done | `41fe548` |
 | T8 | Place Bar tool (click face → 2 points → `placeBar`, default cover from catalog) | bar renders in wall | ✅ Done | `13bdee4` |
-| T9 | `plane_polyline_intersection` (Rust) + `sectioning.ts` (parametric outline + dots + projection) | unit tests | 🟡 Awaiting review | — |
+| T9 | `plane_polyline_intersection` (Rust) + `sectioning.ts` (parametric outline + dots + projection) | unit tests | ✅ Done | `d7f6df4` |
 | T10 | Section Cut tool + SectionView panel (Canvas2D, auto-fit) | dot at correct cover | ⬜ Pending | — |
 | T11 | Acceptance pass against root README review checklist | zero store imports in `src/ui/`, lint+build clean | ⬜ Pending | — |
 
@@ -205,7 +205,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 **Review fix #4 (2026-08-09, author screenshot) — surface kink at bends:** the bend arcs exposed a latent mesh bug — `ring_basis` picked its reference axis PER RING and flipped it when the path direction crossed the 0.9 Y-component threshold, which happens mid-arc on vertical→horizontal bends; the cross-section twisted ~90° between two adjacent rings, shearing the surface into a visible pinch. Fixed with **parallel-transported ring frames** (`ring_frames`/`transport_basis` in mesh.rs): heuristic basis only for the first ring, each subsequent frame is the previous one minimally rotated to the new direction (Rodrigues) — no reference flips, no twist, anywhere on the path. Rust test added (`ring_frames_do_not_twist_across_a_vertical_bend`: consecutive frame dot > 0.9 across a vertical bend). Rust 10/10, TS 61/61, WASM 32.7 kB / 14.7 kB gzip.
 
-### T9 — `plane_polyline_intersection` (Rust) + `sectioning.ts` ✅ (2026-08-09, implemented — awaiting author review)
+### T9 — `plane_polyline_intersection` (Rust) + `sectioning.ts` ✅ (2026-08-09, committed `d7f6df4`)
 
 **Files added:** `core/src/section.rs` (plane–polyline intersection + 9 Rust unit tests), `src/engine/sectioning.test.ts` (18 tests), `src/engine/wasm-bridge.test.ts` (4 boundary round-trip tests), `src/engine/wasm-test-init.ts` (vitest helper — node env can't fetch the pkg's file:// URL, so the .wasm bytes are read from disk and handed to the bridge init).
 
@@ -243,3 +243,5 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | 2026-08-09 | T8 approved by author — visual pass confirmed (chaining, all-faces cover, smooth bends) |
 | 2026-08-09 | T8 committed (`13bdee4`) — pushed to `A_MVP_Scope_M0` |
 | 2026-08-09 | T9 implemented (Rust plane–polyline intersection + §G.1 Tier 1 sectioning orchestration + memoized selector), awaiting author review |
+| 2026-08-09 | Workflow additions (author): author_notebook.md moved to `docs/` (still ⛔ for AI sessions); root README rules 7–8 (manual test list per task → persisted scenarios; parallel edits — approval commit sweeps all working-tree changes); `docs/test-scenarios/` created, M0-S01…S15 backfilled |
+| 2026-08-09 | T9 approved by author — committed (`d7f6df4`) — pushed to `A_MVP_Scope_M0` |
