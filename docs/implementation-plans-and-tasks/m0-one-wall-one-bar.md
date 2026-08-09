@@ -8,7 +8,7 @@
 ## ▶️ Current State (read this first in a fresh session)
 
 - **Next task:** **T9 — `plane_polyline_intersection` (Rust) + `sectioning.ts` (parametric outline + dots + projection).**
-- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author); T7 — `41fe548`; T8 — visual confirmed by author (hash recorded in the tracker table).
+- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author); T7 — `41fe548`; T8 — `13bdee4` (visual confirmed by author).
 - **Awaiting review:** —
 - **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes → **author reviews and commits** → next task.
 
@@ -91,7 +91,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | T5 | Commands + registry + `CommandError`; **add vitest** (Q2) | headless unit tests | ✅ Done | `a7934d2` |
 | T6 | App shell layout + toolbar (M0 tool set, §B.6) + status bar | manual | ✅ Done | `20fe9b6` |
 | T7 | Viewport3D + Place Wall tool (click-click, chained → `placeWall`) | wall renders | ✅ Done | `41fe548` |
-| T8 | Place Bar tool (click face → 2 points → `placeBar`, default cover from catalog) | bar renders in wall | ✅ Done | — |
+| T8 | Place Bar tool (click face → 2 points → `placeBar`, default cover from catalog) | bar renders in wall | ✅ Done | `13bdee4` |
 | T9 | `plane_polyline_intersection` (Rust) + `sectioning.ts` (parametric outline + dots + projection) | unit tests | ⬜ Pending | — |
 | T10 | Section Cut tool + SectionView panel (Canvas2D, auto-fit) | dot at correct cover | ⬜ Pending | — |
 | T11 | Acceptance pass against root README review checklist | zero store imports in `src/ui/`, lint+build clean | ⬜ Pending | — |
@@ -228,3 +228,4 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | 2026-08-08 | T8 review feedback #3: bending radius at bends — catalog `mandrelDiameter` seed (DIN 1045-1 / EC2 Table 8.1: 4·Ø ≤ 16, 7·Ø > 16) + tangent-arc sweep in Rust mesh; stored path keeps sharp vertices |
 | 2026-08-09 | T8 review fix #4: bend surface kink — per-ring frame reference flip replaced with parallel-transported ring frames (Rust mesh) |
 | 2026-08-09 | T8 approved by author — visual pass confirmed (chaining, all-faces cover, smooth bends) |
+| 2026-08-09 | T8 committed (`13bdee4`) — pushed to `A_MVP_Scope_M0` |
