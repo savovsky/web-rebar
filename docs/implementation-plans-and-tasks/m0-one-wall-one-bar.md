@@ -8,7 +8,7 @@
 ## ▶️ Current State (read this first in a fresh session)
 
 - **M0: ✅ COMPLETE (2026-08-09)** — all 11 tasks done; the T11 acceptance pass against the root README review checklist is green (verdict table in the task log below). Next: **M1 planning** (Architecture Spec §A — Edit + Reactivity) as a new milestone plan file, author-approved before coding.
-- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author); T7 — `41fe548`; T8 — `13bdee4` (visual confirmed by author); T9 — `d7f6df4`; T10 — `ab2007d` (visual confirmed by author); T11 — author adds hash on commit.
+- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author); T7 — `41fe548`; T8 — `13bdee4` (visual confirmed by author); T9 — `d7f6df4`; T10 — `ab2007d` (visual confirmed by author); T11 — `29176ad` (acceptance pass — all checklist rules ✅).
 - **Manual test scenarios:** [../test-scenarios/m0-one-wall-one-bar.md](../test-scenarios/m0-one-wall-one-bar.md) (M0-S01…S18; updated after every approved task — root README rule 7).
 - **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
 
@@ -94,7 +94,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | T8 | Place Bar tool (click face → 2 points → `placeBar`, default cover from catalog) | bar renders in wall | ✅ Done | `13bdee4` |
 | T9 | `plane_polyline_intersection` (Rust) + `sectioning.ts` (parametric outline + dots + projection) | unit tests | ✅ Done | `d7f6df4` |
 | T10 | Section Cut tool + SectionView panel (Canvas2D, auto-fit) | dot at correct cover | ✅ Done | `ab2007d` |
-| T11 | Acceptance pass against root README review checklist | zero store imports in `src/ui/`, lint+build clean | ✅ Done | — |
+| T11 | Acceptance pass against root README review checklist | zero store imports in `src/ui/`, lint+build clean | ✅ Done | `29176ad` |
 
 ---
 
@@ -239,7 +239,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 
 **Model change:** `SectionDefinition` gains `lineStart`/`lineEnd` (the stored design intent the wireframe edits; invariant `plane.origin === lineStart`). Tests 108 → 127 (engine drag/volume math, reshaped command suites, 3-step draft flow). `pnpm lint` / `pnpm test` / `pnpm build` ✅.
 
-### T11 — Acceptance pass ✅ (2026-08-09, awaiting author commit)
+### T11 — Acceptance pass ✅ (2026-08-09, committed `29176ad`)
 
 Not a feature task — a rule-by-rule audit of T1–T10 against the root README "Rules for Implementation Sessions" + Review Checklist, plus the M0 acceptance sentence captured as a durable headless test.
 
@@ -308,3 +308,4 @@ Not a feature task — a rule-by-rule audit of T1–T10 against the root README 
 | 2026-08-09 | T10 approved by author — scenarios M0-S13…S15 verified + M0-S16…S18 added ([../test-scenarios/](../test-scenarios/m0-one-wall-one-bar.md)) |
 | 2026-08-09 | T10 committed (`ab2007d`) — pushed to `A_MVP_Scope_M0` |
 | 2026-08-09 | T11 acceptance pass implemented — checklist verdict green on all rules; durable artifact `src/commands/m0-acceptance.test.ts` (the §A acceptance sentence through the §N commands + real WASM boundary); small doc fixes in place (root README deferred-topics table placement + structure table, doc 10 stale placeholder note, plans index); findings F1/F2 recorded report-only — awaiting author review/commit |
+| 2026-08-09 | T11 committed (`29176ad`) at the author's instruction — pushed to `A_MVP_Scope_M0`. **M0 ✅ COMPLETE.** Next: M1 planning (§A — Edit + Reactivity) |
