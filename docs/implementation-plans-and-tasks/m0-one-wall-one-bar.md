@@ -8,7 +8,7 @@
 ## ▶️ Current State (read this first in a fresh session)
 
 - **Next task:** **T11 — Acceptance pass against the root README review checklist.**
-- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author); T7 — `41fe548`; T8 — `13bdee4` (visual confirmed by author); T9 — `d7f6df4`; T10 — (hash below; visual confirmed by author).
+- **Done:** T1 — `bc11f9b`; T2 — `71ecca2`; T3 — `0a279e1` (visual confirmed by author); T4 — `4413366`; T5 — `a7934d2`; T6 — `20fe9b6` (visual confirmed by author); T7 — `41fe548`; T8 — `13bdee4` (visual confirmed by author); T9 — `d7f6df4`; T10 — `ab2007d` (visual confirmed by author).
 - **Awaiting review:** —
 - **Manual test scenarios:** [../test-scenarios/m0-one-wall-one-bar.md](../test-scenarios/m0-one-wall-one-bar.md) (M0-S01…S18; updated after every approved task — root README rule 7).
 - **Workflow:** implement one task → `pnpm lint` + `pnpm build` green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
@@ -94,7 +94,7 @@ Windows machine **without** MSVC Build Tools → host toolchain pinned to `stabl
 | T7 | Viewport3D + Place Wall tool (click-click, chained → `placeWall`) | wall renders | ✅ Done | `41fe548` |
 | T8 | Place Bar tool (click face → 2 points → `placeBar`, default cover from catalog) | bar renders in wall | ✅ Done | `13bdee4` |
 | T9 | `plane_polyline_intersection` (Rust) + `sectioning.ts` (parametric outline + dots + projection) | unit tests | ✅ Done | `d7f6df4` |
-| T10 | Section Cut tool + SectionView panel (Canvas2D, auto-fit) | dot at correct cover | ✅ Done | (see log) |
+| T10 | Section Cut tool + SectionView panel (Canvas2D, auto-fit) | dot at correct cover | ✅ Done | `ab2007d` |
 | T11 | Acceptance pass against root README review checklist | zero store imports in `src/ui/`, lint+build clean | ⬜ Pending | — |
 
 ---
