@@ -36,23 +36,26 @@ interface CommandScope {
 }
 
 /** Redux dispatch is synchronous and single-threaded, so one module-level
- *  slot is safe; nested thunk invocations save/restore the outer scope. */
+ *  slot is safe. */
 let activeScope: CommandScope | null = null;
 
 /**
- * Wraps every thunk (function action) in a fresh command scope for undo
- * recording. Plain-object actions pass through untouched; a project action
+ * Wraps every thunk (function action) in a command scope for undo recording.
+ * A thunk dispatched INSIDE another command (e.g. T3's deleteSelection
+ * dispatching deleteElement/deleteBar per selection contents) joins the outer
+ * scope — one undo level per command DISPATCH (Q4-a), even for a composite
+ * command. Plain-object actions pass through untouched; a project action
  * dispatched outside any thunk (forbidden by §N) is recorded as its own
  * level — the safe default.
  */
 export const undoScopeMiddleware: Middleware = () => (next) => (action) => {
   if (typeof action !== 'function') return next(action);
-  const outerScope = activeScope;
+  if (activeScope !== null) return next(action); // nested command joins the outer scope
   activeScope = { recorded: false };
   try {
     return next(action);
   } finally {
-    activeScope = outerScope;
+    activeScope = null;
   }
 };
 

@@ -5,7 +5,12 @@
 // does the math). Under other tools the click falls through to the ground
 // plane. Concrete is transparent so bars stay visible inside (§L.2) — fill and
 // opacity are domain tokens (src/data/appearance.ts), the selection highlight
-// a UI token (doc 10).
+// a UI token (doc 10). Selection priority (§B.5 — smallest entity wins): the
+// wall face is always closer to the camera than a hosted bar, so Select clicks
+// and hovers resolve through pickPointerWinner (hover-target.ts) — the wall
+// YIELDS when one of its own bars wins the ray (no stopPropagation, the event
+// continues down the R3F intersection list to the bar's handler), and the
+// hover highlight previews exactly what a click would select.
 import type { ThreeEvent } from '@react-three/fiber';
 import { DEFAULT_ELEMENT_APPEARANCE } from '@/data/appearance';
 import type { Vec3, WallElement } from '@/data/models';
@@ -15,6 +20,7 @@ import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { setSelection } from '@/stores/ui-slice';
 import { CLICK_DRAG_TOLERANCE_PX } from './constants';
 import { setCursorPoint } from './cursor-position';
+import { clearHoverTarget, pickPointerWinner, setHoverTarget, useIsHoverTarget } from './hover-target';
 import { advanceBarDraft, captureBarFace } from './place-bar-draft';
 import { useViewportTheme } from './viewport-theme';
 
@@ -27,7 +33,12 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
   const gridSpacingMm = useAppSelector((state) => state.ui.gridSpacingMm);
   const transform = getWallTransform(wall);
 
+  const isHovered = useIsHoverTarget('wall', wall.id);
   const isDraftHost = draft.kind === 'bar' && draft.hostElementId === wall.id && draft.faceNormal !== null;
+  // Selection outranks hover; both outrank the domain concrete color.
+  let fillColor: string = DEFAULT_ELEMENT_APPEARANCE.concreteColor;
+  if (isHovered) fillColor = theme.hover;
+  if (isSelected) fillColor = theme.selection;
 
   /** Raycast hit → point on the captured face plane (projected + grid-snapped). */
   const resolveOnFace = (event: ThreeEvent<PointerEvent | MouseEvent>): Vec3 | null => {
@@ -41,6 +52,11 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
   };
 
   const handleSelectClick = (event: ThreeEvent<MouseEvent>) => {
+    // §B.5: smallest entity wins — yield when a hosted bar wins this ray (the
+    // bar sits behind the transparent wall face); a bar hosted by a wall
+    // BEHIND this one never steals the wall's click (pickPointerWinner).
+    const winner = pickPointerWinner(event.intersections);
+    if (winner?.entityType !== 'wall' || winner.id !== wall.id) return;
     event.stopPropagation(); // keep the ground plane from clearing this selection
     dispatch(setSelection({ elementIds: [wall.id], barIds: [] }));
   };
@@ -66,6 +82,10 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
   };
 
   const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
+    if (activeTool === 'select') {
+      setHoverTarget(pickPointerWinner(event.intersections));
+      return;
+    }
     if (activeTool !== 'placeBar' || !isDraftHost) return;
     event.stopPropagation(); // the on-face cursor wins over the ground-plane cursor
     setCursorPoint(resolveOnFace(event));
@@ -81,12 +101,16 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
       rotation-y={transform.rotationY}
       onClick={handleClick}
       onPointerMove={handlePointerMove}
+      onPointerOut={() => {
+        if (activeTool === 'select') clearHoverTarget({ entityType: 'wall', id: wall.id });
+      }}
       onPointerLeave={handlePointerLeave}
+      userData={{ entityType: 'wall', entityId: wall.id }}
     >
       <boxGeometry args={[transform.lengthMm, wall.height, wall.thickness]} />
       {/* §L.2: transparent concrete with no depth writes — bars inside stay visible. */}
       <meshStandardMaterial
-        color={isSelected ? theme.selection : DEFAULT_ELEMENT_APPEARANCE.concreteColor}
+        color={fillColor}
         transparent
         opacity={DEFAULT_ELEMENT_APPEARANCE.concreteOpacity}
         depthWrite={false}

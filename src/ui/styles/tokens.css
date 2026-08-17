@@ -24,8 +24,10 @@
 
   /* Selection & snapping (CAD-specific) */
   --selection: 221 83% 53%;
+  --hover: 221 83% 63%; /* pre-selection highlight — same hue as selection, lighter */
   --snap-target: 142 71% 45%;
   --guide-line: 221 83% 63%;
+  --wireframe: 222 47% 11%; /* section volume ink — dark on the light viewport */
 
   /* Chrome */
   --border: 214 32% 91%;
@@ -67,8 +69,10 @@
   --warning: 38 92% 55%;
   --success: 142 71% 50%;
   --selection: 217 91% 60%;
+  --hover: 217 91% 70%;
   --snap-target: 142 71% 50%;
   --guide-line: 217 91% 70%;
+  --wireframe: 210 40% 96%; /* section volume ink — white on the dark viewport */
   --border: 217 33% 20%;
   --accent: 217 33% 18%;
   --focus-ring: 217 91% 70%;
@@ -88,8 +92,10 @@
   --color-warning: hsl(var(--warning));
   --color-success: hsl(var(--success));
   --color-selection: hsl(var(--selection));
+  --color-hover: hsl(var(--hover));
   --color-snap-target: hsl(var(--snap-target));
   --color-guide-line: hsl(var(--guide-line));
+  --color-wireframe: hsl(var(--wireframe));
   --color-border: hsl(var(--border));
   --color-accent: hsl(var(--accent));
   --color-focus-ring: hsl(var(--focus-ring));

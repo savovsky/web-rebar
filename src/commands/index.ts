@@ -10,6 +10,7 @@ import { createSection } from './create-section';
 import { deleteBar } from './delete-bar';
 import { deleteElement } from './delete-element';
 import { deleteSection } from './delete-section';
+import { deleteSelection } from './delete-selection';
 import { extendBar } from './extend-bar';
 import { moveElement } from './move-element';
 import { placeBar } from './place-bar';
@@ -24,6 +25,7 @@ export { createSection } from './create-section';
 export { deleteBar } from './delete-bar';
 export { deleteElement } from './delete-element';
 export { deleteSection } from './delete-section';
+export { deleteSelection } from './delete-selection';
 export { extendBar } from './extend-bar';
 export { moveElement } from './move-element';
 export { placeBar } from './place-bar';
@@ -50,6 +52,7 @@ export const commandRegistry = {
   deleteBar: { name: 'deleteBar', thunk: deleteBar },
   deleteElement: { name: 'deleteElement', thunk: deleteElement },
   deleteSection: { name: 'deleteSection', thunk: deleteSection },
+  deleteSelection: { name: 'deleteSelection', thunk: deleteSelection },
   extendBar: { name: 'extendBar', thunk: extendBar },
   moveElement: { name: 'moveElement', thunk: moveElement },
   placeBar: { name: 'placeBar', thunk: placeBar },

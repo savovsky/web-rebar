@@ -99,6 +99,7 @@ When a decision must be revisited, update this document and note the revision da
 
 | Action | Behavior |
 | --- | --- |
+| Hover entity under the Select tool | Pre-selection highlight (hover token) shows exactly which entity a click would select (added 2026-08-09) |
 | Click element in viewport | Select, deselect others |
 | Ctrl+Click | Add/remove from selection |
 | Drag-select (marquee) | Select all intersecting |
@@ -106,7 +107,9 @@ When a decision must be revisited, update this document and note the revision da
 | Escape | Deselect all / cancel tool → Select |
 | Shift+scroll wheel | Cycle through overlapping objects under cursor |
 
-Selection priority: smallest entity wins (bar > wall).
+Selection priority: smallest entity wins (bar > wall > section volume). **Revised 2026-08-09:** hover and click share ONE ray-resolution — a bar beats the transparent wall face in front of it only when that wall hosts it (§L.2); a bar hidden in a wall behind never wins; section wireframe volumes are the lowest-priority hit area, so entities inside a volume stay clickable through it.
+
+**Parked (post-POC polish, noted 2026-08-09):** once slabs/beams/columns/openings and annotation (§M) exist, this ordering must become an explicit hover-priority table covering every entity type, and overlapping-entity cycling gets a decided gesture — the Shift+scroll row above vs. Tab-flipping the hovered candidate (pick ONE or support both deliberately). `pickPointerWinner` (src/ui/viewport/hover-target.ts) already computes the ranked candidate list, so cycling is an index into it.
 
 ### B.6 Tool Palette Design
 
