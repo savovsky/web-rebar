@@ -224,17 +224,19 @@ Complex objects stay in TypeScript. Only geometry data crosses the boundary.
 ## E — State Management & Undo/Redo
 
 > **Revised 2026-07-28** — State library changed from Zustand to RTK (Redux Toolkit). Rationale: the author's 10 years of Redux/RTK experience; thunks map one-to-one onto the §N command layer; Immer is built in; Redux DevTools provide action log and time-travel debugging out of the box. The undo design itself is unchanged.
+>
+> **Revised 2026-08-09** — "No auto-follow" replaced by **host-follow**: moving/copying an element moves/copies its hosted reinforcement (bars identified via `hostElementId`) as part of the same command transaction — one undo step restores all of it. There is still **no live dependency graph**: the follow is computed once inside the command, not propagated. Rationale: host-follow matches detailing reality (reinforcement belongs to its element — Allplan behaves the same) and the explicit-cascade pattern was already proven in M0 by `deleteElement` (which removes hosted bars in-command); the original concern was cascading *live* updates, which this does not introduce. Scope: M1 implements translation-follow; rotation is the same class of point transform (later); **mirror** flips bend handedness (a mirrored bar is a different physical shape for the schedule) — a Modify-tools (M3+) concern. Cross-element bars: the host wins — the whole bar follows its host; §K validation flags resulting violations. Placement groups (§F.2, M3): generated bars translate with the host like individual bars; param edits regenerate as before.
 
 **Decision:** RTK (Redux Toolkit) + Immer (built in). Full state snapshots per undo level.
 
 - 30 undo levels (session only, not persisted)
 - Snapshots stored compressed in memory
 - 3D meshes excluded from undo (regenerated on restore)
-- No cascading/derived updates (move wall → bars stay; no auto-follow)
+- Host-follow moves/copies (revised 2026-08-09): move/copy element → hosted bars move/copy with it, in the same command (no live dependency graph — see revision note above)
 
 **Transient interaction state stays out of the store:** during drag/move gestures (60 FPS (Frames Per Second) pointer updates), in-progress values live in component-local state or refs. Only the committed result dispatches a command (on pointer-up / drop). This prevents dispatch overhead and action-log spam.
 
-**Rationale:** Reinforcement does NOT automatically follow element moves (per user requirement). This eliminates cascading state changes and makes snapshot-based undo simple and correct.
+**Rationale:** No cascading/derived *live* updates — all model changes are explicit, in-command, and synchronous (including host-follow, revised 2026-08-09). This eliminates propagation graphs and makes snapshot-based undo simple and correct: one command = one snapshot = exact restore.
 
 **Estimated memory:** ~5-10 MB per snapshot × 30 levels = 150-300 MB worst case. Acceptable for target scale.
 

@@ -7,7 +7,8 @@ import type { Vec3 } from './geometry';
 
 export interface ReinforcementBar {
   id: string;
-  /** Element this bar belongs to (M0: a wall). Bars do not auto-follow host moves (§E). */
+  /** Element this bar belongs to (M0: a wall). Bars follow host element moves/copies —
+   *  computed once inside the same command transaction (§E, revised 2026-08-09). */
   hostElementId: string;
   /** Bar diameter (mm) — must exist in the active steel catalog (§K.3). */
   diameter: number;
