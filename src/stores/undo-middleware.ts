@@ -23,6 +23,8 @@ import {
   removeElement,
   removeSection,
   resetProject,
+  translateBar,
+  translateElement,
   updateSectionGeometry,
 } from './project-slice';
 import type { ProjectState } from './project-slice';
@@ -72,6 +74,8 @@ undoListenerMiddleware.startListening({
     removeElement,
     removeSection,
     resetProject,
+    translateBar,
+    translateElement,
     updateSectionGeometry,
   ),
   effect: (_action, listenerApi) => {

@@ -7,9 +7,10 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **M1: ✅ PLAN APPROVED (2026-08-09)** — Q1–Q4 answered (see below); §E revised to host-follow. M0 is ✅ complete ([tracker](./m0-one-wall-one-bar.md)); branch `A_MVP_Scope_M1`. **T1 ✅ complete** (undo core, 2026-08-09 — see task log); **T2 is next**.
+- **M1: ✅ PLAN APPROVED (2026-08-09)** — Q1–Q4 answered (see below); §E revised to host-follow. M0 is ✅ complete ([tracker](./m0-one-wall-one-bar.md)); branch `A_MVP_Scope_M1`. **T1 ✅ complete** (undo core, 2026-08-09); **T2 ✅ complete** (edit commands + reactivity proofs, 2026-08-09 — see task log); **T3 is next**.
 - **Workflow (same as M0):** implement one task → `pnpm lint` + `pnpm test` + `pnpm build` green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
 - **Manual test scenarios:** `docs/test-scenarios/m1-edit-and-reactivity.md` (created in T3; M1-S01… — root README rule 7).
+- **Known console warning (report-only, 2026-08-09):** `THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.` fires once on app load. Source: R3F 9.7.0's internal root store (`clock: new THREE.Clock()` in its dist) × three r183+ deprecation — not our code (no `Clock`/`state.clock` usage anywhere in `src/`; Drei clean). Harmless; R3F v10 (alpha) has already removed `state.clock` entirely, so the warning disappears with the future R3F 10 upgrade. No action — do NOT patch R3F (Timer's API differs; a naive swap would break frame deltas) and do NOT downgrade three for a cosmetic warning.
 
 ## M1 Goal (Architecture Spec §A)
 
@@ -94,7 +95,7 @@
 | # | Task | Verify by | State | Commit |
 | --- | --- | --- | --- | --- |
 | T1 | Undo core: undo-slice + listener middleware + `restoreProjectSnapshot` + `undo`/`redo` commands (Q1/Q2) | headless tests: all 8 M0 commands undo/redo, cap 30, future cleared, delete-cascade restores, memory-light snapshots | ✅ Done | `491c5f3` |
-| T2 | Edit commands: `moveElement` (+ `translateElement`/`translateBar` reducers, host-follow per §E revised), `deleteSection`; headless reactivity proofs (§A dependency-graph probe) | unit tests: move → wall+bars translate, section primitives re-derive; one undo restores all; deletes propagate | ⬜ Pending | — |
+| T2 | Edit commands: `moveElement` (+ `translateElement`/`translateBar` reducers, host-follow per §E revised), `deleteSection`; headless reactivity proofs (§A dependency-graph probe) | unit tests: move → wall+bars translate, section primitives re-derive; one undo restores all; deletes propagate | ✅ Done | — |
 | T3 | Edit UI: Delete / Ctrl+Z / Ctrl+Shift+Z keybindings + Edit menu (TopBar) + status hints; scenario file started | manual: keyboard + menu drive undo/redo/delete; guards in editable fields | ⬜ Pending | — |
 | T4 | Move tool (M) (Q3-b): toolbar + shortcut, transient drag, ghost preview, grid snap, Esc cancel, single-shot auto-return, `commitElementDrag` → `moveElement` | manual: M + drag wall → wall+bars move in 3D, open 2D section updates on drop; undo reverts all; Select never moves | ⬜ Pending | — |
 | T5 | Performance probes: full-recompute benchmark + undo-stack memory measurement (§A risks) | numbers reported in task log; assertions green | ⬜ Pending | — |
@@ -118,3 +119,29 @@
 
 1. `pnpm dev` → the app loads and behaves exactly as at M0: place wall (W, chained), place bar (B, chained bends), section cut (S, drag + depth click), reshape the section via its 3D wireframe volume, delete nothing / delete via nothing — no UI regressions anywhere (T1 touches no UI; undo has no UI yet — keyboard + Edit menu arrive in T3).
 2. Redux DevTools: place a wall → one `undo/recordSnapshot` action per command; delete a wall with bars → exactly ONE `recordSnapshot` for the whole cascade; `project/restoreProjectSnapshot` never triggers a recording (no UI trigger for undo/redo yet — optional check, the headless tests cover this).
+
+### T2 — Edit commands: `moveElement` (host-follow) + `deleteSection` + headless reactivity proofs ✅ (2026-08-09)
+
+**Files added:** `src/commands/move-element.ts` (§N command: validates element exists + delta finite/non-zero, then dispatches `translateElement` plus one explicit `translateBar` per hosted bar — host-follow per §E revised 2026-08-09, exactly like the deleteElement cascade; ids unchanged → no selection pruning), `src/commands/delete-section.ts` (completes the delete family; the `removeSection` reducer existed since M0 without a command — now wired; clears `activeSectionId` when the 2D panel showed the deleted section), `src/commands/move-element.test.ts` (6 tests), `src/commands/m1-reactivity.test.ts` (4 tests — the §A dependency-graph probe).
+
+**Files changed:** `src/stores/project-slice.ts` (`translateElement` — walls: plan axis shifts, baseElevation/thickness/height untouched, grows with the element union at M3/M4 — and `translateBar` — every path point incl. bending places), `src/stores/undo-middleware.ts` (both reducers added to the recording matcher), `src/commands/index.ts` (registry: `moveElement`, `deleteSection` — 12 commands), `src/commands/command-registry.test.ts` (expected list updated), `src/commands/delete-commands.test.ts` (`deleteSection` describe block — the delete family now lives in one file: element, bar, section).
+
+**Design notes:**
+- **Vertical deltas:** `translateElement` moves the wall's plan axis only (the plan text: baseElevation/thickness/height untouched), while `translateBar` applies the full delta — a non-zero `delta.y` would shift hosted bar paths without lifting the parametric wall. The T4 Move tool drags in plan (`delta.y = 0`); the command accepts a full Vec3 for the scripting/MCP door (§N.2) and documents this. If a vertical element move becomes a real workflow (M4 storeys), that is the point to revisit.
+- **Zero delta rejected:** a no-op move would otherwise pass the middleware's pre/post reference guard unrecorded but still spam the action log — `INVALID_PARAMS` keeps both clean.
+- **`deleteSection` closes the panel via the ui-slice action directly** (like deleteElement dispatches slice actions, not other commands) — `activeSectionId` is ui state, so undo (project state only, §E) does not reopen the panel on restore; asserted by test.
+
+**Reactivity proofs (§A dependency-graph probe, `m1-reactivity.test.ts` — M0 acceptance fixture: wall 4000×200×2800, Ø12 bar at 25 mm cover from +Z, perpendicular cut at x=2000 looking +X):**
+1. Memoization baseline: repeated `selectSectionPrimitives` calls on unchanged state return the identical reference.
+2. `moveElement` 1000 mm along +Z → new primitives reference (re-derived); outline u-range follows the wall exactly (+1000); the cut-bar dot moved +1000 and keeps its **31 mm offset from the covered face** (bar followed its host); `undo` restores the exact project reference → the memoized selector returns the baseline object itself.
+3. `moveElement` fully off the cut plane (+10 000 mm X, beyond viewDepth) → outline/dot/background sets all empty, section survives; moving back re-derives the full picture.
+4. `deleteElement` → section kept (deleteElement keeps sections by design) but drops outline + dot; undo restores the baseline reference exactly.
+5. `deleteBar` → dot gone, outline (thickness × height) stays.
+
+**Verification:** `pnpm lint` ✅ · `pnpm test` ✅ (154 vitest — 14 new: moveElement wall+bars translate / other hosts untouched / one undo level exact-reference restore + redo / NOT_FOUND / non-finite delta / zero delta; deleteSection removes + closes panel / other section keeps panel / undo-redo exact restore / NOT_FOUND; the 4 reactivity probes above) · `pnpm build` ✅ (chunk-size warning is the pre-existing three.js bundle, deferred per M0 T3).
+
+**Manual test list (rule 7) — ✅ approved by the author 2026-08-09** (scenarios persist in T3's scenario file `m1-edit-and-reactivity.md` per plan):
+
+1. `pnpm dev` → no UI regressions anywhere: place wall (W), place bar (B, chained bends), section cut (S), reshape the section volume, watch the 2D section panel update — T2 adds commands and reducers but touches no UI; nothing is wired to the keyboard/menus yet (that is T3/T4).
+2. Redux DevTools (optional): place a wall with bars and edit sections as usual — the action log must show NO `project/translateElement`/`project/translateBar` actions anywhere (no silent dispatches; only the T4 Move tool will emit them later) and each `undo/recordSnapshot` still corresponds to exactly one command.
+3. Headless spot-check (optional, mirrors the probe): `pnpm test m1-reactivity` — 4 green tests.
