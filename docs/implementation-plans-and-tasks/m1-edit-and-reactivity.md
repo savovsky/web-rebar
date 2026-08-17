@@ -95,7 +95,7 @@
 | # | Task | Verify by | State | Commit |
 | --- | --- | --- | --- | --- |
 | T1 | Undo core: undo-slice + listener middleware + `restoreProjectSnapshot` + `undo`/`redo` commands (Q1/Q2) | headless tests: all 8 M0 commands undo/redo, cap 30, future cleared, delete-cascade restores, memory-light snapshots | ✅ Done | `491c5f3` |
-| T2 | Edit commands: `moveElement` (+ `translateElement`/`translateBar` reducers, host-follow per §E revised), `deleteSection`; headless reactivity proofs (§A dependency-graph probe) | unit tests: move → wall+bars translate, section primitives re-derive; one undo restores all; deletes propagate | ✅ Done | — |
+| T2 | Edit commands: `moveElement` (+ `translateElement`/`translateBar` reducers, host-follow per §E revised), `deleteSection`; headless reactivity proofs (§A dependency-graph probe) | unit tests: move → wall+bars translate, section primitives re-derive; one undo restores all; deletes propagate | ✅ Done | `fa5ed7c` |
 | T3 | Edit UI: Delete / Ctrl+Z / Ctrl+Shift+Z keybindings + Edit menu (TopBar) + status hints; scenario file started | manual: keyboard + menu drive undo/redo/delete; guards in editable fields | ⬜ Pending | — |
 | T4 | Move tool (M) (Q3-b): toolbar + shortcut, transient drag, ghost preview, grid snap, Esc cancel, single-shot auto-return, `commitElementDrag` → `moveElement` | manual: M + drag wall → wall+bars move in 3D, open 2D section updates on drop; undo reverts all; Select never moves | ⬜ Pending | — |
 | T5 | Performance probes: full-recompute benchmark + undo-stack memory measurement (§A risks) | numbers reported in task log; assertions green | ⬜ Pending | — |
@@ -120,7 +120,7 @@
 1. `pnpm dev` → the app loads and behaves exactly as at M0: place wall (W, chained), place bar (B, chained bends), section cut (S, drag + depth click), reshape the section via its 3D wireframe volume, delete nothing / delete via nothing — no UI regressions anywhere (T1 touches no UI; undo has no UI yet — keyboard + Edit menu arrive in T3).
 2. Redux DevTools: place a wall → one `undo/recordSnapshot` action per command; delete a wall with bars → exactly ONE `recordSnapshot` for the whole cascade; `project/restoreProjectSnapshot` never triggers a recording (no UI trigger for undo/redo yet — optional check, the headless tests cover this).
 
-### T2 — Edit commands: `moveElement` (host-follow) + `deleteSection` + headless reactivity proofs ✅ (2026-08-09)
+### T2 — Edit commands: `moveElement` (host-follow) + `deleteSection` + headless reactivity proofs ✅ (2026-08-09, committed `fa5ed7c`)
 
 **Files added:** `src/commands/move-element.ts` (§N command: validates element exists + delta finite/non-zero, then dispatches `translateElement` plus one explicit `translateBar` per hosted bar — host-follow per §E revised 2026-08-09, exactly like the deleteElement cascade; ids unchanged → no selection pruning), `src/commands/delete-section.ts` (completes the delete family; the `removeSection` reducer existed since M0 without a command — now wired; clears `activeSectionId` when the 2D panel showed the deleted section), `src/commands/move-element.test.ts` (6 tests), `src/commands/m1-reactivity.test.ts` (4 tests — the §A dependency-graph probe).
 
