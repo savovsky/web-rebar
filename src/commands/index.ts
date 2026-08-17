@@ -12,8 +12,10 @@ import { deleteElement } from './delete-element';
 import { extendBar } from './extend-bar';
 import { placeBar } from './place-bar';
 import { placeWall } from './place-wall';
+import { redo } from './redo';
 import { reshapeSection } from './reshape-section';
 import { setActiveSection } from './set-active-section';
+import { undo } from './undo';
 
 export { CommandError } from './command-error';
 export { createSection } from './create-section';
@@ -22,8 +24,10 @@ export { deleteElement } from './delete-element';
 export { extendBar } from './extend-bar';
 export { placeBar } from './place-bar';
 export { placeWall } from './place-wall';
+export { redo } from './redo';
 export { reshapeSection } from './reshape-section';
 export { setActiveSection } from './set-active-section';
+export { undo } from './undo';
 export type { CommandErrorCode } from './command-error';
 export type { CreateSectionParams } from './create-section';
 export type { DeleteBarParams } from './delete-bar';
@@ -42,8 +46,10 @@ export const commandRegistry = {
   extendBar: { name: 'extendBar', thunk: extendBar },
   placeBar: { name: 'placeBar', thunk: placeBar },
   placeWall: { name: 'placeWall', thunk: placeWall },
+  redo: { name: 'redo', thunk: redo },
   reshapeSection: { name: 'reshapeSection', thunk: reshapeSection },
   setActiveSection: { name: 'setActiveSection', thunk: setActiveSection },
+  undo: { name: 'undo', thunk: undo },
 } as const;
 
 export type CommandName = keyof typeof commandRegistry;

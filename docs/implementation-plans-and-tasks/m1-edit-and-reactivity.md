@@ -7,7 +7,7 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **M1: ✅ PLAN APPROVED (2026-08-09)** — Q1–Q4 answered (see below); §E revised to host-follow. Ready for T1. M0 is ✅ complete ([tracker](./m0-one-wall-one-bar.md)); branch `A_MVP_Scope_M1`.
+- **M1: ✅ PLAN APPROVED (2026-08-09)** — Q1–Q4 answered (see below); §E revised to host-follow. M0 is ✅ complete ([tracker](./m0-one-wall-one-bar.md)); branch `A_MVP_Scope_M1`. **T1 ✅ complete** (undo core, 2026-08-09 — see task log); **T2 is next**.
 - **Workflow (same as M0):** implement one task → `pnpm lint` + `pnpm test` + `pnpm build` green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
 - **Manual test scenarios:** `docs/test-scenarios/m1-edit-and-reactivity.md` (created in T3; M1-S01… — root README rule 7).
 
@@ -93,7 +93,7 @@
 
 | # | Task | Verify by | State | Commit |
 | --- | --- | --- | --- | --- |
-| T1 | Undo core: undo-slice + listener middleware + `restoreProjectSnapshot` + `undo`/`redo` commands (Q1/Q2) | headless tests: all 8 M0 commands undo/redo, cap 30, future cleared, delete-cascade restores, memory-light snapshots | ⬜ Pending | — |
+| T1 | Undo core: undo-slice + listener middleware + `restoreProjectSnapshot` + `undo`/`redo` commands (Q1/Q2) | headless tests: all 8 M0 commands undo/redo, cap 30, future cleared, delete-cascade restores, memory-light snapshots | ✅ Done | `fa864d5` |
 | T2 | Edit commands: `moveElement` (+ `translateElement`/`translateBar` reducers, host-follow per §E revised), `deleteSection`; headless reactivity proofs (§A dependency-graph probe) | unit tests: move → wall+bars translate, section primitives re-derive; one undo restores all; deletes propagate | ⬜ Pending | — |
 | T3 | Edit UI: Delete / Ctrl+Z / Ctrl+Shift+Z keybindings + Edit menu (TopBar) + status hints; scenario file started | manual: keyboard + menu drive undo/redo/delete; guards in editable fields | ⬜ Pending | — |
 | T4 | Move tool (M) (Q3-b): toolbar + shortcut, transient drag, ghost preview, grid snap, Esc cancel, single-shot auto-return, `commitElementDrag` → `moveElement` | manual: M + drag wall → wall+bars move in 3D, open 2D section updates on drop; undo reverts all; Select never moves | ⬜ Pending | — |
@@ -104,4 +104,17 @@
 
 ## Task Log
 
-(Task reports are appended here as tasks complete — same format as the [M0 tracker](./m0-one-wall-one-bar.md).)
+### T1 — Undo core: undo-slice + listener middleware + `restoreProjectSnapshot` + `undo`/`redo` ✅ (2026-08-09, committed `fa864d5`)
+
+**Files added:** `src/stores/undo-slice.ts` (`{ past, future }` frozen-reference snapshots, §E 30-level cap with oldest-trim, session-only per §H.2; reducers `recordSnapshot` / `shiftToPast` / `shiftToFuture` / `clearHistory` — called by the middleware and the undo/redo commands only, per §N), `src/stores/undo-middleware.ts` (Q1-a listener middleware + command-scope middleware, see design note), `src/commands/undo.ts`, `src/commands/redo.ts` (guards: no-op + status hint via `cursorHint` on empty stacks; never themselves recorded), `src/commands/undo.test.ts` (12 tests).
+
+**Files changed:** `src/stores/project-slice.ts` (`restoreProjectSnapshot` wholesale-replace reducer; `ProjectState` type exported), `src/stores/index.ts` (undo reducer + middleware chain wired into `createAppStore` — headless stores record automatically, which is also the MCP/scripting door §N.2), `src/commands/index.ts` (registry: `undo`, `redo` — 10 commands), `src/commands/command-registry.test.ts` (expected list updated).
+
+**Design note — one level per command (Q4-a) vs. cascades:** pure per-action recording would give `deleteElement` one level per cascade action (wall + 2 bars = 3 levels), contradicting the approved "cascade restores in one step" and T2's host-follow "one undo snapshot restores wall+bars". A cascade and two sequential commands are *observationally identical* at the action level, so a tiny `undoScopeMiddleware` wraps every thunk invocation (all §N commands ARE thunks) in a command scope; the listener records only the scope's first project mutation. Fully command-agnostic — future commands need zero undo code, so the Q1-b failure mode (remembering a snapshot call per command) stays rejected. Guards: no-op actions (pre-state === post-state reference) record nothing; `restoreProjectSnapshot` is excluded from the matcher. Verified by tests: sequential commands are NOT over-coalesced.
+
+**Verification:** `pnpm lint` ✅ · `pnpm test` ✅ (140 vitest — 12 new: all 8 M0 commands undo/redo-able [setActiveSection records nothing by design — undo covers project state only], deleteElement cascade = one exact-reference restore, future clears on new action, cap 30 trims oldest, undo/redo never recorded, empty-stack guards + hints, frozen snapshots + structural sharing (Q2-a), sequential commands get separate levels) · `pnpm build` ✅ (chunk-size warning is the pre-existing three.js bundle, deferred to M4 performance work per M0 T3).
+
+**Manual test list (rule 7) — ✅ approved by the author 2026-08-09** (scenario file `m1-edit-and-reactivity.md` is created in T3 per plan):
+
+1. `pnpm dev` → the app loads and behaves exactly as at M0: place wall (W, chained), place bar (B, chained bends), section cut (S, drag + depth click), reshape the section via its 3D wireframe volume, delete nothing / delete via nothing — no UI regressions anywhere (T1 touches no UI; undo has no UI yet — keyboard + Edit menu arrive in T3).
+2. Redux DevTools: place a wall → one `undo/recordSnapshot` action per command; delete a wall with bars → exactly ONE `recordSnapshot` for the whole cascade; `project/restoreProjectSnapshot` never triggers a recording (no UI trigger for undo/redo yet — optional check, the headless tests cover this).

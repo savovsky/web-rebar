@@ -15,7 +15,7 @@ import type {
 
 /** Project state IS the persisted model. Meshes and section primitives are
  *  derived via selectors and never stored (§E, §H.2). */
-type ProjectState = ProjectModel;
+export type ProjectState = ProjectModel;
 
 const initialState: ProjectState = {
   version: '0.1.0',
@@ -80,6 +80,15 @@ const projectSlice = createSlice({
     removeSection(state, action: PayloadAction<{ id: string }>) {
       delete state.sections[action.payload.id];
     },
+    /** §E undo restore: wholesale replace with a recorded snapshot (a frozen
+     *  Immer reference, Q2-a). Excluded from undo recording (undo-middleware
+     *  matcher) — undo/redo are never themselves recorded. Every reducer above
+     *  keeps the state plain JSON (M0 T11 audit), so any historical snapshot
+     *  restores cleanly; meshes/section primitives re-derive via selectors and
+     *  are never restored (§H.2). */
+    restoreProjectSnapshot(_state, action: PayloadAction<ProjectState>) {
+      return action.payload;
+    },
     resetProject() {
       return initialState;
     },
@@ -95,6 +104,7 @@ export const {
   removeElement,
   removeSection,
   resetProject,
+  restoreProjectSnapshot,
   updateSectionGeometry,
 } = projectSlice.actions;
 export default projectSlice.reducer;
