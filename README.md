@@ -222,14 +222,15 @@ Read C:\work\personal\projects\web-rebar\README.md first — it has session stat
 Then read docs/08-architecture-spec.md — it has all locked architecture decisions.
 ```
 
-**To start M1 planning (current), use this:**
+**To continue M1 implementation (current), use this:**
 
 ```text
 Read C:\work\personal\projects\web-rebar\README.md, docs/08-architecture-spec.md,
-and docs/implementation-plans-and-tasks/README.md (M0 is complete — its tracker has the full history).
-Draft the M1 implementation plan (Architecture Spec §A — Edit + Reactivity:
-move wall → section updates, undo/redo per §E) as a new file in
-docs/implementation-plans-and-tasks/ for my approval. Do not commit.
+and docs/implementation-plans-and-tasks/m1-edit-and-reactivity.md — the M1 plan is
+APPROVED (Q1–Q4 decided; §E revised 2026-08-09 to host-follow); its ▶️ Current State
+section says which task is next. Implement exactly one task, end with pnpm lint +
+pnpm test + pnpm build green and a manual test list. Do not commit — I review and
+commit myself (rule 8).
 ```
 
 **Session type guide:**
