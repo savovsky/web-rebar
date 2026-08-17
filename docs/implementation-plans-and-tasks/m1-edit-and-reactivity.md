@@ -93,7 +93,7 @@
 
 | # | Task | Verify by | State | Commit |
 | --- | --- | --- | --- | --- |
-| T1 | Undo core: undo-slice + listener middleware + `restoreProjectSnapshot` + `undo`/`redo` commands (Q1/Q2) | headless tests: all 8 M0 commands undo/redo, cap 30, future cleared, delete-cascade restores, memory-light snapshots | ✅ Done | `fa864d5` |
+| T1 | Undo core: undo-slice + listener middleware + `restoreProjectSnapshot` + `undo`/`redo` commands (Q1/Q2) | headless tests: all 8 M0 commands undo/redo, cap 30, future cleared, delete-cascade restores, memory-light snapshots | ✅ Done | `491c5f3` |
 | T2 | Edit commands: `moveElement` (+ `translateElement`/`translateBar` reducers, host-follow per §E revised), `deleteSection`; headless reactivity proofs (§A dependency-graph probe) | unit tests: move → wall+bars translate, section primitives re-derive; one undo restores all; deletes propagate | ⬜ Pending | — |
 | T3 | Edit UI: Delete / Ctrl+Z / Ctrl+Shift+Z keybindings + Edit menu (TopBar) + status hints; scenario file started | manual: keyboard + menu drive undo/redo/delete; guards in editable fields | ⬜ Pending | — |
 | T4 | Move tool (M) (Q3-b): toolbar + shortcut, transient drag, ghost preview, grid snap, Esc cancel, single-shot auto-return, `commitElementDrag` → `moveElement` | manual: M + drag wall → wall+bars move in 3D, open 2D section updates on drop; undo reverts all; Select never moves | ⬜ Pending | — |
@@ -104,7 +104,7 @@
 
 ## Task Log
 
-### T1 — Undo core: undo-slice + listener middleware + `restoreProjectSnapshot` + `undo`/`redo` ✅ (2026-08-09, committed `fa864d5`)
+### T1 — Undo core: undo-slice + listener middleware + `restoreProjectSnapshot` + `undo`/`redo` ✅ (2026-08-09, committed `491c5f3`)
 
 **Files added:** `src/stores/undo-slice.ts` (`{ past, future }` frozen-reference snapshots, §E 30-level cap with oldest-trim, session-only per §H.2; reducers `recordSnapshot` / `shiftToPast` / `shiftToFuture` / `clearHistory` — called by the middleware and the undo/redo commands only, per §N), `src/stores/undo-middleware.ts` (Q1-a listener middleware + command-scope middleware, see design note), `src/commands/undo.ts`, `src/commands/redo.ts` (guards: no-op + status hint via `cursorHint` on empty stacks; never themselves recorded), `src/commands/undo.test.ts` (12 tests).
 
