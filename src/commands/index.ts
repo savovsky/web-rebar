@@ -11,6 +11,7 @@ import { deleteBar } from './delete-bar';
 import { deleteElement } from './delete-element';
 import { deleteSection } from './delete-section';
 import { deleteSelection } from './delete-selection';
+import { exportIfc } from './export-ifc';
 import { extendBar } from './extend-bar';
 import { moveElement } from './move-element';
 import { placeBar } from './place-bar';
@@ -26,6 +27,7 @@ export { deleteBar } from './delete-bar';
 export { deleteElement } from './delete-element';
 export { deleteSection } from './delete-section';
 export { deleteSelection } from './delete-selection';
+export { exportIfc } from './export-ifc';
 export { extendBar } from './extend-bar';
 export { moveElement } from './move-element';
 export { placeBar } from './place-bar';
@@ -39,6 +41,7 @@ export type { CreateSectionParams } from './create-section';
 export type { DeleteBarParams } from './delete-bar';
 export type { DeleteElementParams } from './delete-element';
 export type { DeleteSectionParams } from './delete-section';
+export type { ExportIfcResult } from './export-ifc';
 export type { ExtendBarParams } from './extend-bar';
 export type { MoveElementParams } from './move-element';
 export type { PlaceBarParams } from './place-bar';
@@ -53,6 +56,7 @@ export const commandRegistry = {
   deleteElement: { name: 'deleteElement', thunk: deleteElement },
   deleteSection: { name: 'deleteSection', thunk: deleteSection },
   deleteSelection: { name: 'deleteSelection', thunk: deleteSelection },
+  exportIfc: { name: 'exportIfc', thunk: exportIfc },
   extendBar: { name: 'extendBar', thunk: extendBar },
   moveElement: { name: 'moveElement', thunk: moveElement },
   placeBar: { name: 'placeBar', thunk: placeBar },

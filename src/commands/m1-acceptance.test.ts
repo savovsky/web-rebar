@@ -20,6 +20,7 @@ import {
   deleteElement,
   deleteSection,
   deleteSelection,
+  exportIfc,
   extendBar,
   moveElement,
   placeBar,
@@ -317,8 +318,9 @@ const createProbeFixture = (): ProbeFixture => {
   return { store, wallId, barId, sectionId };
 };
 
-/** One dispatch per registry command against the probe fixture. */
-const commandProbes: Record<CommandName, (fixture: ProbeFixture) => void> = {
+/** One dispatch per registry command against the probe fixture. Async
+ *  commands (exportIfc — lazy web-ifc load) return the dispatch promise. */
+const commandProbes: Record<CommandName, (fixture: ProbeFixture) => void | Promise<void>> = {
   placeWall: ({ store }) => {
     store.dispatch(placeWall({ ...WALL_PARAMS, baseElevation: 3000 }));
   },
@@ -351,6 +353,9 @@ const commandProbes: Record<CommandName, (fixture: ProbeFixture) => void> = {
   },
   setActiveSection: ({ store, sectionId }) => {
     store.dispatch(setActiveSection({ sectionId }));
+  },
+  exportIfc: async ({ store }) => {
+    await store.dispatch(exportIfc());
   },
   moveElement: ({ store, wallId }) => {
     store.dispatch(moveElement({ elementId: wallId, delta: MOVE_DELTA }));
@@ -399,7 +404,9 @@ describe('every M0+M1 command is undoable (§E — the review-checklist row that
       const before = fixture.store.getState().project;
       const depthBefore = fixture.store.getState().undo.past.length;
 
-      commandProbes[name](fixture);
+      // void: sync probes return void; the map's widened type (exportIfc is
+      // async) would otherwise trip no-floating-promises.
+      void commandProbes[name](fixture);
 
       const after = fixture.store.getState().project;
       expect(after, name).not.toBe(before);
@@ -417,11 +424,22 @@ describe('every M0+M1 command is undoable (§E — the review-checklist row that
     const depthBefore = fixture.store.getState().undo.past.length;
     const projectBefore = fixture.store.getState().project;
 
-    commandProbes.setActiveSection(fixture);
+    void commandProbes.setActiveSection(fixture);
 
     expect(fixture.store.getState().undo.past).toHaveLength(depthBefore);
     expect(fixture.store.getState().project).toBe(projectBefore);
     expect(fixture.store.getState().ui.activeSectionId).toBe(fixture.sectionId);
+  });
+
+  it('exportIfc records no undo level and mutates nothing — pure read + file output (M2 T2, same precedent as setActiveSection)', async () => {
+    const fixture = createProbeFixture();
+    const depthBefore = fixture.store.getState().undo.past.length;
+    const projectBefore = fixture.store.getState().project;
+
+    await commandProbes.exportIfc(fixture);
+
+    expect(fixture.store.getState().undo.past).toHaveLength(depthBefore);
+    expect(fixture.store.getState().project).toBe(projectBefore);
   });
 
   it('undo/redo themselves are never recorded', () => {
@@ -429,11 +447,11 @@ describe('every M0+M1 command is undoable (§E — the review-checklist row that
     const depthBefore = fixture.store.getState().undo.past.length;
     const projectBefore = fixture.store.getState().project;
 
-    commandProbes.undo(fixture);
+    void commandProbes.undo(fixture);
     expect(fixture.store.getState().undo.past).toHaveLength(depthBefore - 1);
     expect(fixture.store.getState().undo.future).toHaveLength(1);
 
-    commandProbes.redo(fixture);
+    void commandProbes.redo(fixture);
     expect(fixture.store.getState().undo.past).toHaveLength(depthBefore);
     expect(fixture.store.getState().undo.future).toHaveLength(0);
     expect(fixture.store.getState().project).toBe(projectBefore);
