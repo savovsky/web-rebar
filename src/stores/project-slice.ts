@@ -15,7 +15,10 @@ import type {
 
 /** Project state IS the persisted model. Meshes and section primitives are
  *  derived via selectors and never stored (§E, §H.2). */
-type ProjectState = ProjectModel;
+export type ProjectState = ProjectModel;
+
+/** Minimal Vec3 addition — the model stays plain JSON (§H.1), no classes. */
+const addVec3 = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
 
 const initialState: ProjectState = {
   version: '0.1.0',
@@ -53,6 +56,25 @@ const projectSlice = createSlice({
       const bar = state.reinforcement[action.payload.id];
       if (bar) bar.path.push(action.payload.point);
     },
+    /** Host-follow translation (§E revised 2026-08-09): the moveElement command
+     *  dispatches this plus one translateBar per hosted bar — explicit per-entity
+     *  actions like the deleteElement cascade, so the action log shows every
+     *  change and one undo snapshot restores all of it (command scope, Q4-a).
+     *  Walls: the plan axis shifts; baseElevation, thickness, and height are
+     *  untouched. Grows with the element union (slabs/beams/columns, M3/M4). */
+    translateElement(state, action: PayloadAction<{ id: string; delta: Vec3 }>) {
+      const element = state.elements[action.payload.id];
+      if (!element) return;
+      element.startPoint = addVec3(element.startPoint, action.payload.delta);
+      element.endPoint = addVec3(element.endPoint, action.payload.delta);
+    },
+    /** Translates every path point (bending places included) — one bar stays one
+     *  position; dispatched by the moveElement command per hosted bar. */
+    translateBar(state, action: PayloadAction<{ id: string; delta: Vec3 }>) {
+      const bar = state.reinforcement[action.payload.id];
+      if (!bar) return;
+      bar.path = bar.path.map((point) => addVec3(point, action.payload.delta));
+    },
     addSection(state, action: PayloadAction<SectionDefinition>) {
       state.sections[action.payload.id] = action.payload;
     },
@@ -80,6 +102,15 @@ const projectSlice = createSlice({
     removeSection(state, action: PayloadAction<{ id: string }>) {
       delete state.sections[action.payload.id];
     },
+    /** §E undo restore: wholesale replace with a recorded snapshot (a frozen
+     *  Immer reference, Q2-a). Excluded from undo recording (undo-middleware
+     *  matcher) — undo/redo are never themselves recorded. Every reducer above
+     *  keeps the state plain JSON (M0 T11 audit), so any historical snapshot
+     *  restores cleanly; meshes/section primitives re-derive via selectors and
+     *  are never restored (§H.2). */
+    restoreProjectSnapshot(_state, action: PayloadAction<ProjectState>) {
+      return action.payload;
+    },
     resetProject() {
       return initialState;
     },
@@ -95,6 +126,9 @@ export const {
   removeElement,
   removeSection,
   resetProject,
+  restoreProjectSnapshot,
+  translateBar,
+  translateElement,
   updateSectionGeometry,
 } = projectSlice.actions;
 export default projectSlice.reducer;

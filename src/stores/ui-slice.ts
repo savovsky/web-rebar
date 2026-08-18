@@ -4,7 +4,7 @@
 import { type PayloadAction, createSlice } from '@reduxjs/toolkit';
 import type { Vec3 } from '@/data/models';
 
-export type ToolId = 'select' | 'placeWall' | 'placeBar' | 'sectionCut' | 'pan' | 'orbit';
+export type ToolId = 'select' | 'move' | 'placeWall' | 'placeBar' | 'sectionCut' | 'pan' | 'orbit';
 
 interface SelectionState {
   elementIds: string[];

@@ -22,9 +22,11 @@ When a decision must be revisited, update this document and note the revision da
 | --- | --- | --- |
 | **M0: One Wall, One Bar** | Fixed wall in 3D viewport. User places one straight bar at correct cover. One section cuts wall, shows bar as dot. | WASM bundle size/load; section algorithm correctness; Rust↔TS data passing |
 | **M1: Edit + Reactivity** | Move wall → section updates. Undo/redo. | Dependency graph correctness; full recompute performance; undo stack memory |
-| **M2: IFC Round-Trip** | Model wall+bar → export IFC → reload → identical model | IFC schema fit; web-ifc write capability; lossless round-trip |
+| **M2: Adapters Round-Trip (IFC + DXF)** (revised 2026-08-09 — was "IFC Round-Trip") | Model wall+bar → export IFC → reload → identical model. DXF: import 2D linework as a reference background (the doc-11 tracing workflow); export a section view to DXF | IFC schema fit; web-ifc write capability; lossless round-trip; DXF units/blocks/real-file handling; reference-background storage (Layer Model door) |
 | **M3: Real Bar Placement** | Multi-bar placement on face with spacing, cover, edge distance | Face sampling algorithm; collision detection; placement UX |
 | **M4: Multi-Element Building** | 5 floors, 3 wall types, 2 slab types, real reinforcement | Performance at scale; building tree UX; OPFS storage size |
+
+> **Revised 2026-08-09 — M2 scope widened from IFC-only to IFC + DXF adapters (author decision).** Rationale: the POC's job is finding tech walls as early as possible, and DXF is the second §C adapter — probing both in one milestone validates the whole adapter-layer pattern (two adapters prove the pattern; one proves only the exception). DXF's walls are different from IFC's: not parsing (doc 07 rates it low-effort) but units/scale handling, real-world block/insert explosion, and — the one architectural question — **where imported 2D reference linework lives in the model**, which must NOT silently preempt the deferred **Layer Model** topic (decided explicitly in the M2 plan). DXF scope in M2: import as 2D reference background + export of a §G.1 section view. Explicitly out: DXF→3D model entity mapping (DXF carries no 3D design intent — doc 07: "IFC for 3D, DXF for 2D reference drawings") and DWG (stays a Deferred Topic).
 
 **Rationale:** M0-M2 are architecture-validation (prove the stack works). M3-M4 are domain-validation (prove reinforcement algorithms are correct). Each milestone must demonstrate working, interactive code before moving to the next.
 
@@ -99,6 +101,8 @@ When a decision must be revisited, update this document and note the revision da
 
 | Action | Behavior |
 | --- | --- |
+| Hover entity under the Select tool | Pre-selection highlight (hover token) shows exactly which entity a click would select (added 2026-08-09) |
+| Hover entity under the Move tool | "Highlighted = what will move": a WALL winner highlights the wall AND its hosted bars (they move together — host-follow §E); a BAR winner highlights the bar alone and a drag from it does NOTHING (bar-relative moves are M3 scope — the host wall must not move either) (added 2026-08-09) |
 | Click element in viewport | Select, deselect others |
 | Ctrl+Click | Add/remove from selection |
 | Drag-select (marquee) | Select all intersecting |
@@ -106,7 +110,9 @@ When a decision must be revisited, update this document and note the revision da
 | Escape | Deselect all / cancel tool → Select |
 | Shift+scroll wheel | Cycle through overlapping objects under cursor |
 
-Selection priority: smallest entity wins (bar > wall).
+Selection priority: smallest entity wins (bar > wall > section volume). **Revised 2026-08-09:** hover and click share ONE ray-resolution — a bar beats the transparent wall face in front of it only when that wall hosts it (§L.2); a bar hidden in a wall behind never wins; section wireframe volumes are the lowest-priority hit area, so entities inside a volume stay clickable through it.
+
+**Parked (post-POC polish, noted 2026-08-09):** once slabs/beams/columns/openings and annotation (§M) exist, this ordering must become an explicit hover-priority table covering every entity type, and overlapping-entity cycling gets a decided gesture — the Shift+scroll row above vs. Tab-flipping the hovered candidate (pick ONE or support both deliberately). `pickPointerWinner` (src/ui/viewport/hover-target.ts) already computes the ranked candidate list, so cycling is an index into it.
 
 ### B.6 Tool Palette Design
 
@@ -224,17 +230,19 @@ Complex objects stay in TypeScript. Only geometry data crosses the boundary.
 ## E — State Management & Undo/Redo
 
 > **Revised 2026-07-28** — State library changed from Zustand to RTK (Redux Toolkit). Rationale: the author's 10 years of Redux/RTK experience; thunks map one-to-one onto the §N command layer; Immer is built in; Redux DevTools provide action log and time-travel debugging out of the box. The undo design itself is unchanged.
+>
+> **Revised 2026-08-09** — "No auto-follow" replaced by **host-follow**: moving/copying an element moves/copies its hosted reinforcement (bars identified via `hostElementId`) as part of the same command transaction — one undo step restores all of it. There is still **no live dependency graph**: the follow is computed once inside the command, not propagated. Rationale: host-follow matches detailing reality (reinforcement belongs to its element — Allplan behaves the same) and the explicit-cascade pattern was already proven in M0 by `deleteElement` (which removes hosted bars in-command); the original concern was cascading *live* updates, which this does not introduce. Scope: M1 implements translation-follow; rotation is the same class of point transform (later); **mirror** flips bend handedness (a mirrored bar is a different physical shape for the schedule) — a Modify-tools (M3+) concern. Cross-element bars: the host wins — the whole bar follows its host; §K validation flags resulting violations. Placement groups (§F.2, M3): generated bars translate with the host like individual bars; param edits regenerate as before.
 
 **Decision:** RTK (Redux Toolkit) + Immer (built in). Full state snapshots per undo level.
 
 - 30 undo levels (session only, not persisted)
 - Snapshots stored compressed in memory
 - 3D meshes excluded from undo (regenerated on restore)
-- No cascading/derived updates (move wall → bars stay; no auto-follow)
+- Host-follow moves/copies (revised 2026-08-09): move/copy element → hosted bars move/copy with it, in the same command (no live dependency graph — see revision note above)
 
 **Transient interaction state stays out of the store:** during drag/move gestures (60 FPS (Frames Per Second) pointer updates), in-progress values live in component-local state or refs. Only the committed result dispatches a command (on pointer-up / drop). This prevents dispatch overhead and action-log spam.
 
-**Rationale:** Reinforcement does NOT automatically follow element moves (per user requirement). This eliminates cascading state changes and makes snapshot-based undo simple and correct.
+**Rationale:** No cascading/derived *live* updates — all model changes are explicit, in-command, and synchronous (including host-follow, revised 2026-08-09). This eliminates propagation graphs and makes snapshot-based undo simple and correct: one command = one snapshot = exact restore.
 
 **Estimated memory:** ~5-10 MB per snapshot × 30 levels = 150-300 MB worst case. Acceptable for target scale.
 
@@ -288,6 +296,8 @@ interface PlacementGroup {
 1. **Concrete outline at X** → query element profile parameters (b × h rectangle or L/T polygon).
 2. **Cut bars (dots)** → bars whose stored 3D path intersects the section plane (plane-polyline intersection — simple linear math, no BREP kernel needed).
 3. **Background within view depth [X, X+depth]** → stirrups, bars, and element edges projected as lines per drafting convention (typically simplified/dashed beyond the first plane).
+
+**Revised 2026-08-09 (M1 T4 review):** the view is bounded by the **drawn cut line segment** — content (outlines, dots, background) is clipped to the line's u-extent, so the 2D view matches the 3D wireframe volume (line × depth). Previously the cut plane was treated as infinite: an element moved sideways out of the wireframe box kept its outline/dot (and the auto-fit canvas masked the shift), so a move that left the plane's infinite trace did not visibly update the section. All three primitive kinds above are clipped/dropped at the line ends.
 
 Executes in microseconds with pure math. No mesh slicing, no watertightness dependency, clean vector output.
 

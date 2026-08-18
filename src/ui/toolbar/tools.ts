@@ -1,9 +1,19 @@
-// M0 tool set metadata (§B.6). Shortcuts come from shortcuts.json — the single,
-// user-editable (post-M0) mapping. Orbit has no button: it is native mouse input
-// (right/middle-drag), but keeps a definition so the status bar can describe it.
+// Tool palette metadata (§B.6): the M0 set plus the M1 Move tool — the first
+// Modify-category entry (Q3-b). Shortcuts come from shortcuts.json — the
+// single, user-editable (post-M0) mapping. Orbit has no button: it is native
+// mouse input (right/middle-drag), but keeps a definition so the status bar
+// can describe it.
 import type { ComponentType } from 'react';
 import type { ToolId } from '@/stores/ui-slice';
-import { IconOrbit, IconPan, IconPlaceBar, IconPlaceWall, IconSectionCut, IconSelect } from './icons';
+import {
+  IconMove,
+  IconOrbit,
+  IconPan,
+  IconPlaceBar,
+  IconPlaceWall,
+  IconSectionCut,
+  IconSelect,
+} from './icons';
 import shortcuts from './shortcuts.json';
 
 export interface ToolDefinition {
@@ -25,6 +35,13 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     hint: 'Click to select · drag for marquee · Esc to deselect',
     shortcut: SHORTCUT_BY_TOOL.select ?? null,
     icon: IconSelect,
+  },
+  {
+    id: 'move',
+    label: 'Move',
+    hint: 'Drag a wall to move it — its bars follow · Shift disables snap · Esc cancels',
+    shortcut: SHORTCUT_BY_TOOL.move ?? null,
+    icon: IconMove,
   },
   {
     id: 'placeWall',
@@ -63,7 +80,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
 ];
 
-/** The five clickable M0 tools — orbit is mouse-native and has no button. */
+/** The clickable tools — orbit is mouse-native and has no button. */
 export const TOOLBAR_TOOLS = TOOL_DEFINITIONS.filter((tool) => tool.id !== 'orbit');
 
 export const TOOL_BY_ID = new Map<ToolId, ToolDefinition>(TOOL_DEFINITIONS.map((tool) => [tool.id, tool]));

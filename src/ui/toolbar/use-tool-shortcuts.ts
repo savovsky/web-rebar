@@ -1,7 +1,12 @@
-// Global keyboard shortcuts for the tool palette (§B.6 rule 3). The key → tool
-// mapping comes from shortcuts.json; Escape cancels to Select and deselects (§B.5).
+// Global keyboard shortcuts for the tool palette (§B.6 rule 3) plus the M1
+// edit entry points. The key → tool mapping comes from shortcuts.json; Escape
+// cancels to Select and deselects (§B.5). Edit keys: Delete/Backspace delete
+// the current selection, Ctrl+Z undoes, Ctrl+Shift+Z redoes (Figma
+// convention; Cmd works on macOS). Every guard shares isEditableTarget so
+// typing in inputs stays safe.
 import { useEffect } from 'react';
-import { useAppDispatch } from '@/stores/hooks';
+import { deleteSelection, redo, undo } from '@/commands';
+import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { type ToolId, clearSelection, setTool } from '@/stores/ui-slice';
 import { isEditableTarget } from '@/ui/is-editable-target';
 import shortcuts from './shortcuts.json';
@@ -12,9 +17,25 @@ const KEY_TO_TOOL = new Map<string, ToolId>(
 
 export function useToolShortcuts() {
   const dispatch = useAppDispatch();
+  // Delete is inert while a placement draft is in progress (the in-progress
+  // bar is itself selected — deleting it mid-chain would strand the draft);
+  // Esc is the cancel path (§B.6).
+  const isInProgress = useAppSelector((state) => state.ui.isInProgress);
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isEditableTarget(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (isEditableTarget(event.target)) return;
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        dispatch(event.shiftKey ? redo() : undo());
+        return;
+      }
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        if (isInProgress) return;
+        event.preventDefault();
+        dispatch(deleteSelection());
+        return;
+      }
       if (event.key === 'Escape') {
         dispatch(clearSelection());
         dispatch(setTool({ tool: 'select' }));
@@ -25,5 +46,5 @@ export function useToolShortcuts() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [dispatch]);
+  }, [dispatch, isInProgress]);
 }

@@ -7,6 +7,8 @@ export interface ViewportTheme {
   gridCell: string;
   gridSection: string;
   selection: string;
+  hover: string;
+  wireframe: string;
   snapTarget: string;
   preview: string;
 }
@@ -18,6 +20,8 @@ export function useViewportTheme(): ViewportTheme {
       gridCell: readHslToken('--guide-line'),
       gridSection: readHslToken('--primary'),
       selection: readHslToken('--selection'),
+      hover: readHslToken('--hover'),
+      wireframe: readHslToken('--wireframe'),
       snapTarget: readHslToken('--snap-target'),
       preview: readHslToken('--primary'),
     }),

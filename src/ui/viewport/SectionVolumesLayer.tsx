@@ -28,6 +28,7 @@ import { snapPointToGrid } from '@/engine/snapping';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { CLICK_DRAG_TOLERANCE_PX, SECTION_HANDLE_SIZE_MM, SECTION_VOLUME_FILL_OPACITY } from './constants';
 import { CROSSHAIR_RENDER_ORDER } from './draft-crosshair';
+import { clearHoverTarget, pickPointerWinner, setHoverTarget, useIsHoverTarget } from './hover-target';
 import { commitSectionDrag } from './section-volume-drag';
 import { useViewportTheme } from './viewport-theme';
 
@@ -73,7 +74,12 @@ function useSectionDrag(options: UseSectionDragOptions) {
   };
 
   const updateDrag = (event: ThreeEvent<PointerEvent>): void => {
-    if (!drag) return;
+    if (!drag) {
+      // Not dragging: under the Select tool this move feeds the hover picking
+      // (the fill box only wins when no bar/wall along the ray outranks it).
+      if (isSelectTool) setHoverTarget(pickPointerWinner(event.intersections));
+      return;
+    }
     const ground = groundFromEvent(event);
     if (ground) setDrag({ ...drag, currentGround: ground });
   };
@@ -98,6 +104,7 @@ function SectionVolume({ section }: { section: SectionDefinition }) {
   const theme = useViewportTheme();
   const elements = useAppSelector((state) => state.project.elements);
   const isActive = useAppSelector((state) => state.ui.activeSectionId === section.id);
+  const isHovered = useIsHoverTarget('section', section.id);
   const isSelectTool = useAppSelector((state) => state.ui.activeTool === 'select');
   const isSnapEnabled = useAppSelector((state) => state.ui.snapEnabled);
   const gridSpacingMm = useAppSelector((state) => state.ui.gridSpacingMm);
@@ -111,6 +118,12 @@ function SectionVolume({ section }: { section: SectionDefinition }) {
   });
   const heightMm = sectionVolumeHeightMm({ section, elements, fallbackMm: DEFAULT_WALL_DIMENSIONS.height });
   const corners = sectionVolumeCorners({ geometry, heightMm });
+  // Hover outranks active (unlike walls/bars, where selection outranks hover):
+  // the wireframe is the section's only 3D presence, so it must always answer
+  // the cursor — an active section would otherwise never show hover feedback.
+  let edgeColor = theme.wireframe;
+  if (isActive) edgeColor = theme.preview;
+  if (isHovered) edgeColor = theme.hover;
   const volumeTransform = sectionVolumeTransform({ geometry, heightMm });
 
   const edgeGeometry = useMemo(() => {
@@ -133,6 +146,11 @@ function SectionVolume({ section }: { section: SectionDefinition }) {
 
   const handleActivateClick = (event: ThreeEvent<MouseEvent>): void => {
     if (!isSelectTool || event.delta > CLICK_DRAG_TOLERANCE_PX) return;
+    // §B.5: the fill box is a huge invisible hit area — it activates the
+    // section only when no bar/wall along the ray outranks it, so entities
+    // inside the volume stay clickable through the wireframe.
+    const winner = pickPointerWinner(event.intersections);
+    if (winner?.entityType !== 'section' || winner.id !== section.id) return;
     event.stopPropagation(); // keep the ground plane from clearing the selection
     dispatch(setActiveSection({ sectionId: section.id }));
   };
@@ -140,7 +158,8 @@ function SectionVolume({ section }: { section: SectionDefinition }) {
   return (
     <group>
       <lineSegments geometry={edgeGeometry} renderOrder={CROSSHAIR_RENDER_ORDER}>
-        <lineBasicMaterial color={isActive ? theme.preview : theme.gridCell} depthTest={false} />
+        {/* Hover outranks active; both outrank the plain wireframe ink. */}
+        <lineBasicMaterial color={edgeColor} depthTest={false} />
       </lineSegments>
       {/* Grab/activate fill — invisible for inactive volumes, subtle when active. */}
       <mesh
@@ -151,6 +170,10 @@ function SectionVolume({ section }: { section: SectionDefinition }) {
         onPointerDown={(event) => startDrag({ event, kind: 'move' })}
         onPointerMove={updateDrag}
         onPointerUp={finishDrag}
+        onPointerOut={() => {
+          if (isSelectTool) clearHoverTarget({ entityType: 'section', id: section.id });
+        }}
+        userData={{ entityType: 'section', entityId: section.id }}
       >
         <boxGeometry args={[1, 1, 1]} />
         <meshBasicMaterial
