@@ -149,21 +149,45 @@ function chordThroughFootprint(corners: Vec3[], depths: number[]): [Vec3, Vec3] 
   return farthestPair(dedupePoints(hits));
 }
 
+/** u-extent of the cut line segment in section coordinates — the section
+ *  view is bounded by the drawn line (§G.1 revised 2026-08-09), matching the
+ *  3D wireframe volume (line × depth). Content beyond the line ends is not
+ *  part of the section. */
+interface LineExtent {
+  uMin: number;
+  uMax: number;
+}
+
+function lineExtentOf(section: SectionDefinition, frame: SectionFrame): LineExtent {
+  const uA = projectToSection(section.lineStart, frame).point.u;
+  const uB = projectToSection(section.lineEnd, frame).point.u;
+  return { uMin: Math.min(uA, uB), uMax: Math.max(uA, uB) };
+}
+
+interface WallOutlineOptions {
+  wall: WallGeometryParams;
+  frame: SectionFrame;
+  extent: LineExtent;
+}
+
 /**
  * The wall's cross-section AT the cut plane: the plane's chord through the
  * plan footprint, extruded over the wall height — a rectangle in section
- * coordinates (u along the chord, v up). Null when the plane misses the wall.
+ * coordinates (u along the chord, v up), clipped to the cut line extent
+ * (§G.1 revised). Null when the plane misses the wall or the chord lies
+ * entirely beyond the line ends.
  */
-function wallOutlineAtPlane(wall: WallGeometryParams, frame: SectionFrame): SectionPoint[] | null {
+function wallOutlineAtPlane(options: WallOutlineOptions): SectionPoint[] | null {
+  const { wall, frame, extent } = options;
   const corners = wallFootprintCorners(wall);
   const depths = corners.map((corner) => dot(subtract(corner, frame.origin), frame.forward));
   const chord = chordThroughFootprint(corners, depths);
   if (chord === null) return null;
   const uStart = projectToSection(chord[0], frame).point.u;
   const uEnd = projectToSection(chord[1], frame).point.u;
-  const uMin = Math.min(uStart, uEnd);
-  const uMax = Math.max(uStart, uEnd);
-  if (uMax - uMin < PLANE_TOLERANCE_MM) return null; // grazing touch — no area
+  const uMin = Math.max(Math.min(uStart, uEnd), extent.uMin);
+  const uMax = Math.min(Math.max(uStart, uEnd), extent.uMax);
+  if (uMax - uMin < PLANE_TOLERANCE_MM) return null; // grazing touch or fully beyond the line ends
   const vBase = wall.baseElevation - frame.origin.y;
   const vTop = vBase + wall.height;
   return [
@@ -180,6 +204,7 @@ export interface WallBackgroundOptions {
   wall: WallGeometryParams;
   frame: SectionFrame;
   viewDepthMm: number;
+  extent: LineExtent;
   /** The cut outline, when the plane slices the wall — background edges
    *  coincident with its sides are dropped (they would double the line). */
   outline: SectionPoint[] | null;
@@ -194,7 +219,7 @@ export interface WallBackgroundOptions {
  * emitted.
  */
 function wallBackgroundLines(options: WallBackgroundOptions): SectionPoint[][] {
-  const { wall, frame, viewDepthMm, outline } = options;
+  const { wall, frame, viewDepthMm, extent, outline } = options;
   const vBase = wall.baseElevation - frame.origin.y;
   const vTop = vBase + wall.height;
   const emittedUs: number[] = [];
@@ -202,6 +227,13 @@ function wallBackgroundLines(options: WallBackgroundOptions): SectionPoint[][] {
   for (const corner of wallFootprintCorners(wall)) {
     const { point, depthMm } = projectToSection(corner, frame);
     if (depthMm <= PLANE_TOLERANCE_MM || depthMm > viewDepthMm + PLANE_TOLERANCE_MM) continue;
+    // Beyond the cut line ends the edge is not part of this section (§G.1 revised).
+    if (
+      point.u < extent.uMin - COINCIDENCE_TOLERANCE_MM ||
+      point.u > extent.uMax + COINCIDENCE_TOLERANCE_MM
+    ) {
+      continue;
+    }
     const isCoincidentWithOutline =
       outline !== null &&
       (Math.abs(point.u - outline[0].u) < COINCIDENCE_TOLERANCE_MM ||
@@ -244,20 +276,45 @@ function clipToDepthSlab(options: ClipToDepthSlabOptions): [SectionPoint, Sectio
   return [lerp(t0), lerp(t1)];
 }
 
+interface ClipToURangeOptions {
+  a: SectionPoint;
+  b: SectionPoint;
+  extent: LineExtent;
+}
+
+/** Clips a 2D segment to the cut line's u-extent (§G.1 revised). */
+function clipToURange(options: ClipToURangeOptions): [SectionPoint, SectionPoint] | null {
+  const { a, b, extent } = options;
+  const span = b.u - a.u;
+  if (Math.abs(span) < PLANE_TOLERANCE_MM) {
+    // Constant u: entirely inside or outside the extent.
+    return a.u >= extent.uMin && a.u <= extent.uMax ? [a, b] : null;
+  }
+  let tNear = (extent.uMin - a.u) / span;
+  let tFar = (extent.uMax - a.u) / span;
+  if (tNear > tFar) [tNear, tFar] = [tFar, tNear];
+  const t0 = Math.max(0, tNear);
+  const t1 = Math.min(1, tFar);
+  if (t1 - t0 < PLANE_TOLERANCE_MM) return null;
+  const lerp = (t: number): SectionPoint => ({ u: a.u + t * span, v: a.v + t * (b.v - a.v) });
+  return [lerp(t0), lerp(t1)];
+}
+
 interface BarBackgroundOptions {
   bar: ReinforcementBar;
   frame: SectionFrame;
   viewDepthMm: number;
+  extent: LineExtent;
 }
 
 /**
- * Bar segments behind the plane, clipped to the view-depth slab and projected
- * (§G.2.3 "dashed continuation"). Segments running along the view direction
- * project to a point and are dropped — end-on bars within the depth are an M0
- * simplification.
+ * Bar segments behind the plane, clipped to the view-depth slab AND the cut
+ * line extent (§G.1 revised) and projected (§G.2.3 "dashed continuation").
+ * Segments running along the view direction project to a point and are
+ * dropped — end-on bars within the depth are an M0 simplification.
  */
 function barBackgroundLines(options: BarBackgroundOptions): SectionPoint[][] {
-  const { bar, frame, viewDepthMm } = options;
+  const { bar, frame, viewDepthMm, extent } = options;
   const lines: SectionPoint[][] = [];
   for (let i = 0; i < bar.path.length - 1; i++) {
     const clipped = clipToDepthSlab({
@@ -266,7 +323,9 @@ function barBackgroundLines(options: BarBackgroundOptions): SectionPoint[][] {
       viewDepthMm,
     });
     if (clipped === null) continue;
-    const [p, q] = clipped;
+    const inRange = clipToURange({ a: clipped[0], b: clipped[1], extent });
+    if (inRange === null) continue;
+    const [p, q] = inRange;
     if (Math.hypot(q.u - p.u, q.v - p.v) < MIN_LINE_LENGTH_MM) continue;
     lines.push([p, q]);
   }
@@ -283,10 +342,17 @@ const flattenPath = (path: Vec3[]): Float64Array => {
   return flat;
 };
 
-/** Dots where the bar's stored path crosses the plane (0..n per bar). The
- *  diameter travels with the dot — section dots keep true relative diameters
- *  (§M.4). */
-function cutBarDots(bar: ReinforcementBar, frame: SectionFrame): CutBarDot[] {
+interface CutBarDotsOptions {
+  bar: ReinforcementBar;
+  frame: SectionFrame;
+  extent: LineExtent;
+}
+
+/** Dots where the bar's stored path crosses the plane (0..n per bar), bounded
+ *  by the cut line extent (§G.1 revised). The diameter travels with the dot —
+ *  section dots keep true relative diameters (§M.4). */
+function cutBarDots(options: CutBarDotsOptions): CutBarDot[] {
+  const { bar, frame, extent } = options;
   const crossings = planePolylineIntersection({
     planeOrigin: frame.origin,
     planeNormal: frame.forward,
@@ -295,7 +361,14 @@ function cutBarDots(bar: ReinforcementBar, frame: SectionFrame): CutBarDot[] {
   const dots: CutBarDot[] = [];
   for (let i = 0; i < crossings.length; i += COMPONENTS_PER_POINT) {
     const point: Vec3 = { x: crossings[i], y: crossings[i + 1], z: crossings[i + 2] };
-    dots.push({ center: projectToSection(point, frame).point, diameterMm: bar.diameter });
+    const center = projectToSection(point, frame).point;
+    if (
+      center.u < extent.uMin - COINCIDENCE_TOLERANCE_MM ||
+      center.u > extent.uMax + COINCIDENCE_TOLERANCE_MM
+    ) {
+      continue; // beyond the cut line ends — not part of this section
+    }
+    dots.push({ center, diameterMm: bar.diameter });
   }
   return dots;
 }
@@ -316,22 +389,26 @@ export interface ComputeSectionPrimitivesParams {
 export function computeSectionPrimitives(params: ComputeSectionPrimitivesParams): SectionPrimitives {
   const { section, elements, reinforcement } = params;
   const frame = getSectionFrame(section.plane);
+  // §G.1 revised 2026-08-09: the view is bounded by the drawn cut line
+  // segment (× viewDepth) — matching the 3D wireframe volume; content beyond
+  // the line ends is clipped/dropped.
+  const extent = lineExtentOf(section, frame);
   const concreteOutlines: SectionPoint[][] = [];
   const backgroundLines: SectionPoint[][] = [];
   for (const elementId of section.targetElementIds) {
     const element = elements[elementId];
     if (!element) continue;
-    const outline = wallOutlineAtPlane(element, frame);
+    const outline = wallOutlineAtPlane({ wall: element, frame, extent });
     if (outline !== null) concreteOutlines.push(outline);
     backgroundLines.push(
-      ...wallBackgroundLines({ wall: element, frame, viewDepthMm: section.viewDepth, outline }),
+      ...wallBackgroundLines({ wall: element, frame, viewDepthMm: section.viewDepth, extent, outline }),
     );
   }
   const cutBars: CutBarDot[] = [];
   for (const bar of Object.values(reinforcement)) {
     if (!section.targetElementIds.includes(bar.hostElementId)) continue;
-    cutBars.push(...cutBarDots(bar, frame));
-    backgroundLines.push(...barBackgroundLines({ bar, frame, viewDepthMm: section.viewDepth }));
+    cutBars.push(...cutBarDots({ bar, frame, extent }));
+    backgroundLines.push(...barBackgroundLines({ bar, frame, viewDepthMm: section.viewDepth, extent }));
   }
   return { concreteOutlines, cutBars, backgroundLines };
 }

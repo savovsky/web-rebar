@@ -1,5 +1,6 @@
 {
   "select": "v",
+  "move": "m",
   "placeWall": "w",
   "placeBar": "b",
   "sectionCut": "s",

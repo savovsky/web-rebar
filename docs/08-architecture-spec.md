@@ -100,6 +100,7 @@ When a decision must be revisited, update this document and note the revision da
 | Action | Behavior |
 | --- | --- |
 | Hover entity under the Select tool | Pre-selection highlight (hover token) shows exactly which entity a click would select (added 2026-08-09) |
+| Hover entity under the Move tool | "Highlighted = what will move": a WALL winner highlights the wall AND its hosted bars (they move together — host-follow §E); a BAR winner highlights the bar alone and a drag from it does NOTHING (bar-relative moves are M3 scope — the host wall must not move either) (added 2026-08-09) |
 | Click element in viewport | Select, deselect others |
 | Ctrl+Click | Add/remove from selection |
 | Drag-select (marquee) | Select all intersecting |
@@ -293,6 +294,8 @@ interface PlacementGroup {
 1. **Concrete outline at X** → query element profile parameters (b × h rectangle or L/T polygon).
 2. **Cut bars (dots)** → bars whose stored 3D path intersects the section plane (plane-polyline intersection — simple linear math, no BREP kernel needed).
 3. **Background within view depth [X, X+depth]** → stirrups, bars, and element edges projected as lines per drafting convention (typically simplified/dashed beyond the first plane).
+
+**Revised 2026-08-09 (M1 T4 review):** the view is bounded by the **drawn cut line segment** — content (outlines, dots, background) is clipped to the line's u-extent, so the 2D view matches the 3D wireframe volume (line × depth). Previously the cut plane was treated as infinite: an element moved sideways out of the wireframe box kept its outline/dot (and the auto-fit canvas masked the shift), so a move that left the plane's infinite trace did not visibly update the section. All three primitive kinds above are clipped/dropped at the line ends.
 
 Executes in microseconds with pure math. No mesh slicing, no watertightness dependency, clean vector output.
 

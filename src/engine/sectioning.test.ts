@@ -106,8 +106,12 @@ describe('computeSectionPrimitives — concrete outline (parametric query)', () 
   it('widens the outline for an oblique cut and keeps the genuine end edge', () => {
     // 45° plane near the wall end: chord through the footprint is wider than
     // the thickness; the corner behind the plane is a visible edge at u = 0.
+    // The cut line spans z ∈ [-500, 500] through the plane origin — real
+    // sections always keep line and plane consistent (createSection does).
     const result = compute({
       section: makeSection({
+        lineStart: { x: 3900, y: 0, z: -500 },
+        lineEnd: { x: 3900, y: 0, z: 500 },
         plane: { origin: { x: 3900, y: 0, z: 0 }, normal: { x: 1, y: 0, z: 1 } },
         viewDepth: 1000,
       }),
@@ -162,6 +166,72 @@ describe('computeSectionPrimitives — concrete outline (parametric query)', () 
   it('skips missing target elements (sections survive target deletion)', () => {
     const result = compute({ section: makeSection({ targetElementIds: [WALL.id, 'deleted-wall'] }) });
     expect(result.concreteOutlines).toHaveLength(1);
+  });
+});
+
+describe('computeSectionPrimitives — bounded by the cut line extent (§G.1 revised 2026-08-09)', () => {
+  // The fixture line spans z ∈ [-500, 500] at x = 2000 → u-extent [-500, 500].
+  const wallAtZ = (z: number): WallElement => ({
+    ...WALL,
+    startPoint: { x: 0, y: 0, z },
+    endPoint: { x: 4000, y: 0, z },
+  });
+
+  it('clips a partially overlapping outline to the line ends', () => {
+    // Wall axis at z = 450 → footprint z ∈ [350, 550]: the chord is clipped
+    // to the extent at u = 500.
+    const result = compute({ section: makeSection(), wall: wallAtZ(450) });
+    expect(result.concreteOutlines).toEqual([
+      [
+        { u: 350, v: 0 },
+        { u: 500, v: 0 },
+        { u: 500, v: 2800 },
+        { u: 350, v: 2800 },
+      ],
+    ]);
+  });
+
+  it('drops content fully beyond the line ends (the T4 author scenario)', () => {
+    // Wall axis at z = 700 → footprint z ∈ [600, 800], bar at z = 769: the
+    // infinite plane still crosses both, but nothing lies within the line.
+    const result = compute({
+      section: makeSection(),
+      wall: wallAtZ(700),
+      bars: [
+        makeBar([
+          { x: 500, y: 1400, z: 769 },
+          { x: 3500, y: 1400, z: 769 },
+        ]),
+      ],
+    });
+    expect(result).toEqual({ concreteOutlines: [], cutBars: [], backgroundLines: [] });
+  });
+
+  it('clips background bar segments at the line ends and keeps a dot exactly on the line end', () => {
+    const result = compute({
+      section: makeSection(),
+      bars: [
+        // Diagonal behind the plane: u runs 69 → 1069, clipped at u = 500.
+        makeBar([
+          { x: 2500, y: 500, z: 69 },
+          { x: 3500, y: 500, z: 1069 },
+        ]),
+        // Straight bar crossing the plane exactly at the line end (u = 500).
+        makeBar(
+          [
+            { x: 500, y: 500, z: 500 },
+            { x: 3500, y: 500, z: 500 },
+          ],
+          { id: 'bar-2' },
+        ),
+      ],
+    });
+    expect(result.cutBars).toHaveLength(1);
+    expect(result.cutBars[0].center.u).toBeCloseTo(500);
+    expect(result.backgroundLines).toContainEqual([
+      { u: 69, v: 500 },
+      { u: 500, v: 500 },
+    ]);
   });
 });
 

@@ -94,19 +94,20 @@ describe('M1 reactivity — the selector graph re-derives after every edit class
     // Memoized: no state change → the identical reference, no recompute.
     expect(selectSectionPrimitives(store.getState(), sectionId)).toBe(baseline);
 
-    // Move the wall 1000 mm along +Z — still crossed by the cut plane.
-    store.dispatch(moveElement({ elementId: wallId, delta: { x: 0, y: 0, z: 1000 } }));
+    // Move the wall 300 mm along +Z — still crossed by the cut plane AND
+    // within the cut line extent (z ∈ [200, 400] ⊂ [-500, 500], §G.1 revised).
+    store.dispatch(moveElement({ elementId: wallId, delta: { x: 0, y: 0, z: 300 } }));
 
     const moved = selectSectionPrimitives(store.getState(), sectionId);
     if (moved === null) throw new Error('expected primitives');
     expect(moved).not.toBe(baseline); // re-derived from the new project state
     expect(moved.concreteOutlines).toHaveLength(1);
     const movedUs = moved.concreteOutlines[0].map((point) => point.u);
-    expect(Math.min(...movedUs)).toBeCloseTo(baselineURange[0] + 1000); // outline follows the wall
-    expect(Math.max(...movedUs)).toBeCloseTo(baselineURange[1] + 1000);
+    expect(Math.min(...movedUs)).toBeCloseTo(baselineURange[0] + 300); // outline follows the wall
+    expect(Math.max(...movedUs)).toBeCloseTo(baselineURange[1] + 300);
     expect(moved.cutBars).toHaveLength(1);
     const [movedDot] = moved.cutBars;
-    expect(movedDot.center.u).toBeCloseTo(baselineDot.center.u + 1000); // the bar followed its host
+    expect(movedDot.center.u).toBeCloseTo(baselineDot.center.u + 300); // the bar followed its host
     expect(movedDot.center.v).toBeCloseTo(BAR_HEIGHT_MM);
     expect(movedDot.diameterMm).toBe(DEFAULT_BAR_DIAMETER_MM);
     // The offset from the covered face survives the move exactly (host-follow).
@@ -115,6 +116,25 @@ describe('M1 reactivity — the selector graph re-derives after every edit class
     // One undo restores wall + bar to the pre-move state exactly — the exact
     // project reference comes back, so the memoized selector returns the
     // baseline primitives object itself.
+    store.dispatch(undo());
+    expect(selectSectionPrimitives(store.getState(), sectionId)).toBe(baseline);
+  });
+
+  it('moveElement SIDEWAYS beyond the cut line extent: the outline/dot set empties (§G.1 revised — the T4 author scenario)', () => {
+    const { store, wallId, sectionId, baseline } = createFixture();
+
+    // The infinite cut plane still crosses the wall after a +Z move — but the
+    // section view is bounded by the drawn line (z ∈ [-500, 500]), so the
+    // content must disappear, matching the 3D wireframe volume.
+    store.dispatch(moveElement({ elementId: wallId, delta: { x: 0, y: 0, z: 10_000 } }));
+
+    const moved = selectSectionPrimitives(store.getState(), sectionId);
+    if (moved === null) throw new Error('expected primitives');
+    expect(moved).not.toBe(baseline); // re-derived — the change IS visible
+    expect(moved.concreteOutlines).toEqual([]);
+    expect(moved.cutBars).toEqual([]);
+    expect(moved.backgroundLines).toEqual([]);
+
     store.dispatch(undo());
     expect(selectSectionPrimitives(store.getState(), sectionId)).toBe(baseline);
   });

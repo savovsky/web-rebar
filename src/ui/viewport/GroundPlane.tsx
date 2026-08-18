@@ -37,10 +37,13 @@ export function GroundPlane() {
     // While a bar draft runs, the cursor lives on the captured wall face
     // (tracked by WallMesh), not on the ground.
     if (draftKind === 'bar') return;
-    // Hover picking (§B.5): every Select-tool move handler resolves the same
-    // winner from the same intersection list — idempotent writes, so event
-    // order is irrelevant; empty ground resolves to null and clears the hover.
-    if (activeTool === 'select') setHoverTarget(pickPointerWinner(event.intersections));
+    // Hover picking (§B.5): every Select/Move-tool move handler resolves the
+    // same winner from the same intersection list — idempotent writes, so
+    // event order is irrelevant; empty ground resolves to null and clears the
+    // hover. Move hover is identical to Select (a bar highlights as a bar —
+    // and a drag starting on a bar does nothing; only walls are drag targets).
+    const isHoverTool = activeTool === 'select' || activeTool === 'move';
+    if (isHoverTool) setHoverTarget(pickPointerWinner(event.intersections));
     setCursorPoint(resolvePoint(event));
   };
 

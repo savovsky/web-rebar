@@ -45,3 +45,10 @@ This folder collects **behavioral test scenarios**, captured session by session 
 | [M1-S07](./m1-edit-and-reactivity.md#m1-s07--edit-menu-entries-shortcut-labels-and-disabled-states) | Edit menu entries, shortcut labels and disabled states | M1 T3 | ✅ manual 2026-08-09 |
 | [M1-S08](./m1-edit-and-reactivity.md#m1-s08--edit-shortcuts-guard-editable-fields-and-in-progress-drafts) | Edit shortcuts guard editable fields and in-progress drafts | M1 T3 | ✅ manual 2026-08-09 |
 | [M1-S09](./m1-edit-and-reactivity.md#m1-s09--hover-highlight-previews-the-click-winner) | Hover highlight previews the click winner | M1 T3 | ✅ manual 2026-08-09 |
+| [M1-S10](./m1-edit-and-reactivity.md#m1-s10--move-tool-drags-the-wall-with-its-bars-section-updates-on-drop-one-undo-level) | Move tool drags the wall with its bars; section updates on drop; one undo level | M1 T4 | ✅ manual 2026-08-09 |
+| [M1-S11](./m1-edit-and-reactivity.md#m1-s11--grid-snapping-applies-to-the-drag-delta-shift-disables-it) | Grid snapping applies to the drag delta; Shift disables it | M1 T4 | ✅ manual 2026-08-09 |
+| [M1-S12](./m1-edit-and-reactivity.md#m1-s12--esc--tool-switch-cancels-mid-drag-click-is-not-a-drag) | Esc / tool switch cancels mid-drag; click is not a drag | M1 T4 | ✅ manual 2026-08-09 |
+| [M1-S13](./m1-edit-and-reactivity.md#m1-s13--move-is-single-shot-double-click-locks-it-sticky) | Move is single-shot; double-click locks it sticky | M1 T4 | ✅ manual 2026-08-09 |
+| [M1-S14](./m1-edit-and-reactivity.md#m1-s14--move-picking-highlighted--what-will-move) | Move picking: highlighted = what will move | M1 T4 | ✅ manual 2026-08-09 |
+| [M1-S15](./m1-edit-and-reactivity.md#m1-s15--move-shortcut-guards) | Move shortcut guards | M1 T4 | ✅ manual 2026-08-09 |
+| [M1-S16](./m1-edit-and-reactivity.md#m1-s16--section-content-is-bounded-by-the-cut-line) | Section content is bounded by the cut line | M1 T4 | ✅ manual 2026-08-09 |
