@@ -223,7 +223,9 @@ Complex objects stay in TypeScript. Only geometry data crosses the boundary.
 
 **Decision:** Use existing `web-ifc` TypeScript library for IFC geometry parsing.
 
-**Fallback:** If web-ifc proves insufficient for write support or specific IFC entities, write a custom Rust IFC parser. Documented as a known risk to validate in M2.
+**Fallback:** If web-ifc proves insufficient for write support or specific IFC entities, write a custom IFC parser. Documented as a known risk to validate in M2.
+
+> **Revised 2026-08-18 (M2 T1 — write-capability spike verdict, plan Q1-a):** web-ifc write support **CONFIRMED — the fallback is NOT executed.** The decision-gate probe (`src/io/ifc-write-spike.test.ts`) wrote a minimal IFC4 file (IfcWallStandardCase extrusion + IfcReinforcingBar swept disk + the design-intent property sets) entirely through web-ifc's write API and re-read it losslessly: (i) all entities + properties survived web-ifc's own save/load; (ii) doubles round-tripped *exactly* (17-significant-digit SPF output) — far inside the 1e-6 mm gate; (iii) the artifact `docs/test-fixtures/ifc/m2-t1-spike.ifc` opens and imports completely in the author's Allplan 2022 (wall + bar created, zero ignored/defective; a bare `edmiImportStepFile (11108)` modal line with no failing entity is accepted as a non-blocking Allplan reader notice). Three exporter-convention requirements beyond the schema minimum were found through this check and recorded for the adapter: material layer set usage on walls, an Axis shape representation (2D Curve2D) alongside Body, and an MVD-correct FILE_DESCRIPTION (web-ifc defaults to the IFC2X3 name — override via `CreateModel({ description })`). Two refinements recorded with the verdict: the fallback, had it been needed, is a **custom TypeScript IFC-SPF writer in `src/io/`** (not Rust — §D.2 puts IFC I/O in TS and `core/` stays IFC-free per §C; approved M2 plan Q1), and web-ifc is **lazy-loaded** via dynamic import (`src/io/web-ifc-loader.ts`) so its 3.5 MB JS / 1.3 MB WASM never enter the shell bundle.
 
 ---
 
