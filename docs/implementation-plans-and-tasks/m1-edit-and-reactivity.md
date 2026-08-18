@@ -98,7 +98,7 @@
 | T2 | Edit commands: `moveElement` (+ `translateElement`/`translateBar` reducers, host-follow per §E revised), `deleteSection`; headless reactivity proofs (§A dependency-graph probe) | unit tests: move → wall+bars translate, section primitives re-derive; one undo restores all; deletes propagate | ✅ Done | `fa5ed7c` |
 | T3 | Edit UI: Delete / Ctrl+Z / Ctrl+Shift+Z keybindings + Edit menu (TopBar) + status hints; hover picking (author review addition); scenario file started | manual: keyboard + menu drive undo/redo/delete; guards in editable fields; hover previews click winner | ✅ Done | `ece79bf` |
 | T4 | Move tool (M) (Q3-b): toolbar + shortcut, transient drag, live-offset render (decided in task), grid snap, Esc cancel, single-shot auto-return, `commitElementDrag` → `moveElement`; review fixes: "highlighted = what will move" picking + §G.1 bounded cut line | manual: M + drag wall → wall+bars move in 3D, open 2D section updates on drop; undo reverts all; Select never moves; bar grab moves nothing | ✅ Done | `8a2233a` |
-| T5 | Performance probes: full-recompute benchmark + undo-stack memory measurement (§A risks) | numbers reported in task log; assertions green | ✅ Done | this commit |
+| T5 | Performance probes: full-recompute benchmark + undo-stack memory measurement (§A risks) | numbers reported in task log; assertions green | ✅ Done | `44cd8b5` |
 | T6 | M1 acceptance pass: `m1-acceptance.test.ts` + checklist audit (incl. undo-per-command row) + docs/scenarios sweep | checklist verdict table green; lint/test/build green | ⬜ Pending | — |
 
 ---
