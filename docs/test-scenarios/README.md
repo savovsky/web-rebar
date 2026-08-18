@@ -52,3 +52,4 @@ This folder collects **behavioral test scenarios**, captured session by session 
 | [M1-S14](./m1-edit-and-reactivity.md#m1-s14--move-picking-highlighted--what-will-move) | Move picking: highlighted = what will move | M1 T4 | ✅ manual 2026-08-09 |
 | [M1-S15](./m1-edit-and-reactivity.md#m1-s15--move-shortcut-guards) | Move shortcut guards | M1 T4 | ✅ manual 2026-08-09 |
 | [M1-S16](./m1-edit-and-reactivity.md#m1-s16--section-content-is-bounded-by-the-cut-line) | Section content is bounded by the cut line | M1 T4 | ✅ manual 2026-08-09 |
+| [M1-S17](./m1-edit-and-reactivity.md#m1-s17--milestone-acceptance-move-wall--wallbars-update--section-updates--one-step-undoredo) | Milestone acceptance: move wall → wall+bars update → section updates → one-step undo/redo | M1 T6 | ✅ manual 2026-08-09 |

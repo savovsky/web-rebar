@@ -1,7 +1,7 @@
 # M1 Test Scenarios — Edit + Reactivity
 
 > **Back to:** [Test Scenarios](./README.md) · [M1 tracker](../implementation-plans-and-tasks/m1-edit-and-reactivity.md)
-> Created 2026-08-09 (T3) — persists the approved T1+T2 manual test lists (M1-S01…S03) and the T3 edit-UI + hover-picking checks (M1-S04…S09). Extended 2026-08-09 (T4) with the Move tool + bounded-section checks (M1-S10…S16).
+> Created 2026-08-09 (T3) — persists the approved T1+T2 manual test lists (M1-S01…S03) and the T3 edit-UI + hover-picking checks (M1-S04…S09). Extended 2026-08-09 (T4) with the Move tool + bounded-section checks (M1-S10…S16). Extended 2026-08-09 (T6) with the milestone acceptance scenario (M1-S17).
 
 ---
 
@@ -132,3 +132,11 @@
 - **Given:** two parallel walls with a bar each, one section cut across both, 2D panel open
 - **When:** moving the second wall SIDEWAYS out of the section wireframe volume, then the first; then undoing; separately, dragging a wall only partway past the cut line end
 - **Then:** each wall's outline and dot DISAPPEAR from the 2D view as it leaves the wireframe box (not merely shift); after the second move the panel immediately shows "No geometry in this view" (no reshape needed); undo restores both step by step; a partial crossing shows the outline clipped exactly at the cut line end
+
+### M1-S17 — Milestone acceptance: move wall → wall+bars update → section updates → one-step undo/redo
+
+**Covers:** T6 (the §A acceptance sentence) · **Status:** ✅ manual 2026-08-09 · **Headless counterpart:** `src/commands/m1-acceptance.test.ts` (the sentence end-to-end through the §N commands, also at reference scale + the 30-level cap + the every-command-undoable registry probe)
+
+- **Given:** a wall with two hosted bars (W, then B twice at the default cover), a section cut through the wall (S) with the 2D panel OPEN
+- **When:** (a) dragging the wall with the Move tool (M) to a new position still crossed by the cut; (b) pressing Ctrl+Z once, then Ctrl+Shift+Z once; (c) making 30+ further edits (moves, placements, deletes) and then pressing Ctrl+Z 30 times
+- **Then:** (a) the wall AND both bars move together in 3D and the open 2D section updates on the drop — the outline follows the wall and both bar dots keep their cover offset from the covered face; (b) ONE Ctrl+Z restores the wall and both bars to the exact pre-move positions (the 2D view returns to the pre-move picture) and Ctrl+Shift+Z re-applies the move exactly; (c) exactly 30 undo steps are available (the oldest edits are beyond the cap) and the 31st Ctrl+Z shows "Nothing to undo" without changing anything
