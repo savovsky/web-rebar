@@ -12,7 +12,7 @@
 
 The building structure (walls, beams, columns, slabs, foundations, sections, …) is modeled **using external imported DXF/IFC files as background layers** — the drafter traces/dimensions over the architect's plans rather than starting from a blank canvas.
 
-**Connections:** §C import adapters (IFC/DXF) · M2 IFC round-trip · the *Sketch Underlay* deferred topic (image/PDF underlay at scale — the same "work over a background" pattern).
+**Connections:** §C import adapters (IFC/DXF) · M2 adapters round-trip (IFC + DXF — §A revised 2026-08-09: DXF import as 2D reference background is in M2 scope) · the *Sketch Underlay* deferred topic (image/PDF underlay at scale — the same "work over a background" pattern).
 
 ### 2. Reinforcement is authored element-by-element, floor-by-floor
 

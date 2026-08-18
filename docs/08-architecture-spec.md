@@ -22,9 +22,11 @@ When a decision must be revisited, update this document and note the revision da
 | --- | --- | --- |
 | **M0: One Wall, One Bar** | Fixed wall in 3D viewport. User places one straight bar at correct cover. One section cuts wall, shows bar as dot. | WASM bundle size/load; section algorithm correctness; Rust↔TS data passing |
 | **M1: Edit + Reactivity** | Move wall → section updates. Undo/redo. | Dependency graph correctness; full recompute performance; undo stack memory |
-| **M2: IFC Round-Trip** | Model wall+bar → export IFC → reload → identical model | IFC schema fit; web-ifc write capability; lossless round-trip |
+| **M2: Adapters Round-Trip (IFC + DXF)** (revised 2026-08-09 — was "IFC Round-Trip") | Model wall+bar → export IFC → reload → identical model. DXF: import 2D linework as a reference background (the doc-11 tracing workflow); export a section view to DXF | IFC schema fit; web-ifc write capability; lossless round-trip; DXF units/blocks/real-file handling; reference-background storage (Layer Model door) |
 | **M3: Real Bar Placement** | Multi-bar placement on face with spacing, cover, edge distance | Face sampling algorithm; collision detection; placement UX |
 | **M4: Multi-Element Building** | 5 floors, 3 wall types, 2 slab types, real reinforcement | Performance at scale; building tree UX; OPFS storage size |
+
+> **Revised 2026-08-09 — M2 scope widened from IFC-only to IFC + DXF adapters (author decision).** Rationale: the POC's job is finding tech walls as early as possible, and DXF is the second §C adapter — probing both in one milestone validates the whole adapter-layer pattern (two adapters prove the pattern; one proves only the exception). DXF's walls are different from IFC's: not parsing (doc 07 rates it low-effort) but units/scale handling, real-world block/insert explosion, and — the one architectural question — **where imported 2D reference linework lives in the model**, which must NOT silently preempt the deferred **Layer Model** topic (decided explicitly in the M2 plan). DXF scope in M2: import as 2D reference background + export of a §G.1 section view. Explicitly out: DXF→3D model entity mapping (DXF carries no 3D design intent — doc 07: "IFC for 3D, DXF for 2D reference drawings") and DWG (stays a Deferred Topic).
 
 **Rationale:** M0-M2 are architecture-validation (prove the stack works). M3-M4 are domain-validation (prove reinforcement algorithms are correct). Each milestone must demonstrate working, interactive code before moving to the next.
 

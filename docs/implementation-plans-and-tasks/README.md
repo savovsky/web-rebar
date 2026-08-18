@@ -26,6 +26,6 @@ From root README → "Rules for Implementation Sessions": command layer only (§
 |---|---|---|
 | M0: One Wall, One Bar | [m0-one-wall-one-bar.md](./m0-one-wall-one-bar.md) | ✅ Complete (T1–T11, 2026-08-09) |
 | M1: Edit + Reactivity | [m1-edit-and-reactivity.md](./m1-edit-and-reactivity.md) | ✅ Complete (T1–T6, 2026-08-09; F3 resolved — accepted at M1 scale, revisit at M3/M4) |
-| M2: IFC Round-Trip | — | ⬜ Not planned |
+| M2: Adapters Round-Trip (IFC + DXF — §A revised 2026-08-09, was IFC-only) | — | ⬜ Not planned |
 | M3: Real Bar Placement | — | ⬜ Not planned |
 | M4: Multi-Element Building | — | ⬜ Not planned |
