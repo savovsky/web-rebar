@@ -7,7 +7,7 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **M1: ✅ PLAN APPROVED (2026-08-09)** — Q1–Q4 answered (see below); §E revised to host-follow. M0 is ✅ complete ([tracker](./m0-one-wall-one-bar.md)); branch `A_MVP_Scope_M1`. **T1 ✅ complete** (undo core, 2026-08-09); **T2 ✅ complete** (edit commands + reactivity proofs, 2026-08-09 — see task log); **T3 ✅ complete** (edit UI: keyboard + Edit menu + hover picking — see task log); **T4 ✅ complete** (Move tool + §G.1 bounded-section revision — see task log; render approach decided: **live-offset**); **T5 is next**.
+- **M1: ✅ PLAN APPROVED (2026-08-09)** — Q1–Q4 answered (see below); §E revised to host-follow. M0 is ✅ complete ([tracker](./m0-one-wall-one-bar.md)); branch `A_MVP_Scope_M1`. **T1 ✅ complete** (undo core, 2026-08-09); **T2 ✅ complete** (edit commands + reactivity proofs, 2026-08-09 — see task log); **T3 ✅ complete** (edit UI: keyboard + Edit menu + hover picking — see task log); **T4 ✅ complete** (Move tool + §G.1 bounded-section revision — see task log; render approach decided: **live-offset**); **T5 ✅ complete** (performance probes, approved 2026-08-09 — the §5 recompute probe passes at ~3.5 ms median; **finding F3 stays OPEN: the `moveElement` dispatch itself exceeds the 16 ms frame budget at reference scale (~37 ms median) — author's decision pending, candidates in the T5 task log**); **T6 is next**.
 - **Workflow (same as M0):** implement one task → `pnpm lint` + `pnpm test` + `pnpm build` green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
 - **Manual test scenarios:** `docs/test-scenarios/m1-edit-and-reactivity.md` (created in T3; M1-S01…S09 — root README rule 7).
 - **Known console warning (report-only, 2026-08-09):** `THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.` fires once on app load. Source: R3F 9.7.0's internal root store (`clock: new THREE.Clock()` in its dist) × three r183+ deprecation — not our code (no `Clock`/`state.clock` usage anywhere in `src/`; Drei clean). Harmless; R3F v10 (alpha) has already removed `state.clock` entirely, so the warning disappears with the future R3F 10 upgrade. No action — do NOT patch R3F (Timer's API differs; a naive swap would break frame deltas) and do NOT downgrade three for a cosmetic warning.
@@ -98,7 +98,7 @@
 | T2 | Edit commands: `moveElement` (+ `translateElement`/`translateBar` reducers, host-follow per §E revised), `deleteSection`; headless reactivity proofs (§A dependency-graph probe) | unit tests: move → wall+bars translate, section primitives re-derive; one undo restores all; deletes propagate | ✅ Done | `fa5ed7c` |
 | T3 | Edit UI: Delete / Ctrl+Z / Ctrl+Shift+Z keybindings + Edit menu (TopBar) + status hints; hover picking (author review addition); scenario file started | manual: keyboard + menu drive undo/redo/delete; guards in editable fields; hover previews click winner | ✅ Done | `ece79bf` |
 | T4 | Move tool (M) (Q3-b): toolbar + shortcut, transient drag, live-offset render (decided in task), grid snap, Esc cancel, single-shot auto-return, `commitElementDrag` → `moveElement`; review fixes: "highlighted = what will move" picking + §G.1 bounded cut line | manual: M + drag wall → wall+bars move in 3D, open 2D section updates on drop; undo reverts all; Select never moves; bar grab moves nothing | ✅ Done | `8a2233a` |
-| T5 | Performance probes: full-recompute benchmark + undo-stack memory measurement (§A risks) | numbers reported in task log; assertions green | ⬜ Pending | — |
+| T5 | Performance probes: full-recompute benchmark + undo-stack memory measurement (§A risks) | numbers reported in task log; assertions green | ✅ Done | this commit |
 | T6 | M1 acceptance pass: `m1-acceptance.test.ts` + checklist audit (incl. undo-per-command row) + docs/scenarios sweep | checklist verdict table green; lint/test/build green | ⬜ Pending | — |
 
 ---
@@ -204,3 +204,48 @@
 7. **Tool switch mid-drag:** M → start dragging → press W (or V) mid-drag → release the mouse: nothing commits, the wall snaps back, the newly chosen tool is active.
 8. **Guards:** with a text field focused, M is ignored (same `isEditableTarget` guard); undo/redo/Delete keep working exactly as in M1-S04…S08 after any move.
 9. **Section bounded by the cut line (§G.1 revised):** the reported scenario — 2 parallel walls with a bar each, one section across both: move the second wall SIDEWAYS out of the section wireframe → its outline and dot DISAPPEAR from the 2D view (not just shift); move the first wall out the same way → the 2D view immediately shows "No geometry in this view" (no reshape needed); undo brings both back step by step. Also: drag a wall only PARTWAY past the line end → the 2D outline is clipped exactly at the line end.
+
+### T5 — Performance probes: full-recompute benchmark + undo-stack memory (§A risks) ✅ (2026-08-09, approved by the author — commit hash in the tracker row)
+
+**Files added:** `src/commands/reference-project.ts` (the §5 reference-scale fixture — 50 walls on a 5×10 grid × 20 bars = 1,000 bars + 5 sections (one per grid column, each cutting its 10 walls), built ENTIRELY through the §N commands `placeWall`/`placeBar`/`createSection` with the Place Bar tool's own placement math; bars are 3-point L-shapes so mesh regen exercises the swept-bend path; reusable by the T6 acceptance pass), `src/commands/performance-probes.ts` (`createBenchmarkStore` — see design note; `measureRetainedBytes` — structural-sharing-aware retained-size estimator; `timingStats`; `formatBytes`), `src/commands/m1-performance.test.ts` (3 tests: scale sanity, full-recompute benchmark, undo-stack memory). **No existing files changed — zero app-behavior impact.**
+
+**Measured numbers (2026-08-09, author machine, production middleware set — medians over 12 timed runs after 3 warm-ups):**
+
+*Full recompute @ 50 walls × 20 bars = 1,000 bars + 5 sections, one `moveElement` (wall + 20 hosted bars, host-follow):*
+
+| Component | Median | Max |
+| --- | --- | --- |
+| `selectSectionPrimitives` — the ONE open section (10 outlines, 200 dots) | 2.33 ms | 4.52 ms |
+| `selectSectionPrimitives` — all 5 sections (conservative bound) | 8.05 ms | 10.41 ms |
+| `createBarGeometry` × 20 changed bars (WASM swept meshes) | 1.02 ms | 1.93 ms |
+| **§5 probe (open section + meshes) — the plan's assertion** | **3.51 ms** | 5.65 ms |
+| §5 probe bound (all 5 sections + meshes) | 9.28 ms | 11.79 ms |
+| `moveElement` dispatch (reported, ESCALATED — see F3) | 37.43 ms | 49.62 ms |
+| Full frame incl. dispatch (reported, ESCALATED — see F3) | 41.13 ms | 55.28 ms |
+
+**§5 verdict: the full-recompute probe passes — 3.51 ms median (max 5.65 ms) vs the 16 ms budget, and even the all-5-sections bound fits (9.28 ms). §E's "no incremental dependency graph, full recompute" decision is validated for the derived-data graph at 5× the M1 acceptance scale.**
+
+*Undo-stack memory @ reference scale (Q2-a frozen references + Immer structural sharing, measured by `measureRetainedBytes` — an identity-deduped graph walk with documented V8 layout estimates, NOT a profiler; 30 `moveElement` edits, one per wall, cap already full → steady-state):*
+
+| Metric | Measured | §E estimate |
+| --- | --- | --- |
+| One full project snapshot (JSON.stringify) | 299.9 KiB (naive ×30 = 8.79 MiB) | — |
+| Undo slice alone, before → after the 30 edits | 605.6 KiB → 842.0 KiB (depth stays 30) | — |
+| Current project + undo slice, total after 30 edits | 856.6 KiB (growth 250.3 KiB) | — |
+| **Incremental retained per edit level** | **mean 8.3 KiB, max 14.5 KiB** | **5–10 MiB/level** |
+
+**Memory verdict: Q2-a confirmed decisively — ~600–1,200× under the §E per-level estimate. The ENTIRE app state at reference scale with a full 30-level history is under 1 MiB (vs the §E worst case of 150–300 MiB). Structural sharing works exactly as designed: each level retains only the changed wall/bar objects plus the new record shells (~8 KiB).**
+
+**⚠️ F3 — ESCALATED FINDING (author decision needed, NOT fixed — one-task rule):** the `moveElement` DISPATCH itself costs ~37 ms median (max ~50 ms) at reference scale — over the 16 ms frame budget. Root cause measured: the host-follow cascade is 20 sequential `translateBar` actions, and each Immer produce copies the 1,000-entry `reinforcement` record — ~1.5–3.5 ms per bar action vs 0.14 ms for the 50-entry `elements` record (O(record size) per action × 20). This is production-real (Immer autofreeze is on in production), not a dev artifact. Candidate directions (deliberately NOT implemented in T5 — they touch T2's explicit-per-bar-cascade design decision): (a) batch the cascade into ONE produce (one record copy instead of 20 — e.g. a single `translateElements`/`translateBars` reducer; the action log would show one batched action instead of 20 per-bar actions); (b) accept at M1 scale — the reference project is 5× the acceptance scale and §L/M4 is the performance milestone; (c) decide with the M3/M4 edit-workflow scope when bigger cascades arrive. The test keeps a clearly-labeled 100 ms regression tripwire on the dispatch (catches regressions BEYOND the current architecture's cost; the 16 ms budget itself was NOT weakened — the §5 probe asserts it and passes, and the overage is escalated here rather than absorbed). Related dev-mode note (report-only): `pnpm dev` runs RTK's serializable+immutable invariant middleware (dev-only — `configureStore` omits them in production builds) — at reference scale that is ~170 ms per dispatch and ~44 s for the 1,055-command fixture build, so the benchmarks run on `createBenchmarkStore` (identical reducers + undo chain, production middleware set); the dev app keeps the checks. If F3(a) is ever acted on, the reference build gets proportionally faster too.
+
+**Design notes:**
+- **Benchmarks are regression tripwires, not micro-benchmarks:** warm-ups (3) + medians over 12 runs + generous thresholds; assertions use medians so a single GC pause lands in the reported max, not in a flaky failure. Measured numbers above; the tests print them via `console.info` (visible with `--disable-console-intercept` or on failure).
+- **The §5 probe measures what the app re-derives per edit:** the memoized `selectSectionPrimitives` for the OPEN section (the app shows one 2D section view) + `createBarGeometry` per bar whose object identity changed (exactly what `BarMesh`'s `useMemo([bar])` rebuilds) — timed AFTER the `moveElement` dispatch, per the plan. The dispatch is timed and reported separately (→ F3).
+- **Memory is measured at the `{ project, undo }` root, not the undo slice alone** — snapshots share structure with the LIVE state, so an isolated undo-slice walk would miscount (early probe iterations even produced negative deltas). The undo-slice-alone numbers are still reported for the record.
+- **Fixture determinism:** geometry is fully deterministic (fixed grid, fixed bar shapes); only UUIDs vary and nothing performance-relevant depends on them. Sanity assertions guard the probe itself (10 outlines / 200 dots on the open section, 3-point bar paths, non-empty meshes, undo depth = 30, positive incremental retention).
+
+**Verification:** `pnpm lint` ✅ · `pnpm test` ✅ (184 vitest — 3 new: reference-scale build sanity, full-recompute benchmark, undo-stack memory) · `pnpm build` ✅ (chunk-size warning is the pre-existing three.js bundle, deferred per M0 T3).
+
+**Manual test list (rule 7):** this is a HEADLESS task — no UI was added or changed and no existing file was modified (three new files: fixture, probe helpers, benchmark test). Nothing new to test manually in the app; as a regression spot-check only:
+1. `pnpm dev` → the app behaves exactly as at T4 (one wall + bar + section + Move-drag + undo sanity pass is sufficient).
+2. Headless: `pnpm test m1-performance` → 3 green tests (~8 s); to see the measurement tables, run `pnpm vitest run src/commands/m1-performance.test.ts --disable-console-intercept`.
