@@ -1,7 +1,7 @@
 # M2 Test Scenarios — Adapters Round-Trip (IFC + DXF)
 
 > **Back to:** [Test Scenarios](./README.md) · [M2 tracker](../implementation-plans-and-tasks/m2-adapters-round-trip.md)
-> Created 2026-08-18 (T3 session) — persists the approved T1–T2.5 manual test lists (M2-S01…S03) and records T3's headless IFC round-trip acceptance (M2-S04). T4 (File menu + browser round-trip) and T5–T7 (DXF) extend this file.
+> Created 2026-08-18 (T3 session) — persists the approved T1–T2.5 manual test lists (M2-S01…S03) and records T3's headless IFC round-trip acceptance (M2-S04). Extended 2026-08-18 (T4 session) with the browser round-trip (M2-S05) and the foreign-file skip behavior (M2-S06 — ⚠️ superseded by T6.5/Q7). T5–T7 (DXF) extend this file next.
 
 ---
 
@@ -36,3 +36,19 @@
 - **Given:** a model built through the app's command layer — a wall (plus an elevated one) and a bent bar placed at 25 mm cover
 - **When:** the model is exported to IFC and the resulting file is imported into a fresh project
 - **Then:** the imported model is identical — same entity ids, wall parameters and bar paths exactly equal, design intent (cover distance, host, steel grade, diameter) exactly equal; the import is ONE undo step (undo removes the whole import exactly, redo re-applies it); a file containing foreign entities (no design-intent property sets or unsupported element types) imports the supported ones and reports the skipped count; importing the same file twice, a bar whose host is missing, or a non-IFC file are rejected with a clear error and change nothing
+
+### M2-S05 — Browser IFC round-trip via the File menu
+
+**Covers:** T4 · **Status:** ✅ manual 2026-08-18 (author) · **Headless counterpart:** `src/commands/import-ifc.test.ts` (T3) + `src/ui/shell/ifc-status-hints.test.ts` (T4 hint formatting)
+
+- **Given:** the app running (`pnpm dev`) with a wall (W) and a bent bar (B — chained 3-click L-shape on a wall side face) placed in the viewport
+- **When:** File → Export IFC (first use shows the "…IFC module loads on first use" status hint while web-ifc lazy-loads; a `<project name>.ifc` download lands), then File → Import IFC… with that file picked in the file input
+- **Then:** the re-imported wall + bar appear next to the originals; the status bar summarizes from `ImportIfcModelSummary` ("Imported 1 wall + 1 bar"); exactly ONE Ctrl+Z removes the whole import, Ctrl+Shift+Z re-applies it; importing the SAME file a second time is rejected ("Import rejected: … duplicate … id") and changes nothing; a non-IFC file renamed `.ifc` is rejected ("…not an IFC-SPF file…") with NO WASM crash/hang (the SPF-envelope guard); both File entries are disabled while a transfer is in flight; the exported file opens cleanly in Allplan 2022 (wall + bent bar, 0 ignored/defective)
+
+### M2-S06 — Foreign IFC file imports with skip-count summary (pre-T6.5 behavior)
+
+**Covers:** T4 (Q2 skip-and-report, exercised on a real foreign file) · **Status:** ✅ manual 2026-08-18 (author — `docs/test-fixtures/ifc/2026.07.12 BE TP APP.ifc`, Advance Steel 2018, IFC2X3 SteelFabricationView, 11 MB) · **⚠️ SUPERSEDED BY T6.5:** when Q7 lands, this file must instead produce ONE render-only reference document with 4,008 solids — update this scenario in the T6.5 commit
+
+- **Given:** a foreign IFC file with no web-rebar design-intent psets (the Advance Steel export: 1,598 plates / 455 beams / 124 accessories / 60 members / 5 columns / 1,766 openings)
+- **When:** File → Import IFC… with that file
+- **Then:** the import succeeds without a crash; the status bar reports "Imported 0 walls + 0 bars · skipped 4008: 4008 unsupported elements"; the model is unchanged (nothing to undo)

@@ -6,18 +6,13 @@
 import { Content, Item, Portal, Root, Separator, Trigger } from '@radix-ui/react-dropdown-menu';
 import { deleteSelection, redo, undo } from '@/commands';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
-
-const TRIGGER_CLASS =
-  'rounded-sm px-panel py-0.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring ' +
-  'data-[state=open]:bg-accent data-[state=open]:text-foreground';
-const CONTENT_CLASS = 'z-50 min-w-44 rounded-md border border-border bg-panel p-1 shadow-md';
-const ITEM_CLASS =
-  'flex cursor-default select-none items-center justify-between gap-panel rounded-sm px-panel py-1 ' +
-  'text-xs text-foreground outline-none data-[highlighted]:bg-accent ' +
-  'data-[disabled]:pointer-events-none data-[disabled]:text-muted-foreground';
-const SHORTCUT_CLASS = 'ml-4 font-mono text-muted-foreground';
-const SEPARATOR_CLASS = 'my-1 h-px bg-border';
+import {
+  MENU_CONTENT_CLASS,
+  MENU_ITEM_CLASS,
+  MENU_SEPARATOR_CLASS,
+  MENU_SHORTCUT_CLASS,
+  MENU_TRIGGER_CLASS,
+} from './menu-styles';
 
 export function EditMenu() {
   const dispatch = useAppDispatch();
@@ -33,18 +28,22 @@ export function EditMenu() {
   );
   return (
     <Root>
-      <Trigger className={TRIGGER_CLASS}>Edit</Trigger>
+      <Trigger className={MENU_TRIGGER_CLASS}>Edit</Trigger>
       <Portal>
-        <Content align='start' className={CONTENT_CLASS}>
-          <Item disabled={!canUndo} onSelect={() => dispatch(undo())} className={ITEM_CLASS}>
-            Undo <span className={SHORTCUT_CLASS}>Ctrl+Z</span>
+        <Content align='start' className={MENU_CONTENT_CLASS}>
+          <Item disabled={!canUndo} onSelect={() => dispatch(undo())} className={MENU_ITEM_CLASS}>
+            Undo <span className={MENU_SHORTCUT_CLASS}>Ctrl+Z</span>
           </Item>
-          <Item disabled={!canRedo} onSelect={() => dispatch(redo())} className={ITEM_CLASS}>
-            Redo <span className={SHORTCUT_CLASS}>Ctrl+Shift+Z</span>
+          <Item disabled={!canRedo} onSelect={() => dispatch(redo())} className={MENU_ITEM_CLASS}>
+            Redo <span className={MENU_SHORTCUT_CLASS}>Ctrl+Shift+Z</span>
           </Item>
-          <Separator className={SEPARATOR_CLASS} />
-          <Item disabled={!canDelete} onSelect={() => dispatch(deleteSelection())} className={ITEM_CLASS}>
-            Delete <span className={SHORTCUT_CLASS}>Del</span>
+          <Separator className={MENU_SEPARATOR_CLASS} />
+          <Item
+            disabled={!canDelete}
+            onSelect={() => dispatch(deleteSelection())}
+            className={MENU_ITEM_CLASS}
+          >
+            Delete <span className={MENU_SHORTCUT_CLASS}>Del</span>
           </Item>
         </Content>
       </Portal>

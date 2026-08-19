@@ -183,6 +183,8 @@ Managed in `ui-slice.ts` alongside selection state. Tool activation dispatches a
 
 > **Revised 2026-08-18 (M2 T2.5):** model space migrated from Y-up (Three.js's convention, inherited in M0) to Z-up before the IFC import adapter landed — the M2 T2 `toIfcPoint` rotation (x, −z, y) was deleted in the same change, and T3's import reads coordinates verbatim. Migration cost at M0–M2 scale: ~20 source files + test fixtures; after M3 (modify tools, placement groups) it would have roughly doubled.
 
+> **Revised 2026-08-18 (M2 plan Q7, author decision — foreign IFC products import as render-only reference solids, task T6.5):** IFC entities with geometry but no web-rebar design-intent psets (foreign files — e.g. an Advance Steel model) import as **triangulated dummy solids** in `referenceDocuments` (render-only: never editable, never picked, never sectioned, feeding no computation) instead of skip-and-report only. This preserves §C's rationale exactly — IFC results stay RESULTS; the adapter never invents design intent from foreign geometry. Intent re-derivation (geometric host containment, cover defaults) stays M4 scope, unchanged.
+
 ---
 
 ## D — WASM / TypeScript Boundary
@@ -230,6 +232,8 @@ Complex objects stay in TypeScript. Only geometry data crosses the boundary.
 **Fallback:** If web-ifc proves insufficient for write support or specific IFC entities, write a custom IFC parser. Documented as a known risk to validate in M2.
 
 > **Revised 2026-08-18 (M2 T1 — write-capability spike verdict, plan Q1-a):** web-ifc write support **CONFIRMED — the fallback is NOT executed.** The decision-gate probe (`src/io/ifc-write-spike.test.ts`) wrote a minimal IFC4 file (IfcWallStandardCase extrusion + IfcReinforcingBar swept disk + the design-intent property sets) entirely through web-ifc's write API and re-read it losslessly: (i) all entities + properties survived web-ifc's own save/load; (ii) doubles round-tripped *exactly* (17-significant-digit SPF output) — far inside the 1e-6 mm gate; (iii) the artifact `docs/test-fixtures/ifc/m2-t1-spike.ifc` opens and imports completely in the author's Allplan 2022 (wall + bar created, zero ignored/defective; a bare `edmiImportStepFile (11108)` modal line with no failing entity is accepted as a non-blocking Allplan reader notice). Three exporter-convention requirements beyond the schema minimum were found through this check and recorded for the adapter: material layer set usage on walls, an Axis shape representation (2D Curve2D) alongside Body, and an MVD-correct FILE_DESCRIPTION (web-ifc defaults to the IFC2X3 name — override via `CreateModel({ description })`). Two refinements recorded with the verdict: the fallback, had it been needed, is a **custom TypeScript IFC-SPF writer in `src/io/`** (not Rust — §D.2 puts IFC I/O in TS and `core/` stays IFC-free per §C; approved M2 plan Q1), and web-ifc is **lazy-loaded** via dynamic import (`src/io/web-ifc-loader.ts`) so its 3.5 MB JS / 1.3 MB WASM never enter the shell bundle.
+
+> **Revised 2026-08-18 (M2 plan Q7):** web-ifc's triangulated-geometry API (`LoadAllGeometry` → flat vertex/index arrays per product, §D.3-compatible) is the geometry source for foreign reference solids (task T6.5) — no BREP kernel is introduced for dummy-solid import.
 
 ---
 
@@ -373,6 +377,8 @@ interface ProjectFile {
   layouts: DrawingLayout[];
 }
 ```
+
+> **Revised 2026-08-18 (M2 plan Q7-a):** `referenceDocuments` (arriving with M2 T5, plan Q3) may carry **typed-array geometry** (Float32 positions / Uint32 indices) for IFC reference solids (T6.5) — a deliberate, dated bend of the "project.json is JSON-clean" contract: meshes live in `ProjectModel` so undo snapshots stay frozen-reference-cheap (the M1 T5 finding), and the §H implementation task will either serialize them (base64) or migrate document geometry to OPFS-binary sidecar files referenced from project.json. The decision lands WITH §H persistence, not before.
 
 ### H.2 What Is NOT Persisted
 
