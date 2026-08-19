@@ -125,7 +125,7 @@
 | T1 | web-ifc integration (lazy-loaded) + write-capability spike (Q1) + decision gate | spike test green against gate criteria; verdict + §D.4 revision recorded | ✅ Done | `56802cb` |
 | T2 | IFC export adapter: mapping module + `exportIfc` command (Q2 psets, GlobalId ids) | headless entity-graph tests; registry probe updated | ✅ Done | `2ec0af1` |
 | T2.5 | Model space Y-up → Z-up migration (author decision 2026-08-18; §C coordinate convention) | lint + 214 tests + build green; rotation deleted from the IFC adapter; author re-verifies the T2 artifact in Allplan | ✅ Done | `d842910` |
-| T3 | IFC import adapter + `importIfcModel` command + round-trip identical-model probe | the §A round-trip test green (ids, 1e-6 mm, intent) | ✅ Done | `f17204f` |
+| T3 | IFC import adapter + `importIfcModel` command + round-trip identical-model probe | the §A round-trip test green (ids, 1e-6 mm, intent) | ✅ Done | `9c8ccf4` |
 | T4 | File menu + IFC import/export UI wiring (lazy web-ifc, downloads, status hints) | manual: browser round-trip; author opens .ifc in external viewer | ⬜ Pending | — |
 | T5 | ⚠️ **Fixture gate — check first.** DXF import core: dxf-parser + mapping layer (units, bulge, blocks), ReferenceDocument model (Q3), 3 commands | unit tests: units table, bulge, block explosion, undo | ⬜ Pending | — |
 | T6 | ⚠️ **Fixture gate — check first.** Background rendering + endpoint/midpoint tracing snaps + Backgrounds panel section + Import DXF menu | manual: real-file import at true scale; wall traced over it | ⬜ Pending | — |
@@ -270,4 +270,4 @@
 
 **Green:** `pnpm lint` ✅ · `pnpm test` ✅ 225 tests / 31 files (214 → +11) · `pnpm build` ✅ (shell bundle unchanged at 1,272 kB — see the T4 finding above)
 
-**Commit:** `f17204f`
+**Commit:** `9c8ccf4`
