@@ -22,6 +22,7 @@ import {
   deleteSelection,
   exportIfc,
   extendBar,
+  importIfcModel,
   moveElement,
   placeBar,
   placeWall,
@@ -37,6 +38,7 @@ import {
   type ReferenceStore,
   buildReferenceProject,
 } from '@/commands/reference-project';
+import { getImportProbeBytes } from '@/commands/test-utils';
 import { getWallFaceFrame, resolveBarCenterline } from '@/engine/placement';
 import { type SectionPrimitives, selectSectionPrimitives } from '@/engine/sectioning';
 import { initWasmFromDisk } from '@/engine/wasm-test-init';
@@ -362,6 +364,9 @@ const commandProbes: Record<CommandName, (fixture: ProbeFixture) => void | Promi
   exportIfc: async ({ store }) => {
     await store.dispatch(exportIfc());
   },
+  importIfcModel: async ({ store }) => {
+    await store.dispatch(importIfcModel({ buffer: await getImportProbeBytes() }));
+  },
   moveElement: ({ store, wallId }) => {
     store.dispatch(moveElement({ elementId: wallId, delta: MOVE_DELTA }));
   },
@@ -391,7 +396,7 @@ describe('every M0+M1 command is undoable (§E — the review-checklist row that
     expect(Object.keys(commandProbes).sort()).toEqual(Object.keys(commandRegistry).sort());
   });
 
-  it('each project-mutating command records exactly ONE undo level and restores the exact pre-command reference on undo/redo', () => {
+  it('each project-mutating command records exactly ONE undo level and restores the exact pre-command reference on undo/redo', async () => {
     const mutating: CommandName[] = [
       'placeWall',
       'placeBar',
@@ -403,15 +408,16 @@ describe('every M0+M1 command is undoable (§E — the review-checklist row that
       'deleteElement',
       'deleteSection',
       'deleteSelection',
+      'importIfcModel',
     ];
     for (const name of mutating) {
       const fixture = createProbeFixture();
       const before = fixture.store.getState().project;
       const depthBefore = fixture.store.getState().undo.past.length;
 
-      // void: sync probes return void; the map's widened type (exportIfc is
-      // async) would otherwise trip no-floating-promises.
-      void commandProbes[name](fixture);
+      // Awaiting is type-neutral: sync probes return void, async ones
+      // (exportIfc/importIfcModel — lazy web-ifc load) a promise.
+      await commandProbes[name](fixture);
 
       const after = fixture.store.getState().project;
       expect(after, name).not.toBe(before);

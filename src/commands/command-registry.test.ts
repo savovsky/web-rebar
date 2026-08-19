@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { commandRegistry } from '@/commands';
 
 describe('commandRegistry', () => {
-  it('exposes all commands (8 M0 + undo/redo T1 + moveElement/deleteSection T2 + deleteSelection T3 + exportIfc M2-T2) under names matching their keys', () => {
+  it('exposes all commands (8 M0 + undo/redo T1 + moveElement/deleteSection T2 + deleteSelection T3 + exportIfc M2-T2 + importIfcModel M2-T3) under names matching their keys', () => {
     expect(Object.keys(commandRegistry).sort()).toEqual([
       'createSection',
       'deleteBar',
@@ -11,6 +11,7 @@ describe('commandRegistry', () => {
       'deleteSelection',
       'exportIfc',
       'extendBar',
+      'importIfcModel',
       'moveElement',
       'placeBar',
       'placeWall',
