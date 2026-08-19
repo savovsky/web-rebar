@@ -1,18 +1,21 @@
 # ⚠️ TEMP session prompt — M2 T3 (IFC import adapter + round-trip probe)
 
-> Point a fresh AI session at this file (or paste its content). **Delete this file once the T3 session has started** — the durable record is the M2 tracker. Created 2026-08-18 after M2 T2 (commit on branch `A_MVP_Scope_M2`).
+> Point a fresh AI session at this file (or paste its content). **Delete this file once the T3 session has started** — the durable record is the M2 tracker. Created 2026-08-18 after M2 T2; updated 2026-08-18 after **M2 T2.5** (model space Y-up → Z-up migration — finding #1 below is now "coordinates are IDENTITY"). Branch `A_MVP_Scope_M2`.
 
 ---
 
 I'm working on a browser-based reinforced concrete drawing app ("web-rebar").
 Read C:\work\personal\projects\web-rebar\README.md first — it has session state
-(M0 + M1 ✅ complete; M2 T1 ✅ 2026-08-18, T2 ✅ 2026-08-18, branch
+(M0 + M1 ✅ complete; M2 T1 ✅ 2026-08-18, T2 ✅ 2026-08-18, T2.5 ✅
+2026-08-18 — model space is now Z-up right-handed, matching IFC; branch
 A_MVP_Scope_M2) and the Rules for Implementation Sessions. Then read
 docs/08-architecture-spec.md (especially §A revised, §C, §D.4 revised
 2026-08-18, §E, §G.1, §N) and the approved plan
 docs/implementation-plans-and-tasks/m2-adapters-round-trip.md — including the
-T1 task log (the three Allplan exporter conventions + Q1 gate verdict) AND the
-T2 task log, which records four findings T3 MUST consume (listed below).
+T1 task log (the three Allplan exporter conventions + Q1 gate verdict), the
+T2 task log, AND the T2.5 task log (Z-up migration — supersedes T2 finding #1
+and records the verbatim-coordinate guidance for the round-trip probe). The
+four findings T3 MUST consume are listed below.
 
 Task: implement the next ⬜ Pending task from the M2 tracker — T3: IFC import
 adapter + `importIfcModel` command + the round-trip identical-model probe
@@ -39,14 +42,16 @@ in docs/test-fixtures/dxf/, gitignored) — no gate check needed for T3/T4.
 
 ## T2 findings T3 MUST consume (from the T2 task log — read it in full)
 
-1. **Coordinate inverse.** Export maps model (Y-up mm) → IFC (Z-up mm) as
-   `(x, y, z)model → (x, −z, y)ifc` (proper rotation, reflection-free).
-   Import MUST apply the exact inverse `(x, z, −y)`. Wall export shape: local
-   placement origin = (startPoint.x, −startPoint.z, baseElevation), X along
-   the axis, Z up; body = length × thickness IfcRectangleProfileDef extruded
-   +Z by height; the Axis/Curve2D rep is the reference line (placement +
-   profile are authoritative — the Axis rep is a cross-check). Bars: swept
-   disk directrix = the converted full centerline path incl. bending places.
+1. **Coordinates are IDENTITY (superseded by T2.5, 2026-08-18).** The model
+   space was migrated to Z-up right-handed mm (the engineering convention —
+   plan in X–Y, elevation in +Z), identical to IFC: `toIfcPoint` was deleted
+   and import reads coordinates VERBATIM — there is no transform and no
+   inverse. Wall export shape: local placement origin =
+   (startPoint.x, startPoint.y, baseElevation), X along the axis, Z up; body
+   = length × thickness IfcRectangleProfileDef extruded +Z by height; the
+   Axis/Curve2D rep is the reference line (placement + profile are
+   authoritative — the Axis rep is a cross-check). Bars: swept disk
+   directrix = the full centerline path incl. bending places, verbatim.
 2. **IFC4 naming.** IfcRelContainedInSpatialStructure's product list attribute
    is `RelatedElements` in IFC4 (IFC2X3's `RelatedObjects` was renamed);
    web-ifc's flattened lines follow IFC4 naming. IfcRelDefinesByProperties

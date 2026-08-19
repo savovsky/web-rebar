@@ -18,8 +18,8 @@ const createStoreWithBar = () => {
       hostElementId: wallId,
       diameter: 12,
       path: [
-        { x: 0, y: 500, z: 69 },
-        { x: 4000, y: 500, z: 69 },
+        { x: 0, y: 69, z: 500 },
+        { x: 4000, y: 69, z: 500 },
       ],
     }),
   );
@@ -29,14 +29,14 @@ const createStoreWithBar = () => {
 describe('extendBar', () => {
   it('appends a segment to the same bar — the bar stays one position', () => {
     const { store, barId } = createStoreWithBar();
-    const returnedId = store.dispatch(extendBar({ barId, point: { x: 4000, y: 2000, z: 69 } }));
-    store.dispatch(extendBar({ barId, point: { x: 500, y: 2000, z: 69 } }));
+    const returnedId = store.dispatch(extendBar({ barId, point: { x: 4000, y: 69, z: 2000 } }));
+    store.dispatch(extendBar({ barId, point: { x: 500, y: 69, z: 2000 } }));
 
     const state = store.getState().project;
     expect(returnedId).toBe(barId);
     expect(Object.keys(state.reinforcement)).toHaveLength(1);
     expect(state.reinforcement[barId].path).toHaveLength(4);
-    expect(state.reinforcement[barId].path[3]).toEqual({ x: 500, y: 2000, z: 69 });
+    expect(state.reinforcement[barId].path[3]).toEqual({ x: 500, y: 69, z: 2000 });
   });
 
   it('rejects an unknown bar', () => {
@@ -50,7 +50,7 @@ describe('extendBar', () => {
   it('rejects a zero-length segment', () => {
     const { store, barId } = createStoreWithBar();
     expectCommandError(
-      () => store.dispatch(extendBar({ barId, point: { x: 4000, y: 500, z: 69 } })),
+      () => store.dispatch(extendBar({ barId, point: { x: 4000, y: 69, z: 500 } })),
       'INVALID_PARAMS',
     );
     expect(store.getState().project.reinforcement[barId].path).toHaveLength(2);

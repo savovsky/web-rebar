@@ -40,8 +40,8 @@ export const reshapeSection =
     dispatch(
       updateSectionGeometry({
         id: params.sectionId,
-        lineStart: { x: params.lineStart.x, y: 0, z: params.lineStart.z },
-        lineEnd: { x: params.lineEnd.x, y: 0, z: params.lineEnd.z },
+        lineStart: { x: params.lineStart.x, y: params.lineStart.y, z: 0 },
+        lineEnd: { x: params.lineEnd.x, y: params.lineEnd.y, z: 0 },
         plane: geometry.plane,
         viewDepth: geometry.viewDepthMm,
         targetElementIds,

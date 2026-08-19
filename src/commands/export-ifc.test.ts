@@ -13,8 +13,8 @@ const WALL = {
   height: 2800,
 };
 const BAR_PATH = [
-  { x: 500, y: 700, z: 87 },
-  { x: 3500, y: 700, z: 87 },
+  { x: 500, y: 87, z: 700 },
+  { x: 3500, y: 87, z: 700 },
 ];
 
 describe('exportIfc command (§N — M2 T2)', () => {

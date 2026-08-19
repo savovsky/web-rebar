@@ -49,13 +49,16 @@ beforeAll(initWasmFromDisk);
 const WALL_LENGTH_MM = 4000;
 const WALL_THICKNESS_MM = 200;
 const WALL_HEIGHT_MM = 2800;
-/** Two hosted bars (the sentence says "bars") at 25 mm cover from +Z. */
+/** Two hosted bars (the sentence says "bars") at 25 mm cover from +Y. */
 const BAR_HEIGHTS_MM = [700, 1400] as const;
-/** Expected centerline offset from the +Z face: cover (25) + radius (Ø12/2). */
+/** Expected centerline offset from the +Y face: cover (25) + radius (Ø12/2). */
 const EXPECTED_CENTERLINE_OFFSET_MM = 31;
-/** In-plan move — 300 mm along +Z keeps the wall crossed by the cut plane AND
- *  within the drawn cut line extent (z ∈ [200, 400] ⊂ [-500, 500], §G.1). */
-const MOVE_DELTA = { x: 0, y: 0, z: 300 } as const;
+/** In-plan move — 300 mm along +Y keeps the wall crossed by the cut plane AND
+ *  within the drawn cut line extent (y ∈ [200, 400] ⊂ [-500, 500], §G.1).
+ *  Section u runs along −y (right = forward × +Z), so the move shifts u by
+ *  −300. */
+const MOVE_DELTA = { x: 0, y: 300, z: 0 } as const;
+const MOVE_U_SHIFT = -MOVE_DELTA.y;
 
 const WALL_PARAMS = {
   startPoint: { x: 0, y: 0, z: 0 },
@@ -67,19 +70,19 @@ const WALL_PARAMS = {
 interface PlaceBarAtCoverOptions {
   store: ReferenceStore;
   wallId: string;
-  yMm: number;
+  zMm: number;
 }
 
 /** Tool-equivalent bar placement (the Place Bar draft's own resolution). */
 const placeBarAtCover = (options: PlaceBarAtCoverOptions): string => {
-  const { store, wallId, yMm } = options;
+  const { store, wallId, zMm } = options;
   const wall = store.getState().project.elements[wallId];
   const centerline = resolveBarCenterline({
     facePoints: [
-      { x: 500, y: yMm, z: WALL_THICKNESS_MM / 2 },
-      { x: 3500, y: yMm, z: WALL_THICKNESS_MM / 2 },
+      { x: 500, y: WALL_THICKNESS_MM / 2, z: zMm },
+      { x: 3500, y: WALL_THICKNESS_MM / 2, z: zMm },
     ],
-    frame: getWallFaceFrame(wall, { x: 0, y: 0, z: 1 }),
+    frame: getWallFaceFrame(wall, { x: 0, y: 1, z: 0 }),
     wall,
     coverMm: resolveDefaultCover('wall'),
     radiusMm: DEFAULT_BAR_DIAMETER_MM / 2,
@@ -91,8 +94,8 @@ const placeBarAtCover = (options: PlaceBarAtCoverOptions): string => {
 
 const sectionParams = (wallId: string) => ({
   name: 'S-1',
-  lineStart: { x: 2000, y: 0, z: -500 },
-  lineEnd: { x: 2000, y: 0, z: 500 },
+  lineStart: { x: 2000, y: -500, z: 0 },
+  lineEnd: { x: 2000, y: 500, z: 0 },
   depthPoint: { x: 4500, y: 0, z: 0 },
   targetElementIds: [wallId],
 });
@@ -119,7 +122,7 @@ describe('M1 acceptance sentence (§A): one wall, two hosted bars, one open sect
     // 1–2. Place the wall and its hosted bars (§N commands; the Place Bar
     // tool's face-click math resolves the cover-true centerlines).
     const wallId = store.dispatch(placeWall(WALL_PARAMS));
-    const barIds = BAR_HEIGHTS_MM.map((yMm) => placeBarAtCover({ store, wallId, yMm }));
+    const barIds = BAR_HEIGHTS_MM.map((zMm) => placeBarAtCover({ store, wallId, zMm }));
 
     // 3. Cut the section and OPEN the 2D view (Section Cut tool → panel).
     const sectionId = store.dispatch(createSection(sectionParams(wallId)));
@@ -132,7 +135,7 @@ describe('M1 acceptance sentence (§A): one wall, two hosted bars, one open sect
     const baselineUs = baseline.concreteOutlines[0].map((point) => point.u);
     const baselineURange: [number, number] = [Math.min(...baselineUs), Math.max(...baselineUs)];
     for (const [index, dot] of baseline.cutBars.entries()) {
-      expect(baselineURange[1] - dot.center.u).toBeCloseTo(EXPECTED_CENTERLINE_OFFSET_MM);
+      expect(dot.center.u - baselineURange[0]).toBeCloseTo(EXPECTED_CENTERLINE_OFFSET_MM);
       expect(dot.center.v).toBeCloseTo(BAR_HEIGHTS_MM[index]);
       expect(dot.diameterMm).toBe(DEFAULT_BAR_DIAMETER_MM);
     }
@@ -146,8 +149,8 @@ describe('M1 acceptance sentence (§A): one wall, two hosted bars, one open sect
 
     // The WALL updates in 3D — plan translation; section-defining params untouched.
     const movedWall = postMove.elements[wallId];
-    expect(movedWall.startPoint).toEqual({ x: 0, y: 0, z: MOVE_DELTA.z });
-    expect(movedWall.endPoint).toEqual({ x: WALL_LENGTH_MM, y: 0, z: MOVE_DELTA.z });
+    expect(movedWall.startPoint).toEqual({ x: 0, y: MOVE_DELTA.y, z: 0 });
+    expect(movedWall.endPoint).toEqual({ x: WALL_LENGTH_MM, y: MOVE_DELTA.y, z: 0 });
     expect(movedWall.thickness).toBe(WALL_THICKNESS_MM);
     expect(movedWall.height).toBe(WALL_HEIGHT_MM);
 
@@ -160,8 +163,8 @@ describe('M1 acceptance sentence (§A): one wall, two hosted bars, one open sect
       expect(after.coverDistance).toBe(25); // design intent survives (§C)
       after.path.forEach((point, pointIndex) => {
         expect(point.x).toBe(before.path[pointIndex].x);
-        expect(point.y).toBe(before.path[pointIndex].y);
-        expect(point.z).toBeCloseTo(before.path[pointIndex].z + MOVE_DELTA.z);
+        expect(point.y).toBeCloseTo(before.path[pointIndex].y + MOVE_DELTA.y);
+        expect(point.z).toBe(before.path[pointIndex].z);
       });
     }
 
@@ -170,14 +173,14 @@ describe('M1 acceptance sentence (§A): one wall, two hosted bars, one open sect
     expect(moved).not.toBe(baseline);
     expect(moved.concreteOutlines).toHaveLength(1);
     const movedUs = moved.concreteOutlines[0].map((point) => point.u);
-    expect(Math.min(...movedUs)).toBeCloseTo(baselineURange[0] + MOVE_DELTA.z);
-    expect(Math.max(...movedUs)).toBeCloseTo(baselineURange[1] + MOVE_DELTA.z);
+    expect(Math.min(...movedUs)).toBeCloseTo(baselineURange[0] + MOVE_U_SHIFT);
+    expect(Math.max(...movedUs)).toBeCloseTo(baselineURange[1] + MOVE_U_SHIFT);
     expect(moved.cutBars).toHaveLength(BAR_HEIGHTS_MM.length);
     for (const [index, dot] of moved.cutBars.entries()) {
-      expect(dot.center.u).toBeCloseTo(baseline.cutBars[index].center.u + MOVE_DELTA.z);
+      expect(dot.center.u).toBeCloseTo(baseline.cutBars[index].center.u + MOVE_U_SHIFT);
       expect(dot.center.v).toBeCloseTo(BAR_HEIGHTS_MM[index]);
       // The cover offset from the covered face survives the move exactly.
-      expect(Math.max(...movedUs) - dot.center.u).toBeCloseTo(EXPECTED_CENTERLINE_OFFSET_MM);
+      expect(dot.center.u - Math.min(...movedUs)).toBeCloseTo(EXPECTED_CENTERLINE_OFFSET_MM);
     }
 
     // 5. ONE undo restores wall + bars to the pre-move state EXACTLY — the
@@ -227,33 +230,35 @@ describe('M1 acceptance at reference scale (T5 fixture: 50 walls × 20 bars = 1,
 
     const postMove = store.getState().project;
     // Wall + all 20 hosted bars translated; everything else untouched by identity.
-    expect(postMove.elements[wallId].startPoint.z).toBeCloseTo(MOVE_DELTA.z);
+    expect(postMove.elements[wallId].startPoint.y).toBeCloseTo(MOVE_DELTA.y);
     for (const barId of hostedBarIds) {
       const before = preMove.reinforcement[barId];
       const after = postMove.reinforcement[barId];
       expect(after).not.toBe(before);
       after.path.forEach((point, pointIndex) => {
-        expect(point.z).toBeCloseTo(before.path[pointIndex].z + MOVE_DELTA.z);
+        expect(point.y).toBeCloseTo(before.path[pointIndex].y + MOVE_DELTA.y);
       });
     }
     expect(postMove.reinforcement[foreignBarId]).toBe(foreignBarBefore);
 
     // The open section re-derives: the moved wall's outline and its 20 dots
-    // shifted +300 in u, the other 9 walls' content untouched. (Wall 0 is the
-    // lowest-u content and stays lowest after +300, so sorted order holds.)
+    // shifted −300 in u (u runs along −y), the other 9 walls' content
+    // untouched. (Wall 0 at y = 0 is the HIGHEST-u content and stays highest
+    // after the move, so sorted order holds.)
     const moved = requirePrimitives(store, sectionId);
     expect(moved).not.toBe(baseline);
     expect(moved.concreteOutlines).toHaveLength(10);
     expect(moved.cutBars).toHaveLength(200);
     const movedOutlineUs = outlineUCenters(moved);
-    expect(movedOutlineUs[0]).toBeCloseTo(baselineOutlineUs[0] + MOVE_DELTA.z);
-    for (let index = 1; index < movedOutlineUs.length; index += 1) {
+    const lastOutline = movedOutlineUs.length - 1;
+    expect(movedOutlineUs[lastOutline]).toBeCloseTo(baselineOutlineUs[lastOutline] + MOVE_U_SHIFT);
+    for (let index = 0; index < lastOutline; index += 1) {
       expect(movedOutlineUs[index]).toBeCloseTo(baselineOutlineUs[index]);
     }
     const movedDotUs = moved.cutBars.map((dot) => dot.center.u).sort((a, b) => a - b);
     for (let index = 0; index < movedDotUs.length; index += 1) {
-      const shift = index < REFERENCE_BARS_PER_WALL ? MOVE_DELTA.z : 0;
-      expect(movedDotUs[index]).toBeCloseTo(baselineDotUs[index] + shift);
+      const isMovedWallDot = index >= movedDotUs.length - REFERENCE_BARS_PER_WALL;
+      expect(movedDotUs[index]).toBeCloseTo(baselineDotUs[index] + (isMovedWallDot ? MOVE_U_SHIFT : 0));
     }
 
     // One undo restores all 1,021 entities' relevant state exactly; redo re-applies.
@@ -270,7 +275,7 @@ describe('30 undo levels (§E)', () => {
   it('caps the edit history at 30 — oldest levels trimmed; 30 undos land exactly on the oldest retained snapshot; the 31st is a guarded no-op', () => {
     const store = createAppStore();
     const wallId = store.dispatch(placeWall(WALL_PARAMS));
-    placeBarAtCover({ store, wallId, yMm: BAR_HEIGHTS_MM[0] });
+    placeBarAtCover({ store, wallId, zMm: BAR_HEIGHTS_MM[0] });
 
     // 35 move edits on top of the 2 placement levels = 37 recorded levels;
     // the cap keeps the newest 30 (the placement levels + edits 1–5 pre-states
@@ -278,8 +283,8 @@ describe('30 undo levels (§E)', () => {
     const EDIT_COUNT = 35;
     let afterFiveEdits = store.getState().project;
     for (let edit = 1; edit <= EDIT_COUNT; edit += 1) {
-      const z = edit % 2 === 1 ? 100 : -100; // alternating non-zero deltas
-      store.dispatch(moveElement({ elementId: wallId, delta: { x: 0, y: 0, z } }));
+      const y = edit % 2 === 1 ? 100 : -100; // alternating non-zero deltas
+      store.dispatch(moveElement({ elementId: wallId, delta: { x: 0, y, z: 0 } }));
       if (edit === 5) afterFiveEdits = store.getState().project;
     }
     expect(store.getState().undo.past).toHaveLength(30);
@@ -303,8 +308,8 @@ interface ProbeFixture {
 }
 
 const STRAIGHT_BAR_PATH = [
-  { x: 0, y: 500, z: 87 },
-  { x: WALL_LENGTH_MM, y: 500, z: 87 },
+  { x: 0, y: 87, z: 500 },
+  { x: WALL_LENGTH_MM, y: 87, z: 500 },
 ];
 
 /** Fresh wall + bar + section per probe — three recorded levels of history. */
@@ -328,14 +333,14 @@ const commandProbes: Record<CommandName, (fixture: ProbeFixture) => void | Promi
     store.dispatch(placeBar({ hostElementId: wallId, diameter: 16, path: STRAIGHT_BAR_PATH }));
   },
   extendBar: ({ store, barId }) => {
-    store.dispatch(extendBar({ barId, point: { x: WALL_LENGTH_MM, y: 1500, z: 87 } }));
+    store.dispatch(extendBar({ barId, point: { x: WALL_LENGTH_MM, y: 87, z: 1500 } }));
   },
   createSection: ({ store, wallId }) => {
     store.dispatch(
       createSection({
         name: 'S-2',
-        lineStart: { x: 1000, y: 0, z: -500 },
-        lineEnd: { x: 1000, y: 0, z: 500 },
+        lineStart: { x: 1000, y: -500, z: 0 },
+        lineEnd: { x: 1000, y: 500, z: 0 },
         depthPoint: { x: 3500, y: 0, z: 0 },
         targetElementIds: [wallId],
       }),
@@ -345,8 +350,8 @@ const commandProbes: Record<CommandName, (fixture: ProbeFixture) => void | Promi
     store.dispatch(
       reshapeSection({
         sectionId,
-        lineStart: { x: 1000, y: 0, z: -500 },
-        lineEnd: { x: 1000, y: 0, z: 500 },
+        lineStart: { x: 1000, y: -500, z: 0 },
+        lineEnd: { x: 1000, y: 500, z: 0 },
         depthPoint: { x: 3500, y: 0, z: 0 },
       }),
     );

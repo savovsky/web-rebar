@@ -19,14 +19,14 @@ const wallParams = {
 };
 
 const barPath = [
-  { x: 0, y: 500, z: 87 },
-  { x: 4000, y: 500, z: 87 },
+  { x: 0, y: 87, z: 500 },
+  { x: 4000, y: 87, z: 500 },
 ];
 
 const sectionParams = (wallId: string) => ({
   name: 'S-1',
-  lineStart: { x: 2000, y: 0, z: -500 },
-  lineEnd: { x: 2000, y: 0, z: 500 },
+  lineStart: { x: 2000, y: -500, z: 0 },
+  lineEnd: { x: 2000, y: 500, z: 0 },
   depthPoint: { x: 4500, y: 0, z: 0 },
   targetElementIds: [wallId],
 });

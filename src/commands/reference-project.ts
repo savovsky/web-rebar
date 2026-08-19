@@ -29,20 +29,20 @@ const WALL_HEIGHT_MM = 2800;
 /** Grid pitch (mm): walls run along X, spaced on a 5-column grid (no overlaps). */
 const WALLS_PER_ROW = 5;
 const WALL_SPACING_X_MM = 6000;
-const WALL_SPACING_Z_MM = 6000;
+const WALL_SPACING_Y_MM = 6000;
 
 /** Bars (mm): L-shaped (horizontal leg + 300 mm upward hook at the right
  *  end — a realistic wall bar that also exercises the swept-bend mesh path),
- *  at the catalog cover from the +Z face, stacked with a 120 mm pitch
- *  (Ø12/120). Highest bar + hook: 31 + 20·120 + 300 = 2731 ≤ 2800 − 31. */
-const BAR_SPACING_Y_MM = 120;
+ *  at the catalog cover from the +Y face, stacked vertically with a 120 mm
+ *  pitch (Ø12/120). Highest bar + hook: 31 + 20·120 + 300 = 2731 ≤ 2800 − 31. */
+const BAR_SPACING_Z_MM = 120;
 const BAR_START_INSET_MM = 200;
 const BAR_END_INSET_MM = 500;
 const BAR_HOOK_MM = 300;
 /** Sections: perpendicular cuts across a 10-wall band, looking along the
  *  wall axes with a 2500 mm view depth (M0 acceptance convention). */
 const SECTION_DEPTH_MM = 2500;
-const SECTION_LINE_MARGIN_Z_MM = 500;
+const SECTION_LINE_MARGIN_Y_MM = 500;
 
 export type ReferenceStore = ReturnType<typeof createAppStore>;
 
@@ -63,12 +63,12 @@ export interface BuildReferenceProjectOptions {
 
 interface WallGridPosition {
   originX: number;
-  originZ: number;
+  originY: number;
 }
 
 const wallGridPosition = (index: number): WallGridPosition => ({
   originX: (index % WALLS_PER_ROW) * WALL_SPACING_X_MM,
-  originZ: Math.floor(index / WALLS_PER_ROW) * WALL_SPACING_Z_MM,
+  originY: Math.floor(index / WALLS_PER_ROW) * WALL_SPACING_Y_MM,
 });
 
 interface BarPlacementOptions {
@@ -78,23 +78,23 @@ interface BarPlacementOptions {
   barIndex: number;
 }
 
-/** One horizontal bar on the wall's +Z face (tool-equivalent placement math:
+/** One horizontal bar on the wall's +Y face (tool-equivalent placement math:
  *  face points → cover offset → clamp from ALL faces). */
 const placeBarOnWall = (options: BarPlacementOptions): string => {
   const { store, wallId, wallIndex, barIndex } = options;
   const wall = store.getState().project.elements[wallId];
-  const { originX, originZ } = wallGridPosition(wallIndex);
+  const { originX, originY } = wallGridPosition(wallIndex);
   const coverMm = resolveDefaultCover('wall');
   const radiusMm = DEFAULT_BAR_DIAMETER_MM / 2;
-  const y = coverMm + radiusMm + (barIndex + 1) * BAR_SPACING_Y_MM;
-  const zFace = originZ + WALL_THICKNESS_MM / 2;
+  const z = coverMm + radiusMm + (barIndex + 1) * BAR_SPACING_Z_MM;
+  const yFace = originY + WALL_THICKNESS_MM / 2;
   const centerline = resolveBarCenterline({
     facePoints: [
-      { x: originX + BAR_START_INSET_MM, y, z: zFace },
-      { x: originX + WALL_LENGTH_MM - BAR_END_INSET_MM, y, z: zFace },
-      { x: originX + WALL_LENGTH_MM - BAR_END_INSET_MM, y: y + BAR_HOOK_MM, z: zFace },
+      { x: originX + BAR_START_INSET_MM, y: yFace, z },
+      { x: originX + WALL_LENGTH_MM - BAR_END_INSET_MM, y: yFace, z },
+      { x: originX + WALL_LENGTH_MM - BAR_END_INSET_MM, y: yFace, z: z + BAR_HOOK_MM },
     ],
-    frame: getWallFaceFrame(wall, { x: 0, y: 0, z: 1 }),
+    frame: getWallFaceFrame(wall, { x: 0, y: 1, z: 0 }),
     wall,
     coverMm,
     radiusMm,
@@ -115,11 +115,11 @@ export const buildReferenceProject = (options?: BuildReferenceProjectOptions): R
   const wallIds: string[] = [];
   const barIds: string[] = [];
   for (let wallIndex = 0; wallIndex < REFERENCE_WALL_COUNT; wallIndex++) {
-    const { originX, originZ } = wallGridPosition(wallIndex);
+    const { originX, originY } = wallGridPosition(wallIndex);
     const wallId = store.dispatch(
       placeWall({
-        startPoint: { x: originX, y: 0, z: originZ },
-        endPoint: { x: originX + WALL_LENGTH_MM, y: 0, z: originZ },
+        startPoint: { x: originX, y: originY, z: 0 },
+        endPoint: { x: originX + WALL_LENGTH_MM, y: originY, z: 0 },
         thickness: WALL_THICKNESS_MM,
         height: WALL_HEIGHT_MM,
       }),
@@ -131,7 +131,7 @@ export const buildReferenceProject = (options?: BuildReferenceProjectOptions): R
   }
 
   const sectionIds: string[] = [];
-  const lastRowZ = (WALLS_PER_SECTION - 1) * WALL_SPACING_Z_MM;
+  const lastRowY = (WALLS_PER_SECTION - 1) * WALL_SPACING_Y_MM;
   for (let s = 0; s < REFERENCE_SECTION_COUNT; s++) {
     const lineX = s * WALL_SPACING_X_MM + WALL_LENGTH_MM / 2;
     const targets = wallIds.filter((_, index) => index % WALLS_PER_ROW === s);
@@ -139,8 +139,8 @@ export const buildReferenceProject = (options?: BuildReferenceProjectOptions): R
       store.dispatch(
         createSection({
           name: `S-${s + 1}`,
-          lineStart: { x: lineX, y: 0, z: -SECTION_LINE_MARGIN_Z_MM },
-          lineEnd: { x: lineX, y: 0, z: lastRowZ + SECTION_LINE_MARGIN_Z_MM },
+          lineStart: { x: lineX, y: -SECTION_LINE_MARGIN_Y_MM, z: 0 },
+          lineEnd: { x: lineX, y: lastRowY + SECTION_LINE_MARGIN_Y_MM, z: 0 },
           depthPoint: { x: lineX + SECTION_DEPTH_MM, y: 0, z: 0 },
           targetElementIds: targets,
         }),

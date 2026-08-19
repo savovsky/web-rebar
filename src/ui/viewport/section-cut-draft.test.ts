@@ -13,7 +13,7 @@ import { advanceSectionCut, beginSectionCut, finishSectionCut } from './section-
 // Local alias keeps the arrange lines terse (the ui action is not a §N command).
 const setToolSectionCut = () => setTool({ tool: 'sectionCut' });
 
-/** Wall along +X: 4000 long, 200 thick → plan footprint z ∈ [-100, 100]. */
+/** Wall along +X: 4000 long, 200 thick → plan footprint y ∈ [-100, 100]. */
 const createStoreWithWall = () => {
   const store = createAppStore();
   store.dispatch(setToolSectionCut());
@@ -28,9 +28,9 @@ const createStoreWithWall = () => {
   return { store, wallId };
 };
 
-const LINE_START: Vec3 = { x: 2000, y: 0, z: -500 };
-const LINE_END: Vec3 = { x: 2000, y: 0, z: 500 };
-/** 2500 mm perpendicular to the +Z-running line → the view looks along +X. */
+const LINE_START: Vec3 = { x: 2000, y: -500, z: 0 };
+const LINE_END: Vec3 = { x: 2000, y: 500, z: 0 };
+/** 2500 mm perpendicular to the +Y-running line → the view looks along +X. */
 const DEPTH_CLICK: Vec3 = { x: 4500, y: 0, z: 0 };
 
 interface CutOptions {
@@ -123,7 +123,7 @@ describe('Section Cut flow', () => {
 
   it('rejects a line that crosses no element and keeps the tool active', () => {
     const { store } = createStoreWithWall();
-    performSectionCut({ store, end: { x: 2000, y: 0, z: -200 } }); // stops short of the wall (z ≥ -100)
+    performSectionCut({ store, end: { x: 2000, y: -200, z: 0 } }); // stops short of the wall (y ≥ -100)
 
     const state = store.getState();
     expect(Object.values(state.project.sections)).toHaveLength(0);

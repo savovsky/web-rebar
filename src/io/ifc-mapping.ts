@@ -22,11 +22,12 @@
  * author's real-file fixture being IFC2X3 is import-side evidence (T3 reads
  * whatever web-ifc reads) — it does not constrain what we write.
  *
- * Coordinates: model space is Y-up mm (Three.js, §D.3); IFC is Z-up mm. The
- * mapping applies the proper rotation (x, y, z)model → (x, −z, y)ifc via
- * toIfcPoint — elevation stays elevation, and the transform is
- * reflection-free (a mirrored plan would be an interop bug). T3's import
- * applies the exact inverse (x, z, −y) — recorded in the T2 task log.
+ * Coordinates: model space is Z-up right-handed mm (the engineering
+ * convention — plan in X–Y, elevation in Z; data/models/geometry.ts),
+ * IDENTICAL to IFC's coordinate convention — the mapping carries no
+ * rotation, so there is no handedness/mirroring failure class at this seam
+ * and T3's import reads coordinates verbatim (round-trip exactness by
+ * construction; T1 proved SPF doubles round-trip exactly).
  *
  * Identity: wall/bar GlobalId = compressed encoding of the entity's UUID
  * (ifc-guid.ts, Q2 — reversible and deterministic); the same id also rides
@@ -78,15 +79,6 @@ function createSyntheticGuidSource(): () => IFC4.IfcGloballyUniqueId {
     const uuid = `00000000-0000-0000-0000-${String(counter).padStart(12, '0')}`;
     return new IFC4.IfcGloballyUniqueId(compressUuidToIfcGuid(uuid));
   };
-}
-
-/**
- * Model (Y-up mm) → IFC (Z-up mm): the proper rotation (x, −z, y) — plan
- * north maps to −z_model, no mirroring. Also applied to direction vectors
- * (linear map). `+ 0` folds −0 to 0 so exports never carry negative zero.
- */
-export function toIfcPoint(point: Vec3): Vec3 {
-  return { x: point.x + 0, y: -point.z + 0, z: point.y + 0 };
 }
 
 function cartesian(point: Vec3): IFC4.IfcCartesianPoint {
@@ -268,14 +260,15 @@ interface WallBuildResult {
 
 /** Axis-start placement (X along the axis, Z up) + length × thickness
  *  rectangle extruded +Z by height; intent id in GlobalId (Q2, reversible),
- *  Tag and Pset_WebRebar_Wall. */
+ *  Tag and Pset_WebRebar_Wall. Model space is already Z-up — coordinates
+ *  cross verbatim (no rotation at this seam, see the header). */
 function buildWall(factory: RootedFactory, wall: WallElement): WallBuildResult {
   const { entityGuid, nextSyntheticGuid, history, context, parentPlacement } = factory;
   const dx = wall.endPoint.x - wall.startPoint.x;
-  const dz = wall.endPoint.z - wall.startPoint.z;
-  const length = Math.hypot(dx, dz);
-  const origin = toIfcPoint({ x: wall.startPoint.x, y: wall.baseElevation, z: wall.startPoint.z });
-  const axisDirection = toIfcPoint({ x: dx / length, y: 0, z: dz / length });
+  const dy = wall.endPoint.y - wall.startPoint.y;
+  const length = Math.hypot(dx, dy);
+  const origin: Vec3 = { x: wall.startPoint.x, y: wall.startPoint.y, z: wall.baseElevation };
+  const axisDirection: Vec3 = { x: dx / length, y: dy / length, z: 0 };
   const placement = new IFC4.IfcLocalPlacement(
     parentPlacement,
     new IFC4.IfcAxis2Placement3D(
@@ -383,7 +376,7 @@ interface BarBuildResult {
  *  intent (host, cover, grade) in Pset_WebRebar_ReinforcingBar (Q2). */
 function buildBar(factory: RootedFactory, bar: ReinforcementBar): BarBuildResult {
   const { entityGuid, nextSyntheticGuid, history, context, parentPlacement } = factory;
-  const directrix = new IFC4.IfcPolyline(bar.path.map((point) => cartesian(toIfcPoint(point))));
+  const directrix = new IFC4.IfcPolyline(bar.path.map(cartesian));
   const sweptDisk = new IFC4.IfcSweptDiskSolid(
     directrix,
     new IFC4.IfcPositiveLengthMeasure(bar.diameter / 2),

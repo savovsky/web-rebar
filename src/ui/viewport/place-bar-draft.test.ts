@@ -1,6 +1,7 @@
 // Headless test of the chained Place Bar flow (the draft module is React-free):
 // a multi-click chain on one face must produce ONE bar whose path holds every
 // clicked point as a bending place — never several separate bars (§B.6, §J).
+// Model space is Z-up: plan in X–Y, elevation in Z (data/models/geometry.ts).
 import { describe, expect, it } from 'vitest';
 import { placeWall } from '@/commands';
 import { DEFAULT_BAR_DIAMETER_MM, resolveDefaultCover } from '@/commands/place-bar';
@@ -8,9 +9,9 @@ import type { Vec3, WallElement } from '@/data/models';
 import { createAppStore } from '@/stores';
 import { advanceBarDraft, captureBarFace } from './place-bar-draft';
 
-// Wall along +X: 4000 long, 200 thick, 2800 high → +Z face plane at z = 100.
-const FACE_Z = 100;
-const BAR_CENTER_Z = FACE_Z - (resolveDefaultCover('wall') + DEFAULT_BAR_DIAMETER_MM / 2); // 69
+// Wall along +X: 4000 long, 200 thick (Y), 2800 high (Z) → +Y face plane at y = 100.
+const FACE_Y = 100;
+const BAR_CENTER_Y = FACE_Y - (resolveDefaultCover('wall') + DEFAULT_BAR_DIAMETER_MM / 2); // 69
 
 const createStoreWithCapturedFace = () => {
   const store = createAppStore();
@@ -23,7 +24,7 @@ const createStoreWithCapturedFace = () => {
     }),
   );
   const wall = store.getState().project.elements[wallId];
-  captureBarFace({ dispatch: store.dispatch, wall, localNormal: { x: 0, y: 0, z: 1 } });
+  captureBarFace({ dispatch: store.dispatch, wall, localNormal: { x: 0, y: 1, z: 0 } });
   return { store, wall };
 };
 
@@ -53,10 +54,10 @@ describe('chained Place Bar flow', () => {
       store,
       wall,
       points: [
-        { x: 500, y: 500, z: FACE_Z },
-        { x: 3000, y: 500, z: FACE_Z },
-        { x: 3000, y: 2000, z: FACE_Z },
-        { x: 500, y: 2000, z: FACE_Z },
+        { x: 500, y: FACE_Y, z: 500 },
+        { x: 3000, y: FACE_Y, z: 500 },
+        { x: 3000, y: FACE_Y, z: 2000 },
+        { x: 500, y: FACE_Y, z: 2000 },
       ],
     });
 
@@ -71,10 +72,10 @@ describe('chained Place Bar flow', () => {
     expect(bars[0].coverDistance).toBe(resolveDefaultCover('wall'));
     // Every path point sits at cover + radius inside the captured face.
     for (const point of bars[0].path) {
-      expect(point.z).toBeCloseTo(BAR_CENTER_Z);
+      expect(point.y).toBeCloseTo(BAR_CENTER_Y);
     }
-    expect(bars[0].path[0]).toMatchObject({ x: 500, y: 500 });
-    expect(bars[0].path[3]).toMatchObject({ x: 500, y: 2000 });
+    expect(bars[0].path[0]).toMatchObject({ x: 500, z: 500 });
+    expect(bars[0].path[3]).toMatchObject({ x: 500, z: 2000 });
     // The new bar is selected and the draft keeps the chain going.
     expect(state.ui.selection.barIds).toEqual([bars[0].id]);
     expect(state.ui.placementDraft.barId).toBe(bars[0].id);
@@ -88,8 +89,8 @@ describe('chained Place Bar flow', () => {
       store,
       wall,
       points: [
-        { x: 0, y: 500, z: FACE_Z },
-        { x: 4000, y: 500, z: FACE_Z },
+        { x: 0, y: FACE_Y, z: 500 },
+        { x: 4000, y: FACE_Y, z: 500 },
       ],
     });
 
@@ -97,7 +98,7 @@ describe('chained Place Bar flow', () => {
     expect(bars).toHaveLength(1);
     expect(bars[0].path[0].x).toBeCloseTo(resolveDefaultCover('wall')); // 25
     expect(bars[0].path[1].x).toBeCloseTo(4000 - resolveDefaultCover('wall')); // 3975
-    expect(bars[0].path[0].z).toBeCloseTo(BAR_CENTER_Z);
+    expect(bars[0].path[0].y).toBeCloseTo(BAR_CENTER_Y);
   });
 
   it('keeps the draft and the bar on a zero-length segment click', () => {
@@ -106,9 +107,9 @@ describe('chained Place Bar flow', () => {
       store,
       wall,
       points: [
-        { x: 500, y: 500, z: FACE_Z },
-        { x: 3000, y: 500, z: FACE_Z },
-        { x: 3000, y: 500, z: FACE_Z }, // same point — rejected segment
+        { x: 500, y: FACE_Y, z: 500 },
+        { x: 3000, y: FACE_Y, z: 500 },
+        { x: 3000, y: FACE_Y, z: 500 }, // same point — rejected segment
       ],
     });
 

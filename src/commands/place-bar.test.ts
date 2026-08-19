@@ -21,8 +21,8 @@ const barParams = (wallId: string) => ({
   hostElementId: wallId,
   diameter: 16,
   path: [
-    { x: 0, y: 500, z: 87 },
-    { x: 4000, y: 500, z: 87 },
+    { x: 0, y: 87, z: 500 },
+    { x: 4000, y: 87, z: 500 },
   ],
 });
 

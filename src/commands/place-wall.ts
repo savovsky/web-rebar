@@ -8,9 +8,9 @@ import { CommandError } from './command-error';
 export const DEFAULT_WALL_DIMENSIONS = { thickness: 200, height: 2800 } as const;
 
 export interface PlaceWallParams {
-  /** Axis start point in plan (X/Z); y ignored — see WallElement.baseElevation. */
+  /** Axis start point in plan (X/Y); z ignored — see WallElement.baseElevation. */
   startPoint: Vec3;
-  /** Axis end point in plan (X/Z). */
+  /** Axis end point in plan (X/Y). */
   endPoint: Vec3;
   /** Wall thickness (mm). */
   thickness: number;
@@ -29,7 +29,7 @@ export const placeWall =
   (params: PlaceWallParams): AppThunk<string> =>
   (dispatch) => {
     const { startPoint, endPoint, thickness, height } = params;
-    if (startPoint.x === endPoint.x && startPoint.z === endPoint.z) {
+    if (startPoint.x === endPoint.x && startPoint.y === endPoint.y) {
       throw new CommandError('INVALID_PARAMS', 'placeWall: zero-length wall axis (start === end in plan)');
     }
     if (thickness <= 0) {

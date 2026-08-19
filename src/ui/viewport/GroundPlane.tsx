@@ -1,4 +1,4 @@
-// Invisible ground hit-plane (y = 0): tracks the cursor for the status bar and
+// Invisible ground hit-plane (z = 0): tracks the cursor for the status bar and
 // draft previews, and routes clicks per active tool. Snapping (§B.3) resolves
 // here — Shift disables it while held. 60 FPS pointer data flows into the
 // cursor module, never the store (§E). The Section Cut tool drags here:
@@ -102,8 +102,9 @@ export function GroundPlane() {
   };
 
   return (
+    // PlaneGeometry's default orientation already lies in the XY (ground)
+    // plane facing +Z — no rotation needed in the Z-up model space.
     <mesh
-      rotation-x={-Math.PI / 2}
       onClick={handleClick}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

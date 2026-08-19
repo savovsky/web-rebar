@@ -17,7 +17,8 @@ import { CROSSHAIR_RENDER_ORDER, createCrosshairGeometry } from './draft-crossha
 import { useViewportTheme } from './viewport-theme';
 
 const PREVIEW_LINE_POINTS = 2;
-const UP_VECTOR = new Vector3(0, 1, 0);
+/** The crosshair geometry's home normal (it lies in the XY ground plane). */
+const UP_VECTOR = new Vector3(0, 0, 1);
 const scratchNormal = new Vector3();
 const scratchQuaternion = new Quaternion();
 
@@ -96,7 +97,7 @@ function FaceCrosshair({ geometry, point, faceNormal, gridSpacingMm, color }: Fa
     <lineSegments
       ref={ref}
       geometry={geometry}
-      scale={[gridSpacingMm, 1, gridSpacingMm]}
+      scale={[gridSpacingMm, gridSpacingMm, 1]}
       renderOrder={CROSSHAIR_RENDER_ORDER}
     >
       <lineBasicMaterial color={color} depthTest={false} />
@@ -135,7 +136,7 @@ export function BarDraftPreview() {
       <lineSegments
         ref={markerRef}
         geometry={crosshairGeometry}
-        scale={[gridSpacingMm, 1, gridSpacingMm]}
+        scale={[gridSpacingMm, gridSpacingMm, 1]}
         renderOrder={CROSSHAIR_RENDER_ORDER}
         visible={false}
       >

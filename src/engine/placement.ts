@@ -5,14 +5,14 @@
 import type { Vec3 } from '@/data/models';
 import { type WallGeometryParams, getWallTransform } from './wall-geometry';
 
-const UNIT_Y: Vec3 = { x: 0, y: 1, z: 0 };
+const UNIT_Z: Vec3 = { x: 0, y: 0, z: 1 };
 /** |normal·up| at/above this → the face is horizontal (wall top/bottom). */
 const HORIZONTAL_FACE_DOT = 0.99;
 
 /**
  * Local 2D frame of a wall face in model space: `origin` sits on the face
- * plane, `u` runs along the face horizontally, `v` runs "up" the face (for
- * horizontal faces: u = wall axis, v = across the thickness).
+ * plane, `u` runs along the face horizontally, `v` runs "up" (+Z) the face
+ * (for horizontal faces: u = wall axis, v = across the thickness).
  */
 export interface FaceFrame {
   origin: Vec3;
@@ -39,16 +39,16 @@ const normalize = (v: Vec3): Vec3 => {
 };
 
 /** Rotates a wall-mesh local direction (e.g. a raycast face normal) into world
- *  space — walls are yawed only, so this is a pure Y-rotation. */
+ *  space — walls are yawed only, so this is a pure Z-rotation. */
 export function wallLocalNormalToWorld(wall: WallGeometryParams, localNormal: Vec3): Vec3 {
-  const { rotationY } = getWallTransform(wall);
-  const cos = Math.cos(rotationY);
-  const sin = Math.sin(rotationY);
-  // R_y(θ) · (x,y,z) = (x·cosθ + z·sinθ, y, −x·sinθ + z·cosθ)
+  const { rotationZ } = getWallTransform(wall);
+  const cos = Math.cos(rotationZ);
+  const sin = Math.sin(rotationZ);
+  // R_z(θ) · (x,y,z) = (x·cosθ − y·sinθ, x·sinθ + y·cosθ, z)
   return normalize({
-    x: localNormal.x * cos + localNormal.z * sin,
-    y: localNormal.y,
-    z: -localNormal.x * sin + localNormal.z * cos,
+    x: localNormal.x * cos - localNormal.y * sin,
+    y: localNormal.x * sin + localNormal.y * cos,
+    z: localNormal.z,
   });
 }
 
@@ -57,18 +57,18 @@ export function wallLocalNormalToWorld(wall: WallGeometryParams, localNormal: Ve
  *  direction) — exact for the axis-aligned faces of the wall box. */
 export function getWallFaceFrame(wall: WallGeometryParams, faceNormal: Vec3): FaceFrame {
   const transform = getWallTransform(wall);
-  const axis: Vec3 = { x: Math.cos(transform.rotationY), y: 0, z: -Math.sin(transform.rotationY) };
-  const thicknessDir: Vec3 = { x: Math.sin(transform.rotationY), y: 0, z: Math.cos(transform.rotationY) };
+  const axis: Vec3 = { x: Math.cos(transform.rotationZ), y: Math.sin(transform.rotationZ), z: 0 };
+  const thicknessDir: Vec3 = { x: -Math.sin(transform.rotationZ), y: Math.cos(transform.rotationZ), z: 0 };
   const halfAlongNormal =
     Math.abs(dot(faceNormal, axis)) * (transform.lengthMm / 2) +
-    Math.abs(dot(faceNormal, UNIT_Y)) * (wall.height / 2) +
+    Math.abs(dot(faceNormal, UNIT_Z)) * (wall.height / 2) +
     Math.abs(dot(faceNormal, thicknessDir)) * (wall.thickness / 2);
-  const isHorizontal = Math.abs(dot(faceNormal, UNIT_Y)) >= HORIZONTAL_FACE_DOT;
+  const isHorizontal = Math.abs(dot(faceNormal, UNIT_Z)) >= HORIZONTAL_FACE_DOT;
   return {
     origin: add(transform.center, scale(faceNormal, halfAlongNormal)),
     normal: faceNormal,
-    u: isHorizontal ? axis : normalize(cross(UNIT_Y, faceNormal)),
-    v: isHorizontal ? normalize(cross(faceNormal, axis)) : UNIT_Y,
+    u: isHorizontal ? axis : normalize(cross(UNIT_Z, faceNormal)),
+    v: isHorizontal ? normalize(cross(faceNormal, axis)) : UNIT_Z,
   };
 }
 
@@ -114,10 +114,10 @@ export function offsetFromFace({ point, faceNormal, distanceMm }: OffsetFromFace
 
 // --- concrete cover against ALL element faces (wall-local box clamping) ---
 
-/** Wall-local box frame: +X along the axis, +Y up, +Z along the thickness. */
+/** Wall-local box frame: +X along the axis, +Y across the thickness, +Z up. */
 interface LocalBoxFrame {
   center: Vec3;
-  rotationY: number;
+  rotationZ: number;
   halfX: number;
   halfY: number;
   halfZ: number;
@@ -125,20 +125,20 @@ interface LocalBoxFrame {
 
 const toLocal = (point: Vec3, frame: LocalBoxFrame): Vec3 => {
   const dx = point.x - frame.center.x;
-  const dz = point.z - frame.center.z;
-  const cos = Math.cos(frame.rotationY);
-  const sin = Math.sin(frame.rotationY);
-  // local = R_y(−θ) · (world − center)
-  return { x: dx * cos - dz * sin, y: point.y - frame.center.y, z: dx * sin + dz * cos };
+  const dy = point.y - frame.center.y;
+  const cos = Math.cos(frame.rotationZ);
+  const sin = Math.sin(frame.rotationZ);
+  // local = R_z(−θ) · (world − center)
+  return { x: dx * cos + dy * sin, y: -dx * sin + dy * cos, z: point.z - frame.center.z };
 };
 
 const toWorld = (local: Vec3, frame: LocalBoxFrame): Vec3 => {
-  const cos = Math.cos(frame.rotationY);
-  const sin = Math.sin(frame.rotationY);
+  const cos = Math.cos(frame.rotationZ);
+  const sin = Math.sin(frame.rotationZ);
   return {
-    x: frame.center.x + local.x * cos + local.z * sin,
-    y: frame.center.y + local.y,
-    z: frame.center.z - local.x * sin + local.z * cos,
+    x: frame.center.x + local.x * cos - local.y * sin,
+    y: frame.center.y + local.x * sin + local.y * cos,
+    z: frame.center.z + local.z,
   };
 };
 
@@ -199,10 +199,10 @@ export function applyConcreteCover({ path, wall, coverMm, radiusMm }: ApplyConcr
   const transform = getWallTransform(wall);
   const frame: LocalBoxFrame = {
     center: transform.center,
-    rotationY: transform.rotationY,
+    rotationZ: transform.rotationZ,
     halfX: transform.lengthMm / 2,
-    halfY: wall.height / 2,
-    halfZ: wall.thickness / 2,
+    halfY: wall.thickness / 2,
+    halfZ: wall.height / 2,
   };
   const localPath = path.map((point) => toLocal(point, frame));
   return localPath.map((local, index) => {

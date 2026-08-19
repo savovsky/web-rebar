@@ -1,5 +1,7 @@
-// 3D viewport (§B.2 main canvas) — R3F Canvas over a millimetre, Y-up model
-// space. Scene config lives in ./constants; colors come from design tokens via
+// 3D viewport (§B.2 main canvas) — R3F Canvas over a millimetre, Z-up
+// right-handed model space (the engineering convention — plan in X–Y,
+// elevation in Z; the camera's up axis is set to +Z once, here). Scene config
+// lives in ./constants; colors come from design tokens via
 // useViewportTheme (doc 10). The transparent canvas lets the bg-viewport token
 // surface through from the shell.
 import { Canvas } from '@react-three/fiber';
@@ -32,7 +34,13 @@ export function Viewport3D() {
       }}
     >
       <Canvas
-        camera={{ position: CAMERA_POSITION, fov: CAMERA_FOV, near: CAMERA_NEAR_MM, far: CAMERA_FAR_MM }}
+        camera={{
+          position: CAMERA_POSITION,
+          up: [0, 0, 1],
+          fov: CAMERA_FOV,
+          near: CAMERA_NEAR_MM,
+          far: CAMERA_FAR_MM,
+        }}
       >
         <ambientLight intensity={AMBIENT_INTENSITY} />
         <directionalLight position={DIRECTIONAL_POSITION} intensity={DIRECTIONAL_INTENSITY} />

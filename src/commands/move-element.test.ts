@@ -15,11 +15,11 @@ const wallParams = {
 };
 
 const barPath = [
-  { x: 0, y: 500, z: 69 },
-  { x: 4000, y: 500, z: 69 },
+  { x: 0, y: 69, z: 500 },
+  { x: 4000, y: 69, z: 500 },
 ];
 
-const DELTA = { x: 500, y: 0, z: 300 };
+const DELTA = { x: 500, y: 300, z: 0 };
 
 /** Wall with two hosted bars (one with a bending place). */
 const createPopulatedStore = () => {
@@ -31,9 +31,9 @@ const createPopulatedStore = () => {
       hostElementId: wallId,
       diameter: 16,
       path: [
-        { x: 0, y: 400, z: -69 },
-        { x: 2000, y: 400, z: -69 },
-        { x: 2000, y: 1400, z: -69 },
+        { x: 0, y: -69, z: 400 },
+        { x: 2000, y: -69, z: 400 },
+        { x: 2000, y: -69, z: 1400 },
       ],
     }),
   );
@@ -47,8 +47,8 @@ describe('moveElement', () => {
     store.dispatch(moveElement({ elementId: wallId, delta: DELTA }));
 
     const wall = store.getState().project.elements[wallId];
-    expect(wall.startPoint).toEqual({ x: 500, y: 0, z: 300 });
-    expect(wall.endPoint).toEqual({ x: 4500, y: 0, z: 300 });
+    expect(wall.startPoint).toEqual({ x: 500, y: 300, z: 0 });
+    expect(wall.endPoint).toEqual({ x: 4500, y: 300, z: 0 });
     // Cross-section params are untouched.
     expect(wall.thickness).toBe(200);
     expect(wall.height).toBe(2800);
@@ -56,14 +56,14 @@ describe('moveElement', () => {
 
     const { reinforcement } = store.getState().project;
     expect(reinforcement[barId1].path).toEqual([
-      { x: 500, y: 500, z: 369 },
-      { x: 4500, y: 500, z: 369 },
+      { x: 500, y: 369, z: 500 },
+      { x: 4500, y: 369, z: 500 },
     ]);
     // Bending places translate too — one bar stays one position.
     expect(reinforcement[barId2].path).toEqual([
-      { x: 500, y: 400, z: 231 },
-      { x: 2500, y: 400, z: 231 },
-      { x: 2500, y: 1400, z: 231 },
+      { x: 500, y: 231, z: 400 },
+      { x: 2500, y: 231, z: 400 },
+      { x: 2500, y: 231, z: 1400 },
     ]);
     // Host-follow does not rewrite design intent.
     expect(reinforcement[barId1].hostElementId).toBe(wallId);
@@ -94,12 +94,12 @@ describe('moveElement', () => {
 
     store.dispatch(undo());
     expect(store.getState().project).toBe(preMove); // exact frozen reference (Q2-a)
-    expect(store.getState().project.reinforcement[barId1].path[0].z).toBe(69);
+    expect(store.getState().project.reinforcement[barId1].path[0].y).toBe(69);
     expect(store.getState().project.reinforcement[barId2].path).toHaveLength(3);
 
     store.dispatch(redo());
-    expect(store.getState().project.elements[wallId].startPoint).toEqual({ x: 500, y: 0, z: 300 });
-    expect(store.getState().project.reinforcement[barId1].path[0].z).toBe(369);
+    expect(store.getState().project.elements[wallId].startPoint).toEqual({ x: 500, y: 300, z: 0 });
+    expect(store.getState().project.reinforcement[barId1].path[0].y).toBe(369);
   });
 
   it('rejects an unknown element id', () => {

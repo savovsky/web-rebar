@@ -7,8 +7,9 @@
  *
  * Asserted: the three T1 Allplan conventions (material layer set usage, Axis
  * Curve2D next to Body, IFC4 MVD FILE_DESCRIPTION), Q2 design-intent psets,
- * GlobalId = reversible compressed UUID, the Y-up→Z-up rotation, exact
- * doubles, shared-object dedup (one owner history / one context for a
+ * GlobalId = reversible compressed UUID, verbatim Z-up coordinates (model
+ * space == IFC space since the T2.5 migration — no rotation at this seam),
+ * exact doubles, shared-object dedup (one owner history / one context for a
  * multi-entity export), and the empty-model case.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -35,11 +36,11 @@ import { placeBar, placeWall } from '@/commands';
 import type { ProjectModel } from '@/data/models';
 import { createAppStore } from '@/stores';
 import { decompressIfcGuidToUuid } from './ifc-guid';
-import { buildIfcModel, toIfcPoint } from './ifc-mapping';
+import { buildIfcModel } from './ifc-mapping';
 import { createIfcApi } from './web-ifc-loader';
 
-/** Two crossing walls (one elevated — proves baseElevation maps to IFC Z) and
- *  a straight + a bent bar hosted by wall A. */
+/** Two crossing walls (one elevated — proves baseElevation lands in z
+ *  verbatim) and a straight + a bent bar hosted by wall A. */
 const WALL_A = {
   startPoint: { x: 0, y: 0, z: 0 },
   endPoint: { x: 4000, y: 0, z: 0 },
@@ -47,20 +48,20 @@ const WALL_A = {
   height: 2800,
 };
 const WALL_B = {
-  startPoint: { x: 1000, y: 0, z: 2000 },
-  endPoint: { x: 1000, y: 0, z: 6000 },
+  startPoint: { x: 1000, y: 2000, z: 0 },
+  endPoint: { x: 1000, y: 6000, z: 0 },
   thickness: 300,
   height: 2800,
   baseElevation: 3000,
 };
 const STRAIGHT_BAR_PATH = [
-  { x: 500, y: 700, z: 87 },
-  { x: 3500, y: 700, z: 87 },
+  { x: 500, y: 87, z: 700 },
+  { x: 3500, y: 87, z: 700 },
 ];
 const BENT_BAR_PATH = [
-  { x: 500, y: 1500, z: 87 },
-  { x: 3500, y: 1500, z: 87 },
-  { x: 3500, y: 2400, z: 87 },
+  { x: 500, y: 87, z: 1500 },
+  { x: 3500, y: 87, z: 1500 },
+  { x: 3500, y: 87, z: 2400 },
 ];
 const DEFAULT_WALL_COVER_MM = 25; // catalog seed (steel.ts defaultCover.wall)
 const DEFAULT_STEEL_GRADE = 'B500B';
@@ -183,15 +184,6 @@ function barsByTag(req: ReadRequest): Map<string, BarLine> {
   return new Map(bars.map((bar) => [bar.Tag.value, bar]));
 }
 
-describe('toIfcPoint — Y-up model → Z-up IFC rotation', () => {
-  it('maps (x, y, z)model → (x, −z, y)ifc, elevation stays elevation, never emits −0', () => {
-    expect(toIfcPoint({ x: 1000, y: 3000, z: 500 })).toEqual({ x: 1000, y: -500, z: 3000 });
-    expect(toIfcPoint({ x: 0, y: 0, z: 0 })).toEqual({ x: 0, y: 0, z: 0 });
-    expect(Object.is(toIfcPoint({ x: 0, y: 0, z: 0 }).y, -0)).toBe(false);
-    expect(toIfcPoint({ x: -250, y: 25, z: -4000 })).toEqual({ x: -250, y: 4000, z: 25 });
-  });
-});
-
 describe('IFC export mapping — ProjectModel → IFC4 entity graph (M2 T2)', () => {
   it('writes a valid IFC4 SPF header with the IFC4 MVD FILE_DESCRIPTION (T1 convention 3)', async () => {
     const writer = await createIfcApi();
@@ -238,7 +230,8 @@ describe('IFC export mapping — ProjectModel → IFC4 entity graph (M2 T2)', ()
     const walls = wallsByTag(req);
     expect([...walls.keys()].sort()).toEqual([fixture.wallAId, fixture.wallBId].sort());
 
-    // Wall A: axis along +X at ground level → IFC location (0, 0, 0), X = (1,0,0).
+    // Wall A: axis along +X at ground level → IFC location (0, 0, 0), X = (1,0,0)
+    // (coordinates cross verbatim — model space == IFC space since T2.5).
     const wallA = walls.get(fixture.wallAId) as WallLine;
     expect(decompressIfcGuidToUuid(wallA.GlobalId.value)).toBe(fixture.wallAId);
     const placementA = wallA.ObjectPlacement.RelativePlacement;
@@ -246,13 +239,14 @@ describe('IFC export mapping — ProjectModel → IFC4 entity graph (M2 T2)', ()
     expect(placementA.Axis.DirectionRatios.map((r) => r.value)).toEqual([0, 0, 1]);
     expect(placementA.RefDirection.DirectionRatios.map((r) => r.value)).toEqual([1, 0, 0]);
 
-    // Wall B: axis along +Z_model at baseElevation 3000 → IFC location
-    // (1000, −2000, 3000) — plan z becomes −y, ELEVATION becomes z.
+    // Wall B: axis along +Y at baseElevation 3000 → IFC location
+    // (1000, 2000, 3000) — coordinates cross VERBATIM (model space is the
+    // Z-up IFC space since T2.5); baseElevation is z by construction.
     const wallB = walls.get(fixture.wallBId) as WallLine;
     expect(decompressIfcGuidToUuid(wallB.GlobalId.value)).toBe(fixture.wallBId);
     const placementB = wallB.ObjectPlacement.RelativePlacement;
-    expect(pointCoords(placementB.Location)).toEqual([1000, -2000, 3000]);
-    expect(placementB.RefDirection.DirectionRatios.map((r) => r.value)).toEqual([0, -1, 0]);
+    expect(pointCoords(placementB.Location)).toEqual([1000, 2000, 3000]);
+    expect(placementB.RefDirection.DirectionRatios.map((r) => r.value)).toEqual([0, 1, 0]);
 
     // Both walls: Axis (Curve2D reference line) + Body (length × thickness ×
     // height) representations — the Allplan-required pair.
@@ -306,8 +300,8 @@ describe('IFC export mapping — ProjectModel → IFC4 entity graph (M2 T2)', ()
     const straightRep = straight.Representation.Representations[0].Items[0];
     expect(straightRep.Radius.value).toBe(6);
     expect(straightRep.Directrix.Points.map(pointCoords)).toEqual([
-      [500, -87, 700],
-      [3500, -87, 700],
+      [500, 87, 700],
+      [3500, 87, 700],
     ]);
 
     const bent = bars.get(fixture.bentBarId) as BarLine;
@@ -315,11 +309,11 @@ describe('IFC export mapping — ProjectModel → IFC4 entity graph (M2 T2)', ()
     expect(bent.NominalDiameter.value).toBe(16);
     const bentRep = bent.Representation.Representations[0].Items[0];
     expect(bentRep.Radius.value).toBe(8);
-    // The bending place survives: 3 directrix points, model y → IFC z.
+    // The bending place survives: 3 directrix points, coordinates verbatim.
     expect(bentRep.Directrix.Points.map(pointCoords)).toEqual([
-      [500, -87, 1500],
-      [3500, -87, 1500],
-      [3500, -87, 2400],
+      [500, 87, 1500],
+      [3500, 87, 1500],
+      [3500, 87, 2400],
     ]);
 
     const psets = lineIds({ ...req, type: IFCPROPERTYSET }).map((expressID) =>

@@ -164,8 +164,8 @@ function SectionVolume({ section }: { section: SectionDefinition }) {
       {/* Grab/activate fill — invisible for inactive volumes, subtle when active. */}
       <mesh
         position={[volumeTransform.center.x, volumeTransform.center.y, volumeTransform.center.z]}
-        rotation-y={volumeTransform.rotationY}
-        scale={[volumeTransform.lengthMm, volumeTransform.heightMm, volumeTransform.depthMm]}
+        rotation-z={volumeTransform.rotationZ}
+        scale={[volumeTransform.lengthMm, volumeTransform.depthMm, volumeTransform.heightMm]}
         onClick={handleActivateClick}
         onPointerDown={(event) => startDrag({ event, kind: 'move' })}
         onPointerMove={updateDrag}

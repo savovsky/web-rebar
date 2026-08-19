@@ -124,7 +124,7 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
         transform.center.y + dragOffset.y,
         transform.center.z + dragOffset.z,
       ]}
-      rotation-y={transform.rotationY}
+      rotation-z={transform.rotationZ}
       onClick={handleClick}
       onPointerDown={moveDrag.handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -133,7 +133,7 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
       onPointerLeave={handlePointerLeave}
       userData={{ entityType: 'wall', entityId: wall.id }}
     >
-      <boxGeometry args={[transform.lengthMm, wall.height, wall.thickness]} />
+      <boxGeometry args={[transform.lengthMm, wall.thickness, wall.height]} />
       {/* §L.2: transparent concrete with no depth writes — bars inside stay visible. */}
       <meshStandardMaterial
         color={fillColor}

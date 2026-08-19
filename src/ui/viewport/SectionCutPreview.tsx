@@ -42,12 +42,12 @@ interface FrameTarget {
   isToolActive: boolean;
 }
 
-/** Cursor crosshair follows the raw cursor (ground plane, y = 0). */
+/** Cursor crosshair follows the raw cursor (ground plane, z = 0). */
 function applyMarkerFrame({ object, isToolActive }: FrameTarget): void {
   if (!object) return;
   const cursor = getCursorRawPoint();
   object.visible = isToolActive && cursor !== null;
-  if (cursor) object.position.set(cursor.x, 0, cursor.z);
+  if (cursor) object.position.set(cursor.x, cursor.y, 0);
 }
 
 interface LineFrameOptions extends FrameTarget {
@@ -85,7 +85,7 @@ function applySlabFrame({ object, isToolActive, committedPoints }: LineFrameOpti
     normal !== null;
   object.visible = hasSlab;
   if (!hasSlab || !attribute) return;
-  const signedDepthMm = (cursor.x - lineStart.x) * normal.x + (cursor.z - lineStart.z) * normal.z;
+  const signedDepthMm = (cursor.x - lineStart.x) * normal.x + (cursor.y - lineStart.y) * normal.y;
   const corners = sectionPlanRectangle({ lineStart, lineEnd, normal, viewDepthMm: signedDepthMm });
   for (let edge = 0; edge < corners.length; edge++) {
     setVertex({ attribute, index: edge * 2, point: corners[edge] });
@@ -125,7 +125,7 @@ export function SectionCutPreview() {
       <lineSegments
         ref={markerRef}
         geometry={crosshairGeometry}
-        scale={[gridSpacingMm, 1, gridSpacingMm]}
+        scale={[gridSpacingMm, gridSpacingMm, 1]}
         renderOrder={CROSSHAIR_RENDER_ORDER}
         visible={false}
       >

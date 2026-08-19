@@ -51,7 +51,7 @@
 
 - **Given:** a placement tool is active
 - **When:** moving the cursor over the ground plane, holding Shift, toggling snap in the status bar
-- **Then:** the status bar shows live plan X/Z coordinates; the crosshair marker (one grid cell per arm) snaps to grid intersections; holding Shift or toggling snap off disables snapping — preview and commit use the same snapped position (what you see is what you get)
+- **Then:** the status bar shows live plan X/Y coordinates (Z-up model space, M2 T2.5); the crosshair marker (one grid cell per arm) snaps to grid intersections; holding Shift or toggling snap off disables snapping — preview and commit use the same snapped position (what you see is what you get)
 
 ### M0-S07 — Chained wall placement
 

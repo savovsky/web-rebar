@@ -1,6 +1,9 @@
 // T9 §G.1 Tier 1 orchestration tests — parametric outline, cut-bar dots,
 // convention-based background (§G.2.3), projection math, memoized selector.
 // Cut bars cross the real WASM boundary (initWasmFromDisk).
+// Model space is Z-up: plan in X–Y, elevation in Z. The view frame keeps the
+// drafting convention up = +Z, right = forward × up — so u runs along −y for
+// a cut looking along +X.
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createSection, placeBar, placeWall } from '@/commands';
 import type { ReinforcementBar, SectionDefinition, Vec3, WallElement } from '@/data/models';
@@ -29,8 +32,8 @@ const WALL: WallElement = {
 const makeSection = (overrides?: Partial<SectionDefinition>): SectionDefinition => ({
   id: 'sec-1',
   name: 'S-1',
-  lineStart: { x: 2000, y: 0, z: -500 },
-  lineEnd: { x: 2000, y: 0, z: 500 },
+  lineStart: { x: 2000, y: -500, z: 0 },
+  lineEnd: { x: 2000, y: 500, z: 0 },
   plane: { origin: { x: 2000, y: 0, z: 0 }, normal: { x: 1, y: 0, z: 0 } },
   viewDepth: 5000,
   targetElementIds: [WALL.id],
@@ -64,23 +67,23 @@ describe('getSectionFrame / projectToSection', () => {
   it('builds a right-handed view frame (forward × up = right)', () => {
     const frame = getSectionFrame({ origin: { x: 2000, y: 0, z: 0 }, normal: { x: 1, y: 0, z: 0 } });
     expect(frame.forward).toEqual({ x: 1, y: 0, z: 0 });
-    expect(frame.right).toEqual({ x: 0, y: 0, z: 1 });
-    expect(frame.up).toEqual({ x: 0, y: 1, z: 0 });
+    expect(frame.right).toEqual({ x: 0, y: -1, z: 0 });
+    expect(frame.up).toEqual({ x: 0, y: 0, z: 1 });
   });
 
   it('normalizes a non-unit normal', () => {
-    const frame = getSectionFrame({ origin: { x: 0, y: 0, z: 0 }, normal: { x: 0, y: 0, z: 5 } });
-    expect(frame.forward).toEqual({ x: 0, y: 0, z: 1 });
-    expect(frame.right).toEqual({ x: -1, y: 0, z: 0 });
+    const frame = getSectionFrame({ origin: { x: 0, y: 0, z: 0 }, normal: { x: 0, y: 5, z: 0 } });
+    expect(frame.forward).toEqual({ x: 0, y: 1, z: 0 });
+    expect(frame.right).toEqual({ x: 1, y: 0, z: 0 });
   });
 
   it('projects model points to section coordinates + depth', () => {
     const frame = getSectionFrame({ origin: { x: 2000, y: 0, z: 0 }, normal: { x: 1, y: 0, z: 0 } });
-    expect(projectToSection({ x: 2000, y: 1400, z: 50 }, frame)).toEqual({
+    expect(projectToSection({ x: 2000, y: -50, z: 1400 }, frame)).toEqual({
       point: { u: 50, v: 1400 },
       depthMm: 0,
     });
-    expect(projectToSection({ x: 2500, y: 100, z: -30 }, frame)).toEqual({
+    expect(projectToSection({ x: 2500, y: 30, z: 100 }, frame)).toEqual({
       point: { u: -30, v: 100 },
       depthMm: 500,
     });
@@ -106,13 +109,13 @@ describe('computeSectionPrimitives — concrete outline (parametric query)', () 
   it('widens the outline for an oblique cut and keeps the genuine end edge', () => {
     // 45° plane near the wall end: chord through the footprint is wider than
     // the thickness; the corner behind the plane is a visible edge at u = 0.
-    // The cut line spans z ∈ [-500, 500] through the plane origin — real
+    // The cut line spans y ∈ [-500, 500] through the plane origin — real
     // sections always keep line and plane consistent (createSection does).
     const result = compute({
       section: makeSection({
-        lineStart: { x: 3900, y: 0, z: -500 },
-        lineEnd: { x: 3900, y: 0, z: 500 },
-        plane: { origin: { x: 3900, y: 0, z: 0 }, normal: { x: 1, y: 0, z: 1 } },
+        lineStart: { x: 3900, y: -500, z: 0 },
+        lineEnd: { x: 3900, y: 500, z: 0 },
+        plane: { origin: { x: 3900, y: 0, z: 0 }, normal: { x: 1, y: 1, z: 0 } },
         viewDepth: 1000,
       }),
     });
@@ -136,8 +139,8 @@ describe('computeSectionPrimitives — concrete outline (parametric query)', () 
       section,
       bars: [
         makeBar([
-          { x: 500, y: 1400, z: 69 },
-          { x: 3500, y: 1400, z: 69 },
+          { x: 500, y: 69, z: 1400 },
+          { x: 3500, y: 69, z: 1400 },
         ]),
       ],
     });
@@ -153,12 +156,12 @@ describe('computeSectionPrimitives — concrete outline (parametric query)', () 
     // 4 footprint corners but only 2 distinct u values (near/far ends share u).
     expect(result.backgroundLines).toEqual([
       [
-        { u: 100, v: 0 },
-        { u: 100, v: 2800 },
-      ],
-      [
         { u: -100, v: 0 },
         { u: -100, v: 2800 },
+      ],
+      [
+        { u: 100, v: 0 },
+        { u: 100, v: 2800 },
       ],
     ]);
   });
@@ -170,37 +173,37 @@ describe('computeSectionPrimitives — concrete outline (parametric query)', () 
 });
 
 describe('computeSectionPrimitives — bounded by the cut line extent (§G.1 revised 2026-08-09)', () => {
-  // The fixture line spans z ∈ [-500, 500] at x = 2000 → u-extent [-500, 500].
-  const wallAtZ = (z: number): WallElement => ({
+  // The fixture line spans y ∈ [-500, 500] at x = 2000 → u-extent [-500, 500].
+  const wallAtY = (y: number): WallElement => ({
     ...WALL,
-    startPoint: { x: 0, y: 0, z },
-    endPoint: { x: 4000, y: 0, z },
+    startPoint: { x: 0, y, z: 0 },
+    endPoint: { x: 4000, y, z: 0 },
   });
 
   it('clips a partially overlapping outline to the line ends', () => {
-    // Wall axis at z = 450 → footprint z ∈ [350, 550]: the chord is clipped
-    // to the extent at u = 500.
-    const result = compute({ section: makeSection(), wall: wallAtZ(450) });
+    // Wall axis at y = 450 → footprint y ∈ [350, 550] → u ∈ [-550, -350]:
+    // the chord is clipped to the extent at u = -500.
+    const result = compute({ section: makeSection(), wall: wallAtY(450) });
     expect(result.concreteOutlines).toEqual([
       [
-        { u: 350, v: 0 },
-        { u: 500, v: 0 },
-        { u: 500, v: 2800 },
-        { u: 350, v: 2800 },
+        { u: -500, v: 0 },
+        { u: -350, v: 0 },
+        { u: -350, v: 2800 },
+        { u: -500, v: 2800 },
       ],
     ]);
   });
 
   it('drops content fully beyond the line ends (the T4 author scenario)', () => {
-    // Wall axis at z = 700 → footprint z ∈ [600, 800], bar at z = 769: the
+    // Wall axis at y = 700 → footprint y ∈ [600, 800], bar at y = 769: the
     // infinite plane still crosses both, but nothing lies within the line.
     const result = compute({
       section: makeSection(),
-      wall: wallAtZ(700),
+      wall: wallAtY(700),
       bars: [
         makeBar([
-          { x: 500, y: 1400, z: 769 },
-          { x: 3500, y: 1400, z: 769 },
+          { x: 500, y: 769, z: 1400 },
+          { x: 3500, y: 769, z: 1400 },
         ]),
       ],
     });
@@ -211,12 +214,12 @@ describe('computeSectionPrimitives — bounded by the cut line extent (§G.1 rev
     const result = compute({
       section: makeSection(),
       bars: [
-        // Diagonal behind the plane: u runs 69 → 1069, clipped at u = 500.
+        // Diagonal behind the plane: u runs -69 → -1069, clipped at u = -500.
         makeBar([
-          { x: 2500, y: 500, z: 69 },
-          { x: 3500, y: 500, z: 1069 },
+          { x: 2500, y: 69, z: 500 },
+          { x: 3500, y: 1069, z: 500 },
         ]),
-        // Straight bar crossing the plane exactly at the line end (u = 500).
+        // Straight bar crossing the plane exactly at the line end (u = -500).
         makeBar(
           [
             { x: 500, y: 500, z: 500 },
@@ -227,10 +230,10 @@ describe('computeSectionPrimitives — bounded by the cut line extent (§G.1 rev
       ],
     });
     expect(result.cutBars).toHaveLength(1);
-    expect(result.cutBars[0].center.u).toBeCloseTo(500);
+    expect(result.cutBars[0].center.u).toBeCloseTo(-500);
     expect(result.backgroundLines).toContainEqual([
-      { u: 69, v: 500 },
-      { u: 500, v: 500 },
+      { u: -69, v: 500 },
+      { u: -500, v: 500 },
     ]);
   });
 });
@@ -241,12 +244,12 @@ describe('computeSectionPrimitives — cut bars (dots)', () => {
       section: makeSection(),
       bars: [
         makeBar([
-          { x: 500, y: 1400, z: 69 },
-          { x: 3500, y: 1400, z: 69 },
+          { x: 500, y: 69, z: 1400 },
+          { x: 3500, y: 69, z: 1400 },
         ]),
       ],
     });
-    expect(result.cutBars).toEqual([{ center: { u: 69, v: 1400 }, diameterMm: 12 }]);
+    expect(result.cutBars).toEqual([{ center: { u: -69, v: 1400 }, diameterMm: 12 }]);
     // The behind-plane continuation runs along the view direction — it
     // projects to a point and is dropped (the dot already represents it).
     expect(result.backgroundLines).toEqual([]);
@@ -256,15 +259,15 @@ describe('computeSectionPrimitives — cut bars (dots)', () => {
     const bars = [
       makeBar(
         [
-          { x: 500, y: 1400, z: 0 },
-          { x: 3500, y: 1400, z: 0 },
+          { x: 500, y: 0, z: 1400 },
+          { x: 3500, y: 0, z: 1400 },
         ],
         { id: 'bar-8', diameter: 8 },
       ),
       makeBar(
         [
-          { x: 500, y: 900, z: 0 },
-          { x: 3500, y: 900, z: 0 },
+          { x: 500, y: 0, z: 900 },
+          { x: 3500, y: 0, z: 900 },
         ],
         { id: 'bar-20', diameter: 20 },
       ),
@@ -275,9 +278,9 @@ describe('computeSectionPrimitives — cut bars (dots)', () => {
 
   it('produces one dot per crossing for a bent bar (0..n)', () => {
     const zigzag = makeBar([
-      { x: 500, y: 1400, z: 0 },
-      { x: 2500, y: 1400, z: 0 },
-      { x: 1500, y: 2000, z: 0 },
+      { x: 500, y: 0, z: 1400 },
+      { x: 2500, y: 0, z: 1400 },
+      { x: 1500, y: 0, z: 2000 },
     ]);
     const result = compute({ section: makeSection(), bars: [zigzag] });
     expect(result.cutBars).toHaveLength(2);
@@ -295,8 +298,8 @@ describe('computeSectionPrimitives — cut bars (dots)', () => {
   it('ignores bars whose host is not a section target', () => {
     const otherWallBar = makeBar(
       [
-        { x: 500, y: 1400, z: 0 },
-        { x: 3500, y: 1400, z: 0 },
+        { x: 500, y: 0, z: 1400 },
+        { x: 3500, y: 0, z: 1400 },
       ],
       {
         hostElementId: 'wall-2',
@@ -314,16 +317,16 @@ describe('computeSectionPrimitives — background within viewDepth', () => {
       section: makeSection(),
       bars: [
         makeBar([
-          { x: 2500, y: 100, z: 69 },
-          { x: 2500, y: 2700, z: 69 },
+          { x: 2500, y: 69, z: 100 },
+          { x: 2500, y: 69, z: 2700 },
         ]),
       ],
     });
     expect(result.cutBars).toEqual([]);
     expect(result.backgroundLines).toEqual([
       [
-        { u: 69, v: 100 },
-        { u: 69, v: 2700 },
+        { u: -69, v: 100 },
+        { u: -69, v: 2700 },
       ],
     ]);
   });
@@ -333,15 +336,15 @@ describe('computeSectionPrimitives — background within viewDepth', () => {
       section: makeSection(),
       bars: [
         makeBar([
-          { x: 5500, y: 100, z: 50 },
-          { x: 7500, y: 2700, z: 50 },
+          { x: 5500, y: 50, z: 100 },
+          { x: 7500, y: 50, z: 2700 },
         ]),
       ],
     });
     expect(result.backgroundLines).toEqual([
       [
-        { u: 50, v: 100 },
-        { u: 50, v: 2050 }, // 100 + 0.75 × 2600 — clipped at depth 5000
+        { u: -50, v: 100 },
+        { u: -50, v: 2050 }, // 100 + 0.75 × 2600 — clipped at depth 5000
       ],
     ]);
   });
@@ -351,8 +354,8 @@ describe('computeSectionPrimitives — background within viewDepth', () => {
       section: makeSection(),
       bars: [
         makeBar([
-          { x: 8000, y: 100, z: 50 },
-          { x: 8000, y: 2700, z: 50 },
+          { x: 8000, y: 50, z: 100 },
+          { x: 8000, y: 50, z: 2700 },
         ]),
       ],
     });
@@ -376,8 +379,8 @@ describe('selectSectionPrimitives (memoized selector)', () => {
         hostElementId: wallId,
         diameter: 12,
         path: [
-          { x: 500, y: 1400, z: 69 },
-          { x: 3500, y: 1400, z: 69 },
+          { x: 500, y: 69, z: 1400 },
+          { x: 3500, y: 69, z: 1400 },
         ],
       }),
     );
@@ -385,7 +388,7 @@ describe('selectSectionPrimitives (memoized selector)', () => {
       createSection({
         name: 'S-1',
         lineStart: { x: 2000, y: 0, z: 0 }, // starts inside the footprint — still a crossing
-        lineEnd: { x: 2000, y: 0, z: 500 },
+        lineEnd: { x: 2000, y: 500, z: 0 },
         depthPoint: { x: 7000, y: 0, z: 0 }, // view along +X, 5000 mm deep
         targetElementIds: [wallId],
       }),
@@ -398,7 +401,7 @@ describe('selectSectionPrimitives (memoized selector)', () => {
     const primitives = selectSectionPrimitives(store.getState(), sectionId);
     expect(primitives).not.toBeNull();
     expect(primitives?.concreteOutlines).toHaveLength(1);
-    expect(primitives?.cutBars).toEqual([{ center: { u: 69, v: 1400 }, diameterMm: 12 }]);
+    expect(primitives?.cutBars).toEqual([{ center: { u: -69, v: 1400 }, diameterMm: 12 }]);
   });
 
   it('memoizes per (state, sectionId) — same reference on repeat calls', () => {

@@ -7,7 +7,7 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **M2: ✅ PLAN APPROVED (2026-08-10)**; branch `A_MVP_Scope_M2`. M0 ✅ and M1 ✅ complete ([trackers](./README.md)). **T1 ✅** (web-ifc lazy integration + write-capability spike — Q1 gate PASSED incl. the author's Allplan 2022 check after 3 convention-fix iterations). **T2 ✅** (IFC export adapter: pure mapping + `exportIfc` command — Q2 psets, reversible compressed-UUID GlobalIds, the three T1 Allplan conventions; schema decision recorded: IFC4). T3 is next.
+- **M2: ✅ PLAN APPROVED (2026-08-10)**; branch `A_MVP_Scope_M2`. M0 ✅ and M1 ✅ complete ([trackers](./README.md)). **T1 ✅** (web-ifc lazy integration + write-capability spike — Q1 gate PASSED incl. the author's Allplan 2022 check after 3 convention-fix iterations). **T2 ✅** (IFC export adapter: pure mapping + `exportIfc` command — Q2 psets, reversible compressed-UUID GlobalIds, the three T1 Allplan conventions; schema decision recorded: IFC4). **T2.5 ✅** (model space migrated Y-up → **Z-up right-handed** — the engineering convention, identical to IFC/DXF; the `toIfcPoint` rotation deleted, §C records the convention). T3 is next — its import reads coordinates VERBATIM (T2 finding #1 is superseded: no inverse transform exists).
 - **M2 scope (§A revised 2026-08-09):** (1) model wall+bar → export IFC → reload → identical model; (2) DXF import as 2D reference background linework (the doc-11 tracing workflow); (3) DXF export of a section view. **Explicitly out:** DXF→3D model mapping, DWG (stays a Deferred Topic).
 - **Author dependency — HARD GATE for T5/T6 (author, added at approval):** M2's DXF tasks require **5–6 real-world AutoCAD-exported DXF files (architectural + formwork plans, author-provided)** dropped in `test-fixtures/dxf/` (gitignored — client confidentiality; tests that need them skip gracefully when absent). **✅ DELIVERED 2026-08-18 — 8 files (7× 2507_KOMO arch/formwork plans incl. a 3D-View export, 1× BE Sarafovo TD-FW) in `docs/test-fixtures/dxf/` (author's chosen location — the gitignored `test-fixtures` pattern matches at any depth).** **Implementation-session rule (prepend to every M2 session prompt): when a session reaches T5 (DXF import core) and no such files exist, STOP execution and explicitly ask the author for them — do not proceed on synthetic fixtures alone** (synthetic fixtures still cover unit logic, but the milestone's real-file risk probe — Q4 units/blocks — cannot pass without real files, and T6's tracing-workflow probe is meaningless without them).
 - **Workflow (same as M0/M1):** implement one task → `pnpm lint` + `pnpm test` + `pnpm build` green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
@@ -74,7 +74,7 @@
 
 ### 3. IFC import adapter + the round-trip probe
 
-- `importIfc(buffer) → { model delta }`: web-ifc read → walk IfcWallStandardCase + IfcReinforcingBar → internal models; intent from psets (Q2); ids from GlobalId decompression. Non-wall/bar entities: skip with a reported count (foreign-file mapping is M4 scope, Q2).
+- `importIfc(buffer) → { model delta }`: web-ifc read → walk IfcWallStandardCase + IfcReinforcingBar → internal models; intent from psets (Q2); ids from GlobalId decompression. Non-wall/bar entities: skip with a reported count (foreign-file mapping is M4 scope, Q2). Coordinates read **verbatim** — model space is Z-up like IFC since T2.5 (the T2 log's "exact inverse `(x, z, −y)`" note applied to the pre-migration Y-up model and is superseded).
 - §N command `importIfcModel({ buffer })` — dispatches per-entity add reducers inside one command scope → ONE undo level.
 - **The §A acceptance probe (headless):** command-built model (wall + bent bar at 25 mm cover) → export → import into a fresh store → identical-model assertion per the acceptance definition (ids equal; geometry ≤ 1e-6 mm; intent exactly equal).
 - `m1-acceptance.test.ts` registry probe map updated in the same commit.
@@ -124,6 +124,7 @@
 | --- | --- | --- | --- | --- |
 | T1 | web-ifc integration (lazy-loaded) + write-capability spike (Q1) + decision gate | spike test green against gate criteria; verdict + §D.4 revision recorded | ✅ Done | `56802cb` |
 | T2 | IFC export adapter: mapping module + `exportIfc` command (Q2 psets, GlobalId ids) | headless entity-graph tests; registry probe updated | ✅ Done | `2ec0af1` |
+| T2.5 | Model space Y-up → Z-up migration (author decision 2026-08-18; §C coordinate convention) | lint + 214 tests + build green; rotation deleted from the IFC adapter; author re-verifies the T2 artifact in Allplan | ✅ Done | — |
 | T3 | IFC import adapter + `importIfcModel` command + round-trip identical-model probe | the §A round-trip test green (ids, 1e-6 mm, intent) | ⬜ Pending | — |
 | T4 | File menu + IFC import/export UI wiring (lazy web-ifc, downloads, status hints) | manual: browser round-trip; author opens .ifc in external viewer | ⬜ Pending | — |
 | T5 | ⚠️ **Fixture gate — check first.** DXF import core: dxf-parser + mapping layer (units, bulge, blocks), ReferenceDocument model (Q3), 3 commands | unit tests: units table, bulge, block explosion, undo | ⬜ Pending | — |
@@ -204,3 +205,35 @@
 3. Nothing is user-visible in the app yet (File menu is T4); there is no browser flow to test for T2.
 
 **Green:** `pnpm lint` ✅ · `pnpm test` ✅ 215 tests / 29 files (196 → +19) · `pnpm build` ✅ (shell bundle unchanged at 1,272 kB — see the lazy-loading finding above)
+
+### T2.5 — Model space Y-up → Z-up migration (author decision 2026-08-18) ✅ Done
+
+**Context:** the M0 viewport inherited Three.js's Y-up convention and the data model followed it (plan in X–Z, elevation in Y). The author challenged this before T3: the app is for building structures — slabs lie in X–Y, stories stack in +Z — and the renderer's default should never lead the domain model. With the Y-up model, EVERY IFC/DXF entity crossing the adapter seam needed a handedness-sensitive rotation (T2's `toIfcPoint` (x, −z, y)) whose inverse T3 would have had to reproduce exactly; a sign slip mirrors the model silently. §C now records the coordinate convention explicitly (it was previously undocumented — only the M0/M2 logs mentioned it).
+
+**Decision (author):** migrate NOW, before T3 — ~20 geometry-touching files at M0–M2 scale, all under test; after M3 (modify tools, placement groups) the surface roughly doubles. The migration is a mechanical axis-role swap (plan (x,z)→(x,y), elevation y→z), not a redesign.
+
+**Changed:**
+- **Models (`src/data/models/`):** `geometry.ts` documents Z-up mm; `WallElement` plan axis in X–Y (`startPoint.z` ignored, elevation = `baseElevation` in Z); section planes vertical ⇔ `normal.z === 0`.
+- **Engine:** `wall-geometry.ts` — yaw renamed `rotationY` → `rotationZ` (about +Z: local +X → (cosθ, sinθ, 0)); `placement.ts` — face frames up = +Z, wall-local box +Y = thickness / +Z = height, normals rotate about Z; `section-cut.ts` — all plan math in (x, y), ground plane z = 0, volume transform `rotationZ`; `sectioning.ts` — view frame up = +Z, right = forward × up (**drafting convention**: a cut looking +X has −Y on the right — facing east, north is on your left; consequently section u runs along −y where it previously ran along +z — a visible 2D-view orientation flip vs. pre-migration, correct per convention); `snapping.ts` snaps x/y.
+- **Commands:** `placeWall` zero-length check on (x, y); `createSection`/`reshapeSection` store line z = 0; `reference-project.ts` grid/bars/sections rebuilt in X–Y + Z.
+- **Viewport:** `camera.up = [0,0,1]` once (Viewport3D); drei Grid rotated into the XY plane; GroundPlane needs NO rotation (PlaneGeometry defaults to XY facing +Z); wall/section-volume meshes `rotation-z` with box extents (length, thickness, height) / (length, depth, height); crosshair geometry in XY (scaled [s, s, 1]); status bar shows X/Y plan coordinates.
+- **IFC adapter (`ifc-mapping.ts`):** `toIfcPoint` DELETED — wall placement origin is `(startPoint.x, startPoint.y, baseElevation)` and bar directrix points cross **verbatim**; the mirroring failure class at this seam is eliminated by construction. `ifc-write-spike.ts` left untouched (frozen T1 decision-gate record; self-consistent).
+- **Rust core untouched** — `mesh.rs`'s reference-axis heuristic picks an axis far from the segment direction (degeneracy avoidance, not "up"); `section.rs` is plane math. `cargo test` unchanged (19 green).
+- **Tests:** ~15 test files re-fixtured (axis-role swap; section-u sign flips where u = −y). One stale production bug caught by the suite mid-migration: `section-cut-draft.ts`'s zero-length check still read `.z` — fixed to `.y`.
+
+**Findings recorded for T3 (supersedes T2 finding #1):**
+- **Coordinates are identity across the IFC seam.** Import reads placement origins, axis directions, and directrix points VERBATIM (no inverse transform). Wall reconstruction: `startPoint` = placement location (x, y), `baseElevation` = location z, `length`/`thickness` from the profile, `height` = extrusion depth, direction = RefDirection; bars: the swept-disk directrix IS the stored path. T1 proved SPF doubles round-trip exactly → assert `toBe`/`toEqual` in the round-trip probe where possible.
+- The T2 artifact regenerated by the test suite (`m2-t2-export.ifc`) now carries verbatim coordinates — the author re-verifies it in Allplan (manual test below).
+- T2 findings #2–#4 (IFC4 `RelatedElements`, the synchronous undo-scope middleware, GlobalId/Tag/pset identity) are UNCHANGED and still binding for T3.
+
+**Manual test list (author):**
+1. `pnpm dev` → the viewport must show the grid in the ground plane with walls standing UP along the screen-vertical when orbiting; camera starts in a south-east-above isometric view. Orbit (right-drag), pan (middle), zoom (scroll) must feel unchanged.
+2. Place Wall (W): draw a wall — the preview box and the committed wall lie flat on the grid and rise vertically; the status bar shows **X / Y** plan coordinates.
+3. Place Bar (B): click a wall SIDE face, chain a 3-click L-shape (horizontal leg + upward hook) — the bar renders inside the concrete at 31 mm cover, the hook going UP.
+4. Section Cut (S): drag across the wall, third click to the side — the 2D panel shows the wall outline + bar dot at the correct cover side (dot near the LEFT outline edge when the bar was placed on the +Y face and the cut looks +X); the 3D wireframe volume matches.
+5. Move (M): drag the wall — wall + hosted bar follow live; undo (Ctrl+Z) restores both in one step.
+6. Re-open `docs/test-fixtures/ifc/m2-t2-export.ifc` (regenerated by the test run) in Allplan 2022: same expectation as the T2 check (two clean walls — one at ground level east–west, one at +3000 mm elevation north–south — plus the two bars; 0 ignored/defective). Coordinates are now verbatim Z-up, so this re-verifies the T2 convention check post-migration.
+
+**Green:** `pnpm lint` ✅ · `pnpm test` ✅ 214 tests / 29 files (the removed `toIfcPoint` describe accounts for 215 → 214) · `pnpm build` ✅ (shell bundle unchanged at 1,272 kB)
+
+**Commit:** — *(author records the hash after committing)*

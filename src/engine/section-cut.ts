@@ -14,18 +14,18 @@ const RAY_PARALLEL_EPSILON = 1e-9;
 // --- line & depth point → cut plane ---
 
 /** Negation that collapses −0 (keeps model data canonical). */
-const flipPlanNormal = (normal: Vec3): Vec3 => ({ x: -normal.x + 0, y: 0, z: -normal.z + 0 });
+const flipPlanNormal = (normal: Vec3): Vec3 => ({ x: -normal.x + 0, y: -normal.y + 0, z: 0 });
 
 /**
- * Unit plan normal of a line, rotated 90° clockwise from its direction
- * ((−dir.z, 0, dir.x)). Null for a zero-length line.
+ * Unit plan normal of a line, rotated 90° counterclockwise (seen from +Z)
+ * from its direction ((−dir.y, dir.x, 0)). Null for a zero-length line.
  */
 export function planNormalFromLine(lineStart: Vec3, lineEnd: Vec3): Vec3 | null {
   const dx = lineEnd.x - lineStart.x;
-  const dz = lineEnd.z - lineStart.z;
-  const length = Math.hypot(dx, dz);
+  const dy = lineEnd.y - lineStart.y;
+  const length = Math.hypot(dx, dy);
   if (length < LINE_TOLERANCE_MM) return null;
-  return flipPlanNormal({ x: dz / length, y: 0, z: -dx / length });
+  return flipPlanNormal({ x: dy / length, y: -dx / length, z: 0 });
 }
 
 export interface SectionGeometry {
@@ -51,29 +51,29 @@ export function sectionGeometryFromDepthPoint(options: LineAndDepthPoint): Secti
   const { lineStart, lineEnd, depthPoint } = options;
   const normal = planNormalFromLine(lineStart, lineEnd);
   if (normal === null) return null;
-  const signedDepthMm = (depthPoint.x - lineStart.x) * normal.x + (depthPoint.z - lineStart.z) * normal.z;
+  const signedDepthMm = (depthPoint.x - lineStart.x) * normal.x + (depthPoint.y - lineStart.y) * normal.y;
   if (Math.abs(signedDepthMm) < LINE_TOLERANCE_MM) return null;
   const isFlipped = signedDepthMm < 0;
   return {
     plane: {
-      origin: { x: lineStart.x, y: lineStart.y, z: lineStart.z },
+      origin: { x: lineStart.x, y: lineStart.y, z: 0 },
       normal: isFlipped ? flipPlanNormal(normal) : normal,
     },
     viewDepthMm: Math.abs(signedDepthMm),
   };
 }
 
-// --- plan (x/z) segment vs. footprint crossing ---
+// --- plan (x/y) segment vs. footprint crossing ---
 
 interface PlanPoint {
   x: number;
-  z: number;
+  y: number;
 }
 
-/** 2D cross product of two plan vectors (z takes the y role in plan). */
-const cross2d = (u: PlanPoint, v: PlanPoint): number => u.x * v.z - u.z * v.x;
+/** 2D cross product of two plan vectors. */
+const cross2d = (u: PlanPoint, v: PlanPoint): number => u.x * v.y - u.y * v.x;
 
-const subtract2d = (a: PlanPoint, b: PlanPoint): PlanPoint => ({ x: a.x - b.x, z: a.z - b.z });
+const subtract2d = (a: PlanPoint, b: PlanPoint): PlanPoint => ({ x: a.x - b.x, y: a.y - b.y });
 
 /**
  * Point-in-convex-footprint test: the point must not lie strictly on the far
@@ -106,18 +106,18 @@ interface SegmentVsFootprintOptions {
 function edgeCrossings(options: SegmentVsFootprintOptions): PlanPoint[] {
   const { corners, a, b } = options;
   const crossings: PlanPoint[] = [];
-  const r: PlanPoint = { x: b.x - a.x, z: b.z - a.z };
+  const r: PlanPoint = { x: b.x - a.x, y: b.y - a.y };
   for (let i = 0; i < corners.length; i++) {
     const c = corners[i];
     const d = corners[(i + 1) % corners.length];
-    const s: PlanPoint = { x: d.x - c.x, z: d.z - c.z };
-    const denominator = r.x * s.z - r.z * s.x;
+    const s: PlanPoint = { x: d.x - c.x, y: d.y - c.y };
+    const denominator = r.x * s.y - r.y * s.x;
     if (Math.abs(denominator) <= LINE_TOLERANCE_MM) continue; // parallel/collinear edge
-    const ca: PlanPoint = { x: c.x - a.x, z: c.z - a.z };
-    const t = (ca.x * s.z - ca.z * s.x) / denominator;
-    const u = (ca.x * r.z - ca.z * r.x) / denominator;
+    const ca: PlanPoint = { x: c.x - a.x, y: c.y - a.y };
+    const t = (ca.x * s.y - ca.y * s.x) / denominator;
+    const u = (ca.x * r.y - ca.y * r.x) / denominator;
     if (t < 0 || t > 1 || u < 0 || u > 1) continue;
-    crossings.push({ x: a.x + t * r.x, z: a.z + t * r.z });
+    crossings.push({ x: a.x + t * r.x, y: a.y + t * r.y });
   }
   return crossings;
 }
@@ -135,12 +135,12 @@ function chordLengthThroughFootprint(options: SegmentVsFootprintOptions): number
   const unique = candidates.filter((point, index) =>
     candidates
       .slice(0, index)
-      .every((other) => Math.hypot(point.x - other.x, point.z - other.z) > LINE_TOLERANCE_MM),
+      .every((other) => Math.hypot(point.x - other.x, point.y - other.y) > LINE_TOLERANCE_MM),
   );
   let longest = 0;
   for (let i = 0; i < unique.length; i++) {
     for (let j = i + 1; j < unique.length; j++) {
-      longest = Math.max(longest, Math.hypot(unique[j].x - unique[i].x, unique[j].z - unique[i].z));
+      longest = Math.max(longest, Math.hypot(unique[j].x - unique[i].x, unique[j].y - unique[i].y));
     }
   }
   return longest;
@@ -159,8 +159,8 @@ export interface FindCrossedElementsOptions {
  */
 export function findElementsCrossedByLine(options: FindCrossedElementsOptions): string[] {
   const { lineStart, lineEnd, elements } = options;
-  const a: PlanPoint = { x: lineStart.x, z: lineStart.z };
-  const b: PlanPoint = { x: lineEnd.x, z: lineEnd.z };
+  const a: PlanPoint = { x: lineStart.x, y: lineStart.y };
+  const b: PlanPoint = { x: lineEnd.x, y: lineEnd.y };
   return Object.values(elements)
     .filter(
       (element) =>
@@ -192,18 +192,18 @@ export function sectionPlanGeometry(section: SectionDefinition): SectionPlanGeom
 export function depthPointOf(geometry: SectionPlanGeometry): Vec3 {
   return {
     x: geometry.lineStart.x + geometry.normal.x * geometry.viewDepthMm,
-    y: 0,
-    z: geometry.lineStart.z + geometry.normal.z * geometry.viewDepthMm,
+    y: geometry.lineStart.y + geometry.normal.y * geometry.viewDepthMm,
+    z: 0,
   };
 }
 
 export function isSameSectionGeometry(a: SectionPlanGeometry, b: SectionPlanGeometry): boolean {
-  const samePoint = (p: Vec3, q: Vec3): boolean => Math.hypot(p.x - q.x, p.z - q.z) <= LINE_TOLERANCE_MM;
+  const samePoint = (p: Vec3, q: Vec3): boolean => Math.hypot(p.x - q.x, p.y - q.y) <= LINE_TOLERANCE_MM;
   return (
     samePoint(a.lineStart, b.lineStart) &&
     samePoint(a.lineEnd, b.lineEnd) &&
     Math.abs(a.viewDepthMm - b.viewDepthMm) <= LINE_TOLERANCE_MM &&
-    a.normal.x * b.normal.x + a.normal.z * b.normal.z > 0
+    a.normal.x * b.normal.x + a.normal.y * b.normal.y > 0
   );
 }
 
@@ -212,8 +212,8 @@ export function sectionPlanRectangle(geometry: SectionPlanGeometry): [Vec3, Vec3
   const { lineStart, lineEnd, normal, viewDepthMm } = geometry;
   const behind = (point: Vec3): Vec3 => ({
     x: point.x + normal.x * viewDepthMm,
-    y: 0,
-    z: point.z + normal.z * viewDepthMm,
+    y: point.y + normal.y * viewDepthMm,
+    z: 0,
   });
   return [lineStart, lineEnd, behind(lineEnd), behind(lineStart)];
 }
@@ -222,11 +222,11 @@ export function sectionPlanRectangle(geometry: SectionPlanGeometry): [Vec3, Vec3
 export const SECTION_PLAN_CORNERS = ['frontStart', 'frontEnd', 'backEnd', 'backStart'] as const;
 export type SectionCorner = (typeof SECTION_PLAN_CORNERS)[number];
 
-/** The 8 volume corners: bottom four (plan rectangle at y = 0), then top four. */
+/** The 8 volume corners: bottom four (plan rectangle at z = 0), then top four. */
 export function sectionVolumeCorners(options: { geometry: SectionPlanGeometry; heightMm: number }): Vec3[] {
   const { geometry, heightMm } = options;
   const plan = sectionPlanRectangle(geometry);
-  return [...plan, ...plan.map((point) => ({ x: point.x, y: heightMm, z: point.z }))];
+  return [...plan, ...plan.map((point) => ({ x: point.x, y: point.y, z: heightMm }))];
 }
 
 /** The 12 box edges as index pairs into sectionVolumeCorners' output. */
@@ -250,8 +250,8 @@ const MIN_VOLUME_DIMENSION_MM = 1;
 
 export interface SectionVolumeTransform {
   center: Vec3;
-  /** Yaw (radians, about +Y) aligning the box's local +X with the section line. */
-  rotationY: number;
+  /** Yaw (radians, about +Z) aligning the box's local +X with the section line. */
+  rotationZ: number;
   lengthMm: number;
   depthMm: number;
   heightMm: number;
@@ -265,15 +265,15 @@ export function sectionVolumeTransform(options: {
   const { geometry, heightMm } = options;
   const { lineStart, lineEnd, normal, viewDepthMm } = geometry;
   const dx = lineEnd.x - lineStart.x;
-  const dz = lineEnd.z - lineStart.z;
+  const dy = lineEnd.y - lineStart.y;
   return {
     center: {
       x: (lineStart.x + lineEnd.x) / 2 + (normal.x * viewDepthMm) / 2,
-      y: heightMm / 2,
-      z: (lineStart.z + lineEnd.z) / 2 + (normal.z * viewDepthMm) / 2,
+      y: (lineStart.y + lineEnd.y) / 2 + (normal.y * viewDepthMm) / 2,
+      z: heightMm / 2,
     },
-    rotationY: Math.atan2(-dz, dx),
-    lengthMm: Math.max(Math.hypot(dx, dz), MIN_VOLUME_DIMENSION_MM),
+    rotationZ: Math.atan2(dy, dx),
+    lengthMm: Math.max(Math.hypot(dx, dy), MIN_VOLUME_DIMENSION_MM),
     depthMm: Math.max(viewDepthMm, MIN_VOLUME_DIMENSION_MM),
     heightMm,
   };
@@ -307,8 +307,8 @@ export interface SectionDragState {
 
 const planShift = (point: Vec3, delta: PlanPoint): Vec3 => ({
   x: point.x + delta.x,
-  y: 0,
-  z: point.z + delta.z,
+  y: point.y + delta.y,
+  z: 0,
 });
 
 /** A front (cut-line) corner dragged to a ground point: the line re-forms from
@@ -323,7 +323,7 @@ function dragFrontCorner(options: {
   const lineEnd = corner === 'frontEnd' ? groundPoint : geometry.lineEnd;
   const candidate = planNormalFromLine(lineStart, lineEnd);
   if (candidate === null) return null; // collapsed line — commit will reject
-  const isKeepingSide = candidate.x * geometry.normal.x + candidate.z * geometry.normal.z >= 0;
+  const isKeepingSide = candidate.x * geometry.normal.x + candidate.y * geometry.normal.y >= 0;
   return {
     lineStart,
     lineEnd,
@@ -341,13 +341,13 @@ function dragBackCorner(options: {
 }): SectionPlanGeometry | null {
   const { geometry, corner, groundPoint } = options;
   const { lineStart, lineEnd, normal } = geometry;
-  const length = Math.hypot(lineEnd.x - lineStart.x, lineEnd.z - lineStart.z);
+  const length = Math.hypot(lineEnd.x - lineStart.x, lineEnd.y - lineStart.y);
   if (length < LINE_TOLERANCE_MM) return null;
-  const dir: PlanPoint = { x: (lineEnd.x - lineStart.x) / length, z: (lineEnd.z - lineStart.z) / length };
+  const dir: PlanPoint = { x: (lineEnd.x - lineStart.x) / length, y: (lineEnd.y - lineStart.y) / length };
   const relative = subtract2d(groundPoint, lineStart);
-  const alongMm = relative.x * dir.x + relative.z * dir.z;
-  const foot: Vec3 = { x: lineStart.x + dir.x * alongMm, y: 0, z: lineStart.z + dir.z * alongMm };
-  const signedDepthMm = (groundPoint.x - foot.x) * normal.x + (groundPoint.z - foot.z) * normal.z;
+  const alongMm = relative.x * dir.x + relative.y * dir.y;
+  const foot: Vec3 = { x: lineStart.x + dir.x * alongMm, y: lineStart.y + dir.y * alongMm, z: 0 };
+  const signedDepthMm = (groundPoint.x - foot.x) * normal.x + (groundPoint.y - foot.y) * normal.y;
   const isFlipped = signedDepthMm < 0;
   return {
     lineStart: corner === 'backStart' ? foot : lineStart,
@@ -370,7 +370,7 @@ export function applySectionDrag(options: {
   const { geometry, drag } = options;
   if (drag.kind === 'move') {
     const delta = subtract2d(drag.currentGround, drag.startGround);
-    if (Math.hypot(delta.x, delta.z) < LINE_TOLERANCE_MM) return geometry;
+    if (Math.hypot(delta.x, delta.y) < LINE_TOLERANCE_MM) return geometry;
     return {
       ...geometry,
       lineStart: planShift(geometry.lineStart, delta),
@@ -386,11 +386,11 @@ export function applySectionDrag(options: {
 
 // --- pointer ray → ground plane (wireframe handle drags) ---
 
-/** Plan point where a pointer ray meets the ground plane (y = 0); null when
+/** Plan point where a pointer ray meets the ground plane (z = 0); null when
  *  the ray runs parallel to it or points away. */
 export function groundPointFromRay(rayOrigin: Vec3, rayDirection: Vec3): Vec3 | null {
-  if (Math.abs(rayDirection.y) < RAY_PARALLEL_EPSILON) return null;
-  const t = -rayOrigin.y / rayDirection.y;
+  if (Math.abs(rayDirection.z) < RAY_PARALLEL_EPSILON) return null;
+  const t = -rayOrigin.z / rayDirection.z;
   if (t < 0) return null;
-  return { x: rayOrigin.x + t * rayDirection.x, y: 0, z: rayOrigin.z + t * rayDirection.z };
+  return { x: rayOrigin.x + t * rayDirection.x, y: rayOrigin.y + t * rayDirection.y, z: 0 };
 }

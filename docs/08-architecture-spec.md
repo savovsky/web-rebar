@@ -179,6 +179,10 @@ Managed in `ui-slice.ts` alongside selection state. Tool activation dispatches a
 
 **IFC/DXF adapters:** Separate layer that translates internal model ↔ IFC-SPF / DXF. No IFC dependency in core data structures.
 
+**Coordinate convention:** Model space is **millimetres, Z-up, right-handed** — plan geometry in X–Y (north = +Y), elevation in +Z. This is the engineering/BIM convention and matches IFC and DXF exactly, so the adapters carry **no rotation** (an up-axis mismatch would live entirely at this seam, with a silent-mirroring failure class — eliminated by construction). The renderer's Y-up default (Three.js) is a *view* concern, absorbed once in the viewport setup (`camera.up = +Z`, ground helpers oriented into the XY plane) — picking/raycasting stays 1:1 with model coordinates. Section view frames follow the drafting convention: up = +Z, right = forward × up.
+
+> **Revised 2026-08-18 (M2 T2.5):** model space migrated from Y-up (Three.js's convention, inherited in M0) to Z-up before the IFC import adapter landed — the M2 T2 `toIfcPoint` rotation (x, −z, y) was deleted in the same change, and T3's import reads coordinates verbatim. Migration cost at M0–M2 scale: ~20 source files + test fixtures; after M3 (modify tools, placement groups) it would have roughly doubled.
+
 ---
 
 ## D — WASM / TypeScript Boundary

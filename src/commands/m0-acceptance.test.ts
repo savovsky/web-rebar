@@ -18,7 +18,7 @@ const WALL_LENGTH_MM = 4000;
 const WALL_THICKNESS_MM = 200;
 const WALL_HEIGHT_MM = 2800;
 const BAR_HEIGHT_MM = 1400;
-/** Expected centerline offset from the +Z face: cover (25) + radius (Ø12/2). */
+/** Expected centerline offset from the +Y face: cover (25) + radius (Ø12/2). */
 const EXPECTED_CENTERLINE_OFFSET_MM = 31;
 
 describe('M0 acceptance: one wall, one bar, one section', () => {
@@ -36,15 +36,15 @@ describe('M0 acceptance: one wall, one bar, one section', () => {
     );
 
     // 2. Place the bar at 25 mm cover (Place Bar tool → placeBar command).
-    //    Face clicks on the +Z face resolve to a centerline 31 mm inside,
+    //    Face clicks on the +Y face resolve to a centerline 31 mm inside,
     //    exactly as place-bar-draft.ts computes them.
     const wall = store.getState().project.elements[wallId];
     expect(wall?.kind).toBe('wall');
-    const frame = getWallFaceFrame(wall, { x: 0, y: 0, z: 1 });
+    const frame = getWallFaceFrame(wall, { x: 0, y: 1, z: 0 });
     const centerline = resolveBarCenterline({
       facePoints: [
-        { x: 500, y: BAR_HEIGHT_MM, z: WALL_THICKNESS_MM / 2 },
-        { x: 3500, y: BAR_HEIGHT_MM, z: WALL_THICKNESS_MM / 2 },
+        { x: 500, y: WALL_THICKNESS_MM / 2, z: BAR_HEIGHT_MM },
+        { x: 3500, y: WALL_THICKNESS_MM / 2, z: BAR_HEIGHT_MM },
       ],
       frame,
       wall,
@@ -59,8 +59,8 @@ describe('M0 acceptance: one wall, one bar, one section', () => {
     const bar = store.getState().project.reinforcement[barId];
     expect(bar.coverDistance).toBe(25);
     for (const point of bar.path) {
-      expect(WALL_THICKNESS_MM / 2 - point.z).toBeCloseTo(EXPECTED_CENTERLINE_OFFSET_MM);
-      expect(point.y).toBe(BAR_HEIGHT_MM);
+      expect(WALL_THICKNESS_MM / 2 - point.y).toBeCloseTo(EXPECTED_CENTERLINE_OFFSET_MM);
+      expect(point.z).toBe(BAR_HEIGHT_MM);
     }
 
     // 3. Cut the section (Section Cut tool → createSection command):
@@ -68,8 +68,8 @@ describe('M0 acceptance: one wall, one bar, one section', () => {
     const sectionId = store.dispatch(
       createSection({
         name: 'S-1',
-        lineStart: { x: 2000, y: 0, z: -500 },
-        lineEnd: { x: 2000, y: 0, z: 500 },
+        lineStart: { x: 2000, y: -500, z: 0 },
+        lineEnd: { x: 2000, y: 500, z: 0 },
         depthPoint: { x: 4500, y: 0, z: 0 },
         targetElementIds: [wallId],
       }),
@@ -92,11 +92,13 @@ describe('M0 acceptance: one wall, one bar, one section', () => {
 
     // Bar dot: one crossing, true diameter (§M.4), at the correct offset —
     // 31 mm (cover 25 + Ø/2) from the covered outline side, v = bar height.
+    // (u runs along −y for a cut looking along +X, so the covered +Y face is
+    // the u-min side of the outline.)
     expect(cutBars).toHaveLength(1);
     const [dot] = cutBars;
     expect(dot.diameterMm).toBe(DEFAULT_BAR_DIAMETER_MM);
     expect(dot.center.v).toBeCloseTo(BAR_HEIGHT_MM);
-    expect(Math.max(...us) - dot.center.u).toBeCloseTo(EXPECTED_CENTERLINE_OFFSET_MM);
+    expect(dot.center.u - Math.min(...us)).toBeCloseTo(EXPECTED_CENTERLINE_OFFSET_MM);
     expect(dot.center.u).toBeGreaterThan(Math.min(...us));
     expect(dot.center.u).toBeLessThan(Math.max(...us));
 

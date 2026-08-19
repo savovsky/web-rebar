@@ -50,7 +50,7 @@ export function advanceSectionCut(options: AdvanceSectionCutOptions): void {
   const { dispatch, elements, startPoint, endPoint } = options;
   const targetElementIds = findElementsCrossedByLine({ lineStart: startPoint, lineEnd: endPoint, elements });
   if (targetElementIds.length === 0) {
-    const isZeroLength = startPoint.x === endPoint.x && startPoint.z === endPoint.z;
+    const isZeroLength = startPoint.x === endPoint.x && startPoint.y === endPoint.y;
     rejectSectionCut(
       dispatch,
       isZeroLength

@@ -9,13 +9,13 @@ export interface SectionDefinition {
   /** Display name, e.g. 'S-1'. */
   name: string;
   /**
-   * The section line in plan (y ignored) — the stored design intent the 3D
+   * The section line in plan (z ignored) — the stored design intent the 3D
    * wireframe volume and its corner handles edit (§B.6). Invariant:
    * plane.origin === lineStart; the plane normal points into the view depth.
    */
   lineStart: Vec3;
   lineEnd: Vec3;
-  /** Cutting plane through the line. M0: vertical planes only (normal.y === 0). */
+  /** Cutting plane through the line. M0: vertical planes only (normal.z === 0). */
   plane: Plane;
   /**
    * View depth behind the plane (mm). Geometry within [plane, plane + depth]

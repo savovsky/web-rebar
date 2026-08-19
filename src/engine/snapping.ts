@@ -2,12 +2,12 @@
 // is decided by the event handler; this only does the rounding.
 import type { Vec3 } from '@/data/models';
 
-/** Snaps plan coordinates (x/z) to the nearest grid multiple; y passes through. */
+/** Snaps plan coordinates (x/y) to the nearest grid multiple; z passes through. */
 export function snapPointToGrid(point: Vec3, spacingMm: number): Vec3 {
   if (spacingMm <= 0) return point;
   return {
     x: Math.round(point.x / spacingMm) * spacingMm,
-    y: point.y,
-    z: Math.round(point.z / spacingMm) * spacingMm,
+    y: Math.round(point.y / spacingMm) * spacingMm,
+    z: point.z,
   };
 }
