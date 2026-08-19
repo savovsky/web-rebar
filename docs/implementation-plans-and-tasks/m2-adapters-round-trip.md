@@ -140,7 +140,7 @@
 | T2 | IFC export adapter: mapping module + `exportIfc` command (Q2 psets, GlobalId ids) | headless entity-graph tests; registry probe updated | ✅ Done | `2ec0af1` |
 | T2.5 | Model space Y-up → Z-up migration (author decision 2026-08-18; §C coordinate convention) | lint + 214 tests + build green; rotation deleted from the IFC adapter; author re-verifies the T2 artifact in Allplan | ✅ Done | `d842910` |
 | T3 | IFC import adapter + `importIfcModel` command + round-trip identical-model probe | the §A round-trip test green (ids, 1e-6 mm, intent) | ✅ Done | `9c8ccf4` |
-| T4 | File menu + IFC import/export UI wiring (lazy web-ifc, downloads, status hints) | manual: browser round-trip; author opens .ifc in external viewer | ✅ Done | — |
+| T4 | File menu + IFC import/export UI wiring (lazy web-ifc, downloads, status hints) | manual: browser round-trip; author opens .ifc in external viewer | ✅ Done | `0086791` |
 | T5 | ⚠️ **Fixture gate — check first.** DXF import core: dxf-parser + mapping layer (units, bulge, blocks), ReferenceDocument model (Q3), 3 commands | unit tests: units table, bulge, block explosion, undo | ⬜ Pending | — |
 | T6 | ⚠️ **Fixture gate — check first.** Background rendering + endpoint/midpoint tracing snaps + Backgrounds panel section + Import DXF menu | manual: real-file import at true scale; wall traced over it | ⬜ Pending | — |
 | T6.5 | IFC reference solids: foreign products import as render-only dummy solids (Q7 — author decision 2026-08-18; depends on T5/T6) | headless: reference-document mapping + one-undo probe + perf at 4,008-product scale; manual: the steel model renders, one undo removes it | ⬜ Pending | — |
@@ -321,4 +321,4 @@
 
 **Green:** `pnpm lint` ✅ · `pnpm test` ✅ 233 tests / 32 files (225 → +8) · `pnpm build` ✅ (shell 1,277.66 kB — see the tripwire above)
 
-**Commit:** —
+**Commit:** `0086791`
