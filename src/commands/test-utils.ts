@@ -25,6 +25,42 @@ const PROBE_BAR_Z_MM = 700;
  *  (m1-acceptance.test.ts): a one-wall + one-bar model exported through the
  *  §N exportIfc command — memoized per test file run; the imported ids are
  *  random per run and never collide with the probe fixture's (also random). */
+/** Minimal valid DXF text (mm units, one LINE on layer '0') for the
+ *  registry-completeness probe's reference-document commands (m1-acceptance). */
+export const MINIMAL_REFERENCE_DXF = [
+  '  0',
+  'SECTION',
+  '  2',
+  'HEADER',
+  '  9',
+  '$INSUNITS',
+  ' 70',
+  '     4',
+  '  0',
+  'ENDSEC',
+  '  0',
+  'SECTION',
+  '  2',
+  'ENTITIES',
+  '  0',
+  'LINE',
+  '  8',
+  '0',
+  ' 10',
+  '0.0',
+  ' 20',
+  '0.0',
+  ' 11',
+  '100.0',
+  ' 21',
+  '0.0',
+  '  0',
+  'ENDSEC',
+  '  0',
+  'EOF',
+  '',
+].join('\n');
+
 let importProbeBytes: Promise<Uint8Array> | null = null;
 export const getImportProbeBytes = (): Promise<Uint8Array> => {
   importProbeBytes ??= (async () => {

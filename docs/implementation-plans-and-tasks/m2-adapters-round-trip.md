@@ -7,7 +7,7 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **M2: ✅ PLAN APPROVED (2026-08-10)**; branch `A_MVP_Scope_M2`. M0 ✅ and M1 ✅ complete ([trackers](./README.md)). **T1 ✅** (web-ifc lazy integration + write-capability spike — Q1 gate PASSED incl. the author's Allplan 2022 check after 3 convention-fix iterations). **T2 ✅** (IFC export adapter: pure mapping + `exportIfc` command — Q2 psets, reversible compressed-UUID GlobalIds, the three T1 Allplan conventions; schema decision recorded: IFC4). **T2.5 ✅** (model space migrated Y-up → **Z-up right-handed** — the engineering convention, identical to IFC/DXF; the `toIfcPoint` rotation deleted, §C records the convention). **T3 ✅** (IFC import adapter + `importIfcModel` command + the §A round-trip identical-model probe GREEN; undo scope middleware now awaits promise-returning thunks — one undo level per async command). **T4 ✅** (File menu + IFC import/export UI wiring — Radix DropdownMenu in TopBar, blob-anchor download, status-bar summary/hints from `ImportIfcModelSummary` + `CommandError.code`; the IFC stack stays in lazy chunks, shell 1,278 kB). T5 (DXF import core) is next — the fixture gate is ✅ satisfied. **Scope amendment 2026-08-18 (author decision): Q7 + task T6.5 — unsupported foreign IFC products import as render-only reference solids** (trigger: the author's Advance Steel export skipped 4,008/4,008 correctly-but-uselessly).
+- **M2: ✅ PLAN APPROVED (2026-08-10)**; branch `A_MVP_Scope_M2`. M0 ✅ and M1 ✅ complete ([trackers](./README.md)). **T1 ✅** (web-ifc lazy integration + write-capability spike — Q1 gate PASSED incl. the author's Allplan 2022 check after 3 convention-fix iterations). **T2 ✅** (IFC export adapter: pure mapping + `exportIfc` command — Q2 psets, reversible compressed-UUID GlobalIds, the three T1 Allplan conventions; schema decision recorded: IFC4). **T2.5 ✅** (model space migrated Y-up → **Z-up right-handed** — the engineering convention, identical to IFC/DXF; the `toIfcPoint` rotation deleted, §C records the convention). **T3 ✅** (IFC import adapter + `importIfcModel` command + the §A round-trip identical-model probe GREEN; undo scope middleware now awaits promise-returning thunks — one undo level per async command). **T4 ✅** (File menu + IFC import/export UI wiring — Radix DropdownMenu in TopBar, blob-anchor download, status-bar summary/hints from `ImportIfcModelSummary` + `CommandError.code`; the IFC stack stays in lazy chunks, shell 1,278 kB). **T5 ✅** (DXF import core + ReferenceDocument model: Q3 model + 3 §N commands + dxf-parser mapping layer; the Q4 real-file risk probes RAN on the author's 8 fixtures — units cm/mm both directions, OCS/extrusion load-bearing, explosion to 67k primitives in ~0.6 s; dxf-parser stays a 34 kB lazy chunk). T6 (background rendering + tracing snaps) is next. **Scope amendment 2026-08-18 (author decision): Q7 + task T6.5 — unsupported foreign IFC products import as render-only reference solids** (trigger: the author's Advance Steel export skipped 4,008/4,008 correctly-but-uselessly).
 - **M2 scope (§A revised 2026-08-09):** (1) model wall+bar → export IFC → reload → identical model; (2) DXF import as 2D reference background linework (the doc-11 tracing workflow); (3) DXF export of a section view. **Explicitly out:** DXF→3D model mapping, DWG (stays a Deferred Topic).
 - **Author dependency — HARD GATE for T5/T6 (author, added at approval):** M2's DXF tasks require **5–6 real-world AutoCAD-exported DXF files (architectural + formwork plans, author-provided)** dropped in `test-fixtures/dxf/` (gitignored — client confidentiality; tests that need them skip gracefully when absent). **✅ DELIVERED 2026-08-18 — 8 files (7× 2507_KOMO arch/formwork plans incl. a 3D-View export, 1× BE Sarafovo TD-FW) in `docs/test-fixtures/dxf/` (author's chosen location — the gitignored `test-fixtures` pattern matches at any depth).** **Implementation-session rule (prepend to every M2 session prompt): when a session reaches T5 (DXF import core) and no such files exist, STOP execution and explicitly ask the author for them — do not proceed on synthetic fixtures alone** (synthetic fixtures still cover unit logic, but the milestone's real-file risk probe — Q4 units/blocks — cannot pass without real files, and T6's tracing-workflow probe is meaningless without them).
 - **Workflow (same as M0/M1):** implement one task → `pnpm lint` + `pnpm test` + `pnpm build` green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
@@ -141,7 +141,7 @@
 | T2.5 | Model space Y-up → Z-up migration (author decision 2026-08-18; §C coordinate convention) | lint + 214 tests + build green; rotation deleted from the IFC adapter; author re-verifies the T2 artifact in Allplan | ✅ Done | `d842910` |
 | T3 | IFC import adapter + `importIfcModel` command + round-trip identical-model probe | the §A round-trip test green (ids, 1e-6 mm, intent) | ✅ Done | `9c8ccf4` |
 | T4 | File menu + IFC import/export UI wiring (lazy web-ifc, downloads, status hints) | manual: browser round-trip; author opens .ifc in external viewer | ✅ Done | `0086791` |
-| T5 | ⚠️ **Fixture gate — check first.** DXF import core: dxf-parser + mapping layer (units, bulge, blocks), ReferenceDocument model (Q3), 3 commands | unit tests: units table, bulge, block explosion, undo | ⬜ Pending | — |
+| T5 | ⚠️ **Fixture gate — check first.** DXF import core: dxf-parser + mapping layer (units, bulge, blocks), ReferenceDocument model (Q3), 3 commands | unit tests: units table, bulge, block explosion, undo | ✅ Done | — |
 | T6 | ⚠️ **Fixture gate — check first.** Background rendering + endpoint/midpoint tracing snaps + Backgrounds panel section + Import DXF menu | manual: real-file import at true scale; wall traced over it | ⬜ Pending | — |
 | T6.5 | IFC reference solids: foreign products import as render-only dummy solids (Q7 — author decision 2026-08-18; depends on T5/T6) | headless: reference-document mapping + one-undo probe + perf at 4,008-product scale; manual: the steel model renders, one undo removes it | ⬜ Pending | — |
 | T7 | DXF export of section view: custom writer + `exportSectionDxf` command (Q5) | exact-coordinate headless tests; author measures file in real CAD | ⬜ Pending | — |
@@ -322,3 +322,67 @@
 **Green:** `pnpm lint` ✅ · `pnpm test` ✅ 233 tests / 32 files (225 → +8) · `pnpm build` ✅ (shell 1,277.66 kB — see the tripwire above)
 
 **Commit:** `0086791`
+
+### T5 — DXF import core + ReferenceDocument model (Q3/Q4/Q6) ✅ Done (2026-08-18)
+
+**Fixture gate:** ✅ verified at session start — the author's 8 AutoCAD exports are in `docs/test-fixtures/dxf/`, and the real-file risk probes RAN against them (below).
+
+**Built:**
+
+- `dxf-parser@1.1.2` (MIT) added as a runtime dependency (Q6). The ESM build is browser-safe (no node-`stream` import — `parseStream` is duck-typed).
+- Data model first (rule 4): `src/data/models/reference-documents.ts` — `ReferenceDocument` + `ReferencePrimitive` (line/polyline/arc/circle, plan X–Y in model mm, inert `sourceLayer` tag; arcs normalized to a CCW sweep, angles in radians). The Q3 tagged union `source: { kind: 'dxf', fileName, insunits }` is kept EXACTLY as designed — the `{ kind: 'ifc' }` variant joins at T6.5 (Q7), nothing built for it. `geometry.ts` gains `Vec2`; `project.ts` gains the `referenceDocuments` record; §H.1 revision note landed.
+- `src/io/dxf-adapter.ts` (the plan's named module): the $INSUNITS → mm table + override resolution, the public assembly (`mapDxfToReferencePrimitives` on the library-neutral `DxfDocumentLike` shape — the Q6 swap seam), and the parser seat (`importDxfReference` = dxf-parser + the skip-counting handlers). Split out by the 400-line lint cap: `src/io/dxf-mapping.ts` (entity filter + BLOCK/INSERT explosion + dispatch), `src/io/dxf-primitives.ts` (curve representability verdicts, bulge → arc, polyline emission with straight-run coalescing), `src/io/dxf-affine.ts` (3D affine + OCS arbitrary-axis algorithm). The split keeps the plan's seam exactly where named — recorded as structure, not deviation.
+- §N commands: `importReferenceDocument` (async thunk — DYNAMICALLY imports the adapter, the exportIfc/importIfcModel precedent; the whole document is built first, then added by ONE reducer → exactly ONE undo level — the plan's F3 door-check note; a failed import mutates nothing and records no undo level), `removeReferenceDocument`, `setReferenceDocumentVisibility` (both sync, NOT_FOUND-guarded). Registry now 18 commands; `command-registry.test.ts` + the `m1-acceptance.test.ts` registry-completeness probe map updated IN THE SAME CHANGE (the probe fixture now also imports a minimal reference document; `createProbeFixture` is async for the lazy adapter load — the tripwire worked as designed).
+- Tests: `src/io/dxf-mapping.test.ts` (units table mm/cm/m/in/ft/unitless/missing/unknown + override, basic mapping, bulge math vs known arcs incl. the clockwise-mirror case, OCS cases), `src/io/dxf-blocks.test.ts` (transform composition, base point, nesting, cycle guard, depth cap, array grids + the cap, ByBlock layer inheritance, exact arc mirroring, non-uniform scale skips, unresolved inserts), `src/io/dxf-adapter.test.ts` (end-to-end text parse incl. the HATCH parser seat + the real-file probes), `src/commands/reference-document-commands.test.ts` (command contracts, undo/redo exact-restore, rejection paths), `src/io/dxf-test-fixtures.ts` (shared builders — the ifc-test-fixtures.ts precedent).
+
+**Real-file risk probe results (Q4 units/blocks — RAN against the 8 fixtures):**
+
+| File | Parse+map | Primitives | Notable skips |
+| --- | --- | --- | --- |
+| 2507_KOMO - 3D View (46 MB) | 623 ms | 67,640 | 3DSOLID 4,473 + BODY 16 (parser seats) |
+| 2507_KOMO_ IP01-01 | 184 ms | 7,862 | HATCH 239, ELLIPSE 88 |
+| 2507_KOMO_ IP04-03 | 133 ms | 5,080 | HATCH 439 |
+| 2507_KOMO_ IP04-04 | 46 ms | 2,442 | HATCH 72 |
+| 2507_KOMO_ IP04-05 | 220 ms | 13,016 | HATCH 446, ELLIPSE 88 |
+| 2507_KOMO_ IP04-06 | 635 ms | 57,263 | ELLIPSE 792, HATCH 54 |
+| 2507_KOMO_ IP04-07 | 267 ms | 12,427 | HATCH 92, DIMENSION 22 |
+| BE Sarafovo TD-FW | 437 ms | 5,131 | TEXT 753, DIMENSION 680, HATCH 567, ATTDEF 310, SPLINE 125, SOLID 290, curve/spline-fit POLYLINE 5 |
+
+- **Units (Q4):** ALL 7 KOMO files declare `$INSUNITS=5` (cm → ×10) — the units table is immediately load-bearing; the Sarafovo file declares mm (4). The probe asserts both scale directions on real files; no file needed the assume-mm warning.
+- **Blocks (Q4):** INSERT-heavy content everywhere (explosion multiplies: 39 inserts × block content → 57k primitives in IP04-06); nesting depth ≤ 2; anonymous `*D*` blocks resolve and are inserted 91× in Sarafovo; ZERO unresolved/cyclic/depth-capped inserts on real files (the guards are pinned by synthetic tests).
+- **OCS/extrusion — the surprise load-bearing finding:** every KOMO file carries (0,0,−1) mirrored-plan entities (182–539 each: lines, arcs, LWPOLYLINEs AND INSERTs), Sarafovo 244 arcs with near-(0,0,−1) float-noise normals. The arbitrary-axis OCS conversion (incl. INSERT-level extrusion) is what keeps those entities from being dropped or mirrored wrong. Tilted (genuine-3D) curve planes: ZERO occurrences outside the 3D-View export — the tilt check is pinned synthetically.
+- **Mirrored inserts:** 97 negative-scale INSERTs in Sarafovo (its blocks contain 488 arcs) — the exact arc mirror mapping (angle remap + CCW renormalization) is exercised by real data.
+- **HATCH:** 1,909 exploded instances across the set — invisible to dxf-parser without the registered counting seats (Q4's "nothing silently lost" honored at the parser level). **Skip counts count EXPLODED instances** (block content × insert multiplicity) — consistent with primitive counts (both describe the final background): verified IP01-01's 72 unique HATCH entities → 239 instances.
+- dxf-parser parsed every file without a hiccup — the Q6 custom-reader fallback is NOT needed (verdict for doc 09 at T8). Parse speed: 46 MB in ~0.4–0.7 s.
+
+**Decisions taken in-task (no plan deviations):**
+
+- **$INSUNITS codes 18–20 (astronomical units / light years / parsecs) are NOT honored** — they never legitimately describe a building plan, so they get the unknown-code path (assume mm + warning; the override can still fix a genuinely odd file).
+- **dxf-parser's CIRCLE blind spot accepted:** the library parses no group 210 for CIRCLE (circles always read as plan-oriented). Evidence: zero circle+210 entities exist in the plan fixtures (5 in the genuine-3D export, whose tilted curves are out of scope anyway). If a real file ever breaks on this, the Q6 fallback owns the fix.
+- **Parser seats registered for HATCH, 3DSOLID, BODY only.** Other dxf-parser-unhandled types (LEADER, MLINE, VIEWPORT, REGION, …) remain parser-dropped without counting — the Q4 list is covered exactly; extending the seat list is a one-line change per type.
+- **Array (MINSERT) grids implemented** with spacing steps inside rotation+scale (the AutoCAD convention), capped at 1,024 cells (pathological-grid OOM guard, counted). ZERO array inserts exist in the fixtures — the convention is unit-test-pinned, not real-file-verified.
+- **Layer '0' in block content resolves to the INSERT's layer** (the DXF ByBlock convention) for the inert `sourceLayer` tag — otherwise most real block linework would tag as '0'.
+- **Paper-space entities are skip-counted** (layout sheets are not model background); 4–5 per KOMO file.
+- **Empty-document imports are allowed** (a text-only sheet is a legitimate file; the skip report tells the story) — rejected imports are: empty content, empty file name, unparseable content, unknown override code.
+- **`visible` lives on the document in `ProjectModel` (Q3 as designed) → visibility flips are undoable** like every other project mutation.
+- **Source z is dropped at import** (Q3's 2D primitives; `elevationMm` positions the document at render time — T6). The 3D-View export flattens to plan and imports fine (67k primitives) — it's a degenerate background but a valid stress probe.
+- **Encoding:** files decode as UTF-8 (AC2007+ on-disk encoding; the fixtures' `$DWGCODEPAGE=ANSI_1251` is the legacy locale echo). Pre-2007 codepage files could mangle non-ASCII layer TAGS — geometry is unaffected.
+
+**Bundle tripwire (the T4 finding — the File menu made the IFC stack reachable; DXF is NOT yet reachable):** production build — shell `index-*.js` **1,278.03 kB** (T4 baseline 1,277.66 + ~0.4 kB of registry/command code), IFC chunks unchanged, NO dxf chunk in the app build: the DXF path tree-shakes until T6 wires Import DXF… (the T2 exportIfc situation). Scratch-entry probe build (the T1/T2 pattern, files discarded): entry 32.55 kB · **dxf-adapter chunk 34.38 kB / 10.70 kB gzip LAZY** (dxf-parser + mapping + primitives + affine) · IFC chunks unchanged · no INEFFECTIVE_DYNAMIC_IMPORT warning. From T6 on, the production report covers the DXF path; the shell baseline to defend stays ~1,278 kB.
+
+**Findings recorded for T6:**
+
+- The File menu's **Import DXF…** follows the T4 pattern: `file.text()` → `importReferenceDocument({ text, fileName })` → `ImportReferenceDocumentSummary` for the status-bar hints (the ifc-status-hints.ts pattern: pure formatter + dumb glue). The Q4 **units-override choice** keys off `summary.unitsAssumed` (and belongs in the import flow — e.g. re-import with `insunitsOverride` after the warning, or a pre-import chooser; the command param is ready either way).
+- `DxfImportSkips` counts EXPLODED instances — the summary strings should say "occurrences" (a HATCH inside a 10×-inserted block is 10 missing fills on screen).
+- Rendering (T6): primitives are model-mm plan X–Y at `document.elevationMm`; per-document `visible`; excluded from `pickPointerWinner`. Arc sweeps are always CCW (startAngle → endAngle, radians, possibly wrapping past 2π); endpoint/midpoint snap targets derive from primitive geometry directly.
+- Import speed on the author's largest file (~0.6 s parse + map, 67k primitives) needs no progress UI beyond the T4 in-flight disabling — but note the undo snapshot retains the document once (structural sharing — the M1 T5 finding), so even 67k-primitive imports are memory-quiet.
+
+**Manual test list (author):**
+
+1. Nothing is user-visible in T5 (headless — rendering/UI is T6). The real-file risk evidence IS the probe output: `pnpm vitest run src/io/dxf-adapter.test.ts --disableConsoleIntercept` and review the `[fixture]` lines (the table above).
+2. Optional CAD-user sanity read: do the skip-count totals match your expectation of the files? (e.g. 567 HATCH occurrences in the Sarafovo formwork plan; 4,473 3DSOLID in the 3D-View export; cm units on all KOMO plans.)
+3. Optional regression glance: `pnpm dev` — the app is unchanged (the registry grew invisibly; no UI reaches the new commands until T6).
+
+**Green:** `pnpm lint` ✅ · `pnpm test` ✅ 277 tests / 36 files (233 → +44) · `pnpm build` ✅ (shell 1,278.03 kB — see the tripwire above)
+
+**Commit:** —

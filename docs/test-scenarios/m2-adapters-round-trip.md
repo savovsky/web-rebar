@@ -1,7 +1,7 @@
 # M2 Test Scenarios — Adapters Round-Trip (IFC + DXF)
 
 > **Back to:** [Test Scenarios](./README.md) · [M2 tracker](../implementation-plans-and-tasks/m2-adapters-round-trip.md)
-> Created 2026-08-18 (T3 session) — persists the approved T1–T2.5 manual test lists (M2-S01…S03) and records T3's headless IFC round-trip acceptance (M2-S04). Extended 2026-08-18 (T4 session) with the browser round-trip (M2-S05) and the foreign-file skip behavior (M2-S06 — ⚠️ superseded by T6.5/Q7). T5–T7 (DXF) extend this file next.
+> Created 2026-08-18 (T3 session) — persists the approved T1–T2.5 manual test lists (M2-S01…S03) and records T3's headless IFC round-trip acceptance (M2-S04). Extended 2026-08-18 (T4 session) with the browser round-trip (M2-S05) and the foreign-file skip behavior (M2-S06 — ⚠️ superseded by T6.5/Q7). Extended 2026-08-18 (T5 session) with the headless DXF import-core acceptance (M2-S07). T6/T7 extend this file next.
 
 ---
 
@@ -52,3 +52,11 @@
 - **Given:** a foreign IFC file with no web-rebar design-intent psets (the Advance Steel export: 1,598 plates / 455 beams / 124 accessories / 60 members / 5 columns / 1,766 openings)
 - **When:** File → Import IFC… with that file
 - **Then:** the import succeeds without a crash; the status bar reports "Imported 0 walls + 0 bars · skipped 4008: 4008 unsupported elements"; the model is unchanged (nothing to undo)
+### M2-S07 — DXF import core: real files become reference documents at true units (headless)
+
+**Covers:** T5 (Q3 ReferenceDocument model, Q4 units/blocks/bulge, Q6 dxf-parser) · **Status:** ✅ automated headless 2026-08-18 — no user-visible surface in T5 (rendering/UI is T6; M2-S08+ covers the browser flow) · **Headless counterpart:** `src/io/dxf-adapter.test.ts` (end-to-end + real-file probes), `src/io/dxf-mapping.test.ts` + `src/io/dxf-blocks.test.ts` (units/bulge/blocks/OCS), `src/commands/reference-document-commands.test.ts` (command contracts + undo)
+
+- **Given:** the author's 8 real AutoCAD exports in `docs/test-fixtures/dxf/` (gitignored — the probes skip gracefully when absent, and the hard gate requires them present)
+- **When:** each file is parsed (dxf-parser) and mapped into a reference document through the mapping layer
+- **Then:** declared units are honored ($INSUNITS cm → ×10 on the 7 KOMO files, mm → ×1 on the Sarafovo file); blocks/inserts explode to finite plan primitives (nesting, anonymous `*D*` blocks, mirrored inserts, (0,0,−1) OCS content all included); unsupported content (TEXT/MTEXT, SPLINE, ELLIPSE, HATCH, SOLID, DIMENSION, 3DFACE, ATTDEF, 3DSOLID/BODY, curve-fit POLYLINE) is skip-counted per exploded instance — never silently lost; bulges become CCW-normalized arcs at exact geometry; the import is ONE undo step (one Ctrl+Z removes the whole document, redo re-applies it); remove/visibility commands restore exactly on undo; empty content, an empty file name, unparseable content, or an unknown units-override code are rejected and change nothing
+

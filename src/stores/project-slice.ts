@@ -8,6 +8,7 @@ import type {
   ConcreteElement,
   Plane,
   ProjectModel,
+  ReferenceDocument,
   ReinforcementBar,
   SectionDefinition,
   Vec3,
@@ -32,6 +33,7 @@ const initialState: ProjectState = {
   elements: {},
   reinforcement: {},
   sections: {},
+  referenceDocuments: {},
 };
 
 const projectSlice = createSlice({
@@ -102,6 +104,20 @@ const projectSlice = createSlice({
     removeSection(state, action: PayloadAction<{ id: string }>) {
       delete state.sections[action.payload.id];
     },
+    /** M2 plan Q3: one imported file = one document, added by ONE reducer so
+     *  the importReferenceDocument command records exactly ONE undo level
+     *  (the plan's F3 door-check note — no per-entity cascade for DXF). */
+    addReferenceDocument(state, action: PayloadAction<ReferenceDocument>) {
+      state.referenceDocuments[action.payload.id] = action.payload;
+    },
+    removeReferenceDocument(state, action: PayloadAction<{ id: string }>) {
+      delete state.referenceDocuments[action.payload.id];
+    },
+    /** Document-level render-only flag (Q3 — no freeze/lock semantics). */
+    setReferenceDocumentVisibility(state, action: PayloadAction<{ id: string; visible: boolean }>) {
+      const document = state.referenceDocuments[action.payload.id];
+      if (document) document.visible = action.payload.visible;
+    },
     /** §E undo restore: wholesale replace with a recorded snapshot (a frozen
      *  Immer reference, Q2-a). Excluded from undo recording (undo-middleware
      *  matcher) — undo/redo are never themselves recorded. Every reducer above
@@ -120,13 +136,16 @@ const projectSlice = createSlice({
 export const {
   addBar,
   addElement,
+  addReferenceDocument,
   addSection,
   appendBarPoint,
   removeBar,
   removeElement,
+  removeReferenceDocument,
   removeSection,
   resetProject,
   restoreProjectSnapshot,
+  setReferenceDocumentVisibility,
   translateBar,
   translateElement,
   updateSectionGeometry,

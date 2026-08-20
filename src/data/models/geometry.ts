@@ -13,6 +13,13 @@ export interface Vec3 {
   z: number;
 }
 
+/** 2D point in the plan (X–Y) plane of model space (mm) — e.g. reference
+ *  linework, which lives at a document elevation instead of carrying z. */
+export interface Vec2 {
+  x: number;
+  y: number;
+}
+
 /**
  * Plane in model space: a point on the plane + its unit normal.
  * M0 sections use vertical planes only (normal.z === 0).

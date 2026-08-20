@@ -373,10 +373,13 @@ interface ProjectFile {
   reinforcement: ReinforcementBar[];
   placementGroups: PlacementGroup[];
   sections: SectionDefinition[];
+  referenceDocuments: ReferenceDocument[];
   annotations: Annotation[];
   layouts: DrawingLayout[];
 }
 ```
+
+> **Revised 2026-08-18 (M2 T5 — plan Q3 landed):** `referenceDocuments` added to `ProjectModel` — imported background linework (DXF; IFC reference solids join at T6.5 per Q7). Deliberately NOT the deferred Layer Model: no freeze/lock/active-layer/storey/compute-scoping semantics; the source CAD layer name survives only as an inert per-primitive `sourceLayer` tag; `visible` is a document-level render-only flag (stored in the model, hence undoable). Documents store only exploded primitives converted to model mm — never the raw source file text — keeping the record JSON-clean (the Q7-a typed-array bend below applies to T6.5 solids only).
 
 > **Revised 2026-08-18 (M2 plan Q7-a):** `referenceDocuments` (arriving with M2 T5, plan Q3) may carry **typed-array geometry** (Float32 positions / Uint32 indices) for IFC reference solids (T6.5) — a deliberate, dated bend of the "project.json is JSON-clean" contract: meshes live in `ProjectModel` so undo snapshots stay frozen-reference-cheap (the M1 T5 finding), and the §H implementation task will either serialize them (base64) or migrate document geometry to OPFS-binary sidecar files referenced from project.json. The decision lands WITH §H persistence, not before.
 

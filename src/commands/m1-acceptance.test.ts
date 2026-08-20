@@ -23,12 +23,15 @@ import {
   exportIfc,
   extendBar,
   importIfcModel,
+  importReferenceDocument,
   moveElement,
   placeBar,
   placeWall,
   redo,
+  removeReferenceDocument,
   reshapeSection,
   setActiveSection,
+  setReferenceDocumentVisibility,
   undo,
 } from '@/commands';
 import { createBenchmarkStore } from '@/commands/performance-probes';
@@ -38,7 +41,7 @@ import {
   type ReferenceStore,
   buildReferenceProject,
 } from '@/commands/reference-project';
-import { getImportProbeBytes } from '@/commands/test-utils';
+import { MINIMAL_REFERENCE_DXF, getImportProbeBytes } from '@/commands/test-utils';
 import { getWallFaceFrame, resolveBarCenterline } from '@/engine/placement';
 import { type SectionPrimitives, selectSectionPrimitives } from '@/engine/sectioning';
 import { initWasmFromDisk } from '@/engine/wasm-test-init';
@@ -307,6 +310,7 @@ interface ProbeFixture {
   wallId: string;
   barId: string;
   sectionId: string;
+  referenceDocumentId: string;
 }
 
 const STRAIGHT_BAR_PATH = [
@@ -314,19 +318,25 @@ const STRAIGHT_BAR_PATH = [
   { x: WALL_LENGTH_MM, y: 87, z: 500 },
 ];
 
-/** Fresh wall + bar + section per probe — three recorded levels of history. */
-const createProbeFixture = (): ProbeFixture => {
+/** Fresh wall + bar + section + reference document per probe — four recorded
+ *  levels of history. Async: importReferenceDocument dynamically loads the
+ *  dxf-adapter module (the M2 lazy-loading contract). */
+const createProbeFixture = async (): Promise<ProbeFixture> => {
   const store = createAppStore();
   const wallId = store.dispatch(placeWall(WALL_PARAMS));
   const barId = store.dispatch(
     placeBar({ hostElementId: wallId, diameter: DEFAULT_BAR_DIAMETER_MM, path: STRAIGHT_BAR_PATH }),
   );
   const sectionId = store.dispatch(createSection(sectionParams(wallId)));
-  return { store, wallId, barId, sectionId };
+  const { documentId } = await store.dispatch(
+    importReferenceDocument({ text: MINIMAL_REFERENCE_DXF, fileName: 'probe.dxf' }),
+  );
+  return { store, wallId, barId, sectionId, referenceDocumentId: documentId };
 };
 
 /** One dispatch per registry command against the probe fixture. Async
- *  commands (exportIfc — lazy web-ifc load) return the dispatch promise. */
+ *  commands (exportIfc/importIfcModel — lazy web-ifc; importReferenceDocument
+ *  — lazy dxf-adapter) return the dispatch promise. */
 const commandProbes: Record<CommandName, (fixture: ProbeFixture) => void | Promise<void>> = {
   placeWall: ({ store }) => {
     store.dispatch(placeWall({ ...WALL_PARAMS, baseElevation: 3000 }));
@@ -366,6 +376,15 @@ const commandProbes: Record<CommandName, (fixture: ProbeFixture) => void | Promi
   },
   importIfcModel: async ({ store }) => {
     await store.dispatch(importIfcModel({ buffer: await getImportProbeBytes() }));
+  },
+  importReferenceDocument: async ({ store }) => {
+    await store.dispatch(importReferenceDocument({ text: MINIMAL_REFERENCE_DXF, fileName: 'probe-2.dxf' }));
+  },
+  removeReferenceDocument: ({ store, referenceDocumentId }) => {
+    store.dispatch(removeReferenceDocument({ documentId: referenceDocumentId }));
+  },
+  setReferenceDocumentVisibility: ({ store, referenceDocumentId }) => {
+    store.dispatch(setReferenceDocumentVisibility({ documentId: referenceDocumentId, visible: false }));
   },
   moveElement: ({ store, wallId }) => {
     store.dispatch(moveElement({ elementId: wallId, delta: MOVE_DELTA }));
@@ -409,9 +428,12 @@ describe('every M0+M1 command is undoable (§E — the review-checklist row that
       'deleteSection',
       'deleteSelection',
       'importIfcModel',
+      'importReferenceDocument',
+      'removeReferenceDocument',
+      'setReferenceDocumentVisibility',
     ];
     for (const name of mutating) {
-      const fixture = createProbeFixture();
+      const fixture = await createProbeFixture();
       const before = fixture.store.getState().project;
       const depthBefore = fixture.store.getState().undo.past.length;
 
@@ -430,8 +452,8 @@ describe('every M0+M1 command is undoable (§E — the review-checklist row that
     }
   });
 
-  it('setActiveSection records no undo level — undo covers project state only (§E)', () => {
-    const fixture = createProbeFixture();
+  it('setActiveSection records no undo level — undo covers project state only (§E)', async () => {
+    const fixture = await createProbeFixture();
     const depthBefore = fixture.store.getState().undo.past.length;
     const projectBefore = fixture.store.getState().project;
 
@@ -443,7 +465,7 @@ describe('every M0+M1 command is undoable (§E — the review-checklist row that
   });
 
   it('exportIfc records no undo level and mutates nothing — pure read + file output (M2 T2, same precedent as setActiveSection)', async () => {
-    const fixture = createProbeFixture();
+    const fixture = await createProbeFixture();
     const depthBefore = fixture.store.getState().undo.past.length;
     const projectBefore = fixture.store.getState().project;
 
@@ -453,8 +475,8 @@ describe('every M0+M1 command is undoable (§E — the review-checklist row that
     expect(fixture.store.getState().project).toBe(projectBefore);
   });
 
-  it('undo/redo themselves are never recorded', () => {
-    const fixture = createProbeFixture();
+  it('undo/redo themselves are never recorded', async () => {
+    const fixture = await createProbeFixture();
     const depthBefore = fixture.store.getState().undo.past.length;
     const projectBefore = fixture.store.getState().project;
 
