@@ -145,7 +145,7 @@
 | T5 | ⚠️ **Fixture gate — check first.** DXF import core: dxf-parser + mapping layer (units, bulge, blocks), ReferenceDocument model (Q3), 3 commands | unit tests: units table, bulge, block explosion, undo | ✅ Done | `b25bfa8` |
 | T6 | ⚠️ **Fixture gate — check first.** Background rendering + endpoint/midpoint tracing snaps + Backgrounds panel section + Import DXF menu | manual: real-file import at true scale; wall traced over it | ✅ Done | `3b2348a` |
 | T6.5 | IFC reference solids: foreign products import as render-only dummy solids (Q7 — author decision 2026-08-18; depends on T5/T6) | headless: reference-document mapping + one-undo probe + perf at 4,008-product scale; manual: the steel model renders, one undo removes it | ✅ Done | `737c322` |
-| T7 | DXF export of section view: custom writer + `exportSectionDxf` command (Q5) | exact-coordinate headless tests; author measures file in real CAD | ✅ Done | — |
+| T7 | DXF export of section view: custom writer + `exportSectionDxf` command (Q5) | exact-coordinate headless tests; author measures file in real CAD | ✅ Done | `465b04a` |
 | T8 | M2 acceptance pass: `m2-acceptance.test.ts` + checklist audit + spec/docs/scenarios sweep | verdict table green; lint/test/build green | ⬜ Pending | — |
 
 ---
@@ -534,6 +534,6 @@
 
 **Green:** `pnpm lint` ✅ · `pnpm test` ✅ 353 tests / 42 files (326 → +27: 18 + 4 iter-1 + 5 iter-2 net) · `pnpm build` ✅ (shell 1,294.54 kB, dxf chunk 45.65 kB lazy — see the tripwire above; final after iteration 2)
 
-**Commit:** —
+**Commit:** `465b04a` (hash recorded by follow-up commit)
 
 **Closing-procedure note (2026-08-18):** filling this commit cell triggered a self-reference loop (a commit cannot contain its own hash; amending to insert the hash changes the hash — dozens of doomed amend iterations burned before the repo's own follow-up-commit pattern was used). Prevention adopted: **Rule 9 in the root README** — the `Commit:` cell stays `—` in the task commit, a small `Tracker: record T<n> hash (<hash>)` commit follows immediately (the repo's pre-existing pattern, now written down), NEVER amend after the hash exists, and a two-cycle hard stop for any repeating git/sed/check loop. The T7 session prompt carries the rule so the next session inherits it.
