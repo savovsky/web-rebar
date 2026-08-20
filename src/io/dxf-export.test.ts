@@ -18,72 +18,21 @@ import {
   exportDxfSection,
   importDxfReference,
 } from './dxf-adapter';
-import type { DxfImportSkips } from './dxf-adapter';
-
-interface DxfGroup {
-  code: number;
-  value: string;
-}
-
-/** Minimal group-pair reader for text-level assertions (the real parser is
- *  dxf-parser — exercised by the reimport probe below). */
-function parseGroups(text: string): DxfGroup[] {
-  const lines = text.split('\n');
-  const groups: DxfGroup[] = [];
-  for (let i = 0; i + 1 < lines.length; i += 2) {
-    groups.push({ code: Number(lines[i].trim()), value: lines[i + 1].trim() });
-  }
-  return groups;
-}
-
-/** The groups of one entity/entry starting at its 0-marker (up to the next). */
-function entityGroups(groups: DxfGroup[], query: { typeName: string; occurrence?: number }): DxfGroup[] {
-  const { typeName, occurrence = 0 } = query;
-  const startIndexes = groups
-    .map((group, index) => (group.code === 0 && group.value === typeName ? index : -1))
-    .filter((index) => index >= 0);
-  const start = startIndexes[occurrence];
-  if (start === undefined) throw new Error(`entity not found: ${typeName} #${occurrence}`);
-  let end = groups.length;
-  for (let i = start + 1; i < groups.length; i += 1) {
-    if (groups[i].code === 0) {
-      end = i;
-      break;
-    }
-  }
-  return groups.slice(start, end);
-}
-
-/** All occurrences of an entity/entry type, in file order. */
-function entityGroupsAll(groups: DxfGroup[], typeName: string): DxfGroup[][] {
-  const count = groups.filter((group) => group.code === 0 && group.value === typeName).length;
-  return Array.from({ length: count }, (_, occurrence) => entityGroups(groups, { typeName, occurrence }));
-}
-
-const valueOf = (groups: DxfGroup[], code: number): string | undefined =>
-  groups.find((group) => group.code === code)?.value;
-
-const valuesOf = (groups: DxfGroup[], code: number): string[] =>
-  groups.filter((group) => group.code === code).map((group) => group.value);
+import {
+  type DxfGroup,
+  entityGroups,
+  entityGroupsAll,
+  parseGroups,
+  totalSkips,
+  valueOf,
+  valuesOf,
+} from './dxf-test-fixtures';
 
 /** The file path of the artifact the author opens in real CAD (the T1/T2
  *  artifact pattern). NOT under test-fixtures/dxf/ — that dir is globbed by
  *  the real-file import probe (a 5-primitive file would break its census). */
 const EXPORT_ARTIFACT_DIR = fileURLToPath(new URL('../../docs/test-fixtures/dxf-export/', import.meta.url));
 const EXPORT_ARTIFACT_FILE = join(EXPORT_ARTIFACT_DIR, 'm2-t7-section.dxf');
-
-function totalSkips(skipped: DxfImportSkips): number {
-  const structural =
-    skipped.paperSpaceEntities +
-    skipped.unresolvedInserts +
-    skipped.cyclicInserts +
-    skipped.depthCappedInserts +
-    skipped.cappedArrayInserts +
-    skipped.nonUniformScaledCurves +
-    skipped.tiltedCurves +
-    skipped.degenerateSegments;
-  return Object.values(skipped.unsupportedEntities).reduce((sum, count) => sum + count, structural);
-}
 
 /** Two outlines, two dots (one with a float-awkward center), one dashed
  *  background LINE and one 3-point background polyline. */

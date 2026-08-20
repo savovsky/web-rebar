@@ -274,7 +274,7 @@ describe('M1 acceptance at reference scale (T5 fixture: 50 walls × 20 bars = 1,
     store.dispatch(redo());
     expect(store.getState().project).toBe(postMove);
     expect(requirePrimitives(store, sectionId)).toBe(moved);
-  });
+  }, 120_000); // the T7/T8 contention rationale — see m1-performance.test.ts
 });
 
 describe('30 undo levels (§E)', () => {

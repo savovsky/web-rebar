@@ -18,19 +18,25 @@ const BAR_PATH = [
 ];
 
 describe('exportIfc command (§N — M2 T2)', () => {
-  it('returns the IFC-SPF bytes and a sanitized <project name>.ifc file name', async () => {
-    const store = createAppStore();
-    const wallId = store.dispatch(placeWall(WALL));
-    store.dispatch(placeBar({ hostElementId: wallId, diameter: 12, path: BAR_PATH }));
+  // Generous timeout (the T7/T8 contention rationale — the lazy web-ifc
+  // WASM load exceeds the 5 s default when the full suite shares workers).
+  it(
+    'returns the IFC-SPF bytes and a sanitized <project name>.ifc file name',
+    { timeout: 120_000 },
+    async () => {
+      const store = createAppStore();
+      const wallId = store.dispatch(placeWall(WALL));
+      store.dispatch(placeBar({ hostElementId: wallId, diameter: 12, path: BAR_PATH }));
 
-    const result = await store.dispatch(exportIfc());
+      const result = await store.dispatch(exportIfc());
 
-    expect(result.fileName).toBe('Untitled Project.ifc');
-    const text = new TextDecoder().decode(result.bytes);
-    expect(text.startsWith('ISO-10303-21;')).toBe(true);
-    expect(text).toContain('IFCWALLSTANDARDCASE');
-    expect(text).toContain('IFCREINFORCINGBAR');
-  });
+      expect(result.fileName).toBe('Untitled Project.ifc');
+      const text = new TextDecoder().decode(result.bytes);
+      expect(text.startsWith('ISO-10303-21;')).toBe(true);
+      expect(text).toContain('IFCWALLSTANDARDCASE');
+      expect(text).toContain('IFCREINFORCINGBAR');
+    },
+  );
 
   it('is PURE: no project mutation, no undo level (§E — export is interop output, not an edit)', async () => {
     const store = createAppStore();

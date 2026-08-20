@@ -133,56 +133,62 @@ describe('extractIfcReferenceSolids (M2 T6.5, Q7)', () => {
     }
   });
 
-  it("real-file probe: the author's Advance Steel export (4,008 products) extracts within the budget", async (context) => {
-    if (!existsSync(REAL_FILE)) {
-      context.skip('author fixture not present (gitignored) — the hard gate requires it for the perf probe');
-      return;
-    }
-    const api = await createIfcApi();
-    const started = performance.now();
-    const modelID = api.OpenModel(new Uint8Array(readFileSync(REAL_FILE)));
-    try {
-      const extraction = extractIfcReferenceSolids({ api, modelID, excludeExpressIds: new Set() });
-      const elapsedMs = performance.now() - started;
-      let vertices = 0;
-      for (const part of extraction.parts) vertices += part.positions.length / 3;
-      console.info(
-        `[fixture] Advance Steel extraction: ${elapsedMs.toFixed(0)} ms (open + LoadAllGeometry + walk) · ` +
-          `${extraction.products} products · ${extraction.parts.length} parts · ${vertices} vertices · ` +
-          `${extraction.triangles} triangles · scaleToMm ${extraction.scaleToMm} (assumed: ${extraction.lengthUnitAssumed})`,
-      );
-      expect(elapsedMs).toBeLessThan(REAL_FILE_EXTRACTION_BUDGET_MS);
-      // Sanity at the probe scale (the Q7 trigger file: 1,598 plates + 455
-      // beams + 124 accessories + 60 members + 5 columns = 2,242 steel
-      // products; 1,766 openings yield no geometry).
-      expect(extraction.products).toBe(2242);
-      expect(extraction.triangles).toBeGreaterThan(100000);
-      expect(extraction.scaleToMm).toBe(1000);
-      expect(extraction.lengthUnitAssumed).toBe(false);
+  // Generous timeout (the T7/T8 contention rationale — the 8 s extraction
+  // under the 30 s budget exceeds the 5 s default when the full suite shares
+  // workers; the perf budgets themselves are untouched).
+  it(
+    "real-file probe: the author's Advance Steel export (4,008 products) extracts within the budget",
+    { timeout: 120_000 },
+    async () => {
+      if (!existsSync(REAL_FILE)) {
+        throw new Error('author fixture missing (gitignored) — the hard gate requires it for the perf probe');
+      }
+      const api = await createIfcApi();
+      const started = performance.now();
+      const modelID = api.OpenModel(new Uint8Array(readFileSync(REAL_FILE)));
+      try {
+        const extraction = extractIfcReferenceSolids({ api, modelID, excludeExpressIds: new Set() });
+        const elapsedMs = performance.now() - started;
+        let vertices = 0;
+        for (const part of extraction.parts) vertices += part.positions.length / 3;
+        console.info(
+          `[fixture] Advance Steel extraction: ${elapsedMs.toFixed(0)} ms (open + LoadAllGeometry + walk) · ` +
+            `${extraction.products} products · ${extraction.parts.length} parts · ${vertices} vertices · ` +
+            `${extraction.triangles} triangles · scaleToMm ${extraction.scaleToMm} (assumed: ${extraction.lengthUnitAssumed})`,
+        );
+        expect(elapsedMs).toBeLessThan(REAL_FILE_EXTRACTION_BUDGET_MS);
+        // Sanity at the probe scale (the Q7 trigger file: 1,598 plates + 455
+        // beams + 124 accessories + 60 members + 5 columns = 2,242 steel
+        // products; 1,766 openings yield no geometry).
+        expect(extraction.products).toBe(2242);
+        expect(extraction.triangles).toBeGreaterThan(100000);
+        expect(extraction.scaleToMm).toBe(1000);
+        expect(extraction.lengthUnitAssumed).toBe(false);
 
-      // Render budget half of the tripwire: the merged-BufferGeometry build
-      // (what ReferenceSolidsLayer memoizes per document) + retained bytes.
-      const { buildReferenceSolidBuffers } = await import('@/engine/reference-geometry');
-      const mergeStarted = performance.now();
-      const buffers = buildReferenceSolidBuffers({
-        solids: extraction.parts,
-        fallbackColor: { r: 0.6, g: 0.6, b: 0.6 },
-        opacity: 0.65,
-      });
-      const mergeMs = performance.now() - mergeStarted;
-      const retainedBytes =
-        buffers.positions.byteLength +
-        buffers.normals.byteLength +
-        buffers.colors.byteLength +
-        buffers.indices.byteLength;
-      console.info(
-        `[fixture] merged render buffers: ${mergeMs.toFixed(1)} ms · ${buffers.indices.length / 3} triangles · ` +
-          `${(retainedBytes / 1024 / 1024).toFixed(1)} MB GPU-side (ONE draw call per document)`,
-      );
-      expect(mergeMs).toBeLessThan(1000);
-      expect(buffers.indices.length / 3).toBe(extraction.triangles);
-    } finally {
-      api.CloseModel(modelID);
-    }
-  }, 120000);
+        // Render budget half of the tripwire: the merged-BufferGeometry build
+        // (what ReferenceSolidsLayer memoizes per document) + retained bytes.
+        const { buildReferenceSolidBuffers } = await import('@/engine/reference-geometry');
+        const mergeStarted = performance.now();
+        const buffers = buildReferenceSolidBuffers({
+          solids: extraction.parts,
+          fallbackColor: { r: 0.6, g: 0.6, b: 0.6 },
+          opacity: 0.65,
+        });
+        const mergeMs = performance.now() - mergeStarted;
+        const retainedBytes =
+          buffers.positions.byteLength +
+          buffers.normals.byteLength +
+          buffers.colors.byteLength +
+          buffers.indices.byteLength;
+        console.info(
+          `[fixture] merged render buffers: ${mergeMs.toFixed(1)} ms · ${buffers.indices.length / 3} triangles · ` +
+            `${(retainedBytes / 1024 / 1024).toFixed(1)} MB GPU-side (ONE draw call per document)`,
+        );
+        expect(mergeMs).toBeLessThan(1000);
+        expect(buffers.indices.length / 3).toBe(extraction.triangles);
+      } finally {
+        api.CloseModel(modelID);
+      }
+    },
+  );
 });

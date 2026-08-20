@@ -1,7 +1,7 @@
 # M2 Test Scenarios — Adapters Round-Trip (IFC + DXF)
 
 > **Back to:** [Test Scenarios](./README.md) · [M2 tracker](../implementation-plans-and-tasks/m2-adapters-round-trip.md)
-> Created 2026-08-18 (T3 session) — persists the approved T1–T2.5 manual test lists (M2-S01…S03) and records T3's headless IFC round-trip acceptance (M2-S04). Extended 2026-08-18 (T4 session) with the browser round-trip (M2-S05) and the foreign-file skip behavior (M2-S06). Extended 2026-08-18 (T5 session) with the headless DXF import-core acceptance (M2-S07). Extended 2026-08-18 (T6 session) with the background-rendering / tracing-snap / Backgrounds-panel / Import-DXF scenarios (M2-S08…S11). Extended 2026-08-18 (T6.5 session) — M2-S06 REWRITTEN for Q7 (foreign products import as render-only reference solids; the pre-T6.5 skip-only behavior is retired). Extended 2026-08-18 (T7 session) with the DXF section-export acceptance probe (M2-S12).
+> Created 2026-08-18 (T3 session) — persists the approved T1–T2.5 manual test lists (M2-S01…S03) and records T3's headless IFC round-trip acceptance (M2-S04). Extended 2026-08-18 (T4 session) with the browser round-trip (M2-S05) and the foreign-file skip behavior (M2-S06). Extended 2026-08-18 (T5 session) with the headless DXF import-core acceptance (M2-S07). Extended 2026-08-18 (T6 session) with the background-rendering / tracing-snap / Backgrounds-panel / Import-DXF scenarios (M2-S08…S11). Extended 2026-08-18 (T6.5 session) — M2-S06 REWRITTEN for Q7 (foreign products import as render-only reference solids; the pre-T6.5 skip-only behavior is retired). Extended 2026-08-18 (T7 session) with the DXF section-export acceptance probe (M2-S12). Extended 2026-08-18 (T8 session) with the milestone-closing regression walkthrough (M2-S13).
 
 ---
 
@@ -100,3 +100,11 @@
 - **Given:** the app running (`pnpm dev`) with a wall (W) and a bar (B) placed, and a section cut (S) across the wall so the 2D panel is open (a section is active)
 - **When:** File → Export Section DXF (first use shows the "…DXF module loads on first use" status hint; an `Untitled Project-S-1.dxf` download lands), then the file is opened in real CAD (Allplan 2022 / AutoCAD)
 - **Then:** the wall outline measures TRUE thickness × height (200 × 2800 for the default wall); a Ø12 cut bar measures a 12 mm circle (§M.4 true relative diameters); background linework (far corner edges of an oblique cut, or a second wall in depth) draws DASHED; 1 drawing unit = 1 mm ($INSUNITS=4 — true 1:1 mm model space; scale-on-sheet stays with the CAD paper space); entities sit on the WEBREBAR-CONCRETE / WEBREBAR-REBAR / WEBREBAR-BACKGROUND layers with 0.50 / 0.35 / 0.18 mm lineweights; with NO section active the menu entry is disabled; ALL File entries disable while a transfer runs; the export mutates nothing (no undo level — a Ctrl+Z afterwards still steps through the modeling history, not the export)
+### M2-S13 — M2 acceptance pass: the full regression walkthrough (T8)
+
+**Covers:** T8 (rule 7 — the milestone-closing smoke run) · **Status:** ⬜ pending manual (author) · **Headless counterpart:** `src/commands/m2-acceptance.test.ts` (the four §A sentences) + the registry-completeness probe in `src/commands/m1-acceptance.test.ts` (all 19 commands)
+
+- **Given:** the app running (`pnpm dev`)
+- **When:** the full M2 regression pass is run as one session: **M2-S05** (the IFC browser round-trip incl. both error paths — non-IFC file and duplicate import) → **M2-S06** (the Advance Steel foreign IFC renders as reference solids; excluded from picking/snapping) → **M2-S08…S11** (import a real DXF background, trace a wall over it via endpoint/midpoint snaps, toggle/remove via the Backgrounds panel) → **M2-S12** (export the active section to DXF and measure it in real CAD)
+- **Then:** every listed scenario behaves as persisted; the milestone is confirmed end-to-end in the browser; headless spot-check (optional): `pnpm test m2-acceptance` → 6 green tests
+
