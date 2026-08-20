@@ -12,7 +12,7 @@
 import { describe, expect, it } from 'vitest';
 import { CommandError, exportIfc, importIfcModel, placeBar, placeWall, redo, undo } from '@/commands';
 import type { ProjectModel } from '@/data/models';
-import { buildDanglingHostBarBytes } from '@/io/ifc-test-fixtures';
+import { FOREIGN_SOLIDS, buildDanglingHostBarBytes, buildForeignSolidsBytes } from '@/io/ifc-test-fixtures';
 import { createIfcApi } from '@/io/web-ifc-loader';
 import { createAppStore } from '@/stores';
 import type { CommandErrorCode } from './command-error';
@@ -65,6 +65,11 @@ describe('importIfcModel command + §A round-trip acceptance (M2 T3)', () => {
     const imported = target.getState().project;
     expect(imported.elements).toEqual(sourceProject.elements);
     expect(imported.reinforcement).toEqual(sourceProject.reinforcement);
+    // Q7/T6.5: our own export yields NO reference document — every
+    // geometry-carrying product carries intent and stays editable (no
+    // duplication as solids).
+    expect(summary.reference).toBeNull();
+    expect(imported.referenceDocuments).toEqual({});
   });
 
   it('exactly ONE undo level per import (Q4-a); undo restores the exact pre-import reference; redo re-applies', async () => {
@@ -153,6 +158,65 @@ describe('importIfcModel command + §A round-trip acceptance (M2 T3)', () => {
       target.dispatch(importIfcModel({ buffer: new TextEncoder().encode('not an IFC file') })),
       'INVALID_PARAMS',
     );
+    expect(target.getState().undo.past).toHaveLength(0);
+  });
+
+  it('Q7/T6.5: a foreign file (geometry, no intent psets) imports as ONE render-only reference document + zero editable entities, exactly ONE undo level', async () => {
+    const api = await createIfcApi();
+    const { bytes } = buildForeignSolidsBytes(api);
+    const target = createAppStore();
+    const preImport = target.getState().project;
+
+    const summary = await target.dispatch(importIfcModel({ buffer: bytes, fileName: 'foreign-steel.ifc' }));
+
+    expect(summary.importedWalls).toBe(0);
+    expect(summary.importedBars).toBe(0);
+    expect(summary.reference).not.toBeNull();
+    expect(summary.reference?.products).toBe(2); // wall + proxy; the opening is excluded
+    expect(summary.reference?.parts).toBe(2);
+    expect(summary.reference?.triangles).toBe(FOREIGN_SOLIDS.trianglesPerBox * 2);
+    expect(summary.reference?.lengthUnitAssumed).toBe(false);
+    // The opening (geometry-carrying but deliberately excluded) is the only
+    // skip — the pset-less wall/proxy folded into the solids.
+    expect(summary.skipped).toEqual({ missingIntentPset: 0, unsupportedElements: 1 });
+
+    const documents = Object.values(target.getState().project.referenceDocuments);
+    expect(documents).toHaveLength(1);
+    const document = documents[0];
+    expect(document.id).toBe(summary.reference?.documentId);
+    expect(document.name).toBe('foreign-steel.ifc');
+    expect(document.source).toEqual({ kind: 'ifc', fileName: 'foreign-steel.ifc' });
+    expect(document.visible).toBe(true);
+    expect(document.content).toBe('solids');
+    if (document.content !== 'solids') throw new Error('expected a solids document');
+    expect(document.solids).toHaveLength(2);
+    expect(document.solids[0].positions).toBeInstanceOf(Float32Array);
+    expect(document.solids[0].indices).toBeInstanceOf(Uint32Array);
+    // The wall part sits at its placement in world-space model mm.
+    const wallPart = document.solids.find((part) => part.positions.length / 3 > 8) ?? document.solids[0];
+    expect(Math.max(...wallPart.positions.filter((_, i) => i % 3 === 2))).toBeCloseTo(
+      FOREIGN_SOLIDS.wall.at.z + FOREIGN_SOLIDS.wall.depth,
+      3,
+    );
+
+    // ONE undo level for the whole import; undo restores the exact pre-import
+    // reference; redo re-applies (typed arrays shared by reference).
+    expect(target.getState().undo.past).toHaveLength(1);
+    target.dispatch(undo());
+    expect(target.getState().project).toBe(preImport);
+    target.dispatch(redo());
+    expect(Object.keys(target.getState().project.referenceDocuments)).toHaveLength(1);
+  });
+
+  it('Q7/T6.5: an import with neither editable entities nor solids dispatches nothing (no undo level)', async () => {
+    const source = createAppStore(); // empty model → valid IFC4 boilerplate only
+    const { bytes } = await source.dispatch(exportIfc());
+    const target = createAppStore();
+    const preImport = target.getState().project;
+
+    const summary = await target.dispatch(importIfcModel({ buffer: bytes }));
+    expect(summary.reference).toBeNull();
+    expect(target.getState().project).toBe(preImport);
     expect(target.getState().undo.past).toHaveLength(0);
   });
 });

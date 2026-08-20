@@ -63,8 +63,9 @@ export const importReferenceDocument =
       id: crypto.randomUUID(),
       name: params.fileName,
       source: { kind: 'dxf', fileName: params.fileName, insunits: result.appliedInsunits },
-      elevationMm: 0,
       visible: true,
+      content: 'linework',
+      elevationMm: 0,
       primitives: result.primitives,
     };
     dispatch(addReferenceDocument(document));

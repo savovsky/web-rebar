@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ReferenceDocument, ReferencePrimitive } from '@/data/models';
+import type { LineworkReferenceDocument, ReferencePrimitive } from '@/data/models';
 import {
   collectReferenceSnapTargets,
   findReferenceSnap,
@@ -8,14 +8,15 @@ import {
 
 function makeDocument(
   primitives: ReferencePrimitive[],
-  overrides: Partial<ReferenceDocument> = {},
-): ReferenceDocument {
+  overrides: Partial<LineworkReferenceDocument> = {},
+): LineworkReferenceDocument {
   return {
     id: 'doc-1',
     name: 'plan.dxf',
     source: { kind: 'dxf', fileName: 'plan.dxf', insunits: 4 },
-    elevationMm: 0,
     visible: true,
+    content: 'linework',
+    elevationMm: 0,
     primitives,
     ...overrides,
   };

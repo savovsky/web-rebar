@@ -10,8 +10,15 @@ import {
   setReferenceDocumentVisibility,
   undo,
 } from '@/commands';
+import type { LineworkReferenceDocument, ReferenceDocument } from '@/data/models';
 import { createAppStore } from '@/stores';
 import { expectCommandError } from './test-utils';
+
+/** DXF imports always produce linework documents — narrow the union. */
+function asLinework(document: ReferenceDocument): LineworkReferenceDocument {
+  if (document.content !== 'linework') throw new Error('expected a linework document');
+  return document;
+}
 
 /** Small DXF text builder — HEADER ($INSUNITS optional) + the given ENTITIES body. */
 const dxfText = (options: { insunits?: number; entities: string }): string =>
@@ -71,10 +78,10 @@ describe('importReferenceDocument (M2 plan T5, Q3/Q4)', () => {
     expect(document).toBeDefined();
     expect(document.name).toBe('plan.dxf');
     expect(document.source).toEqual({ kind: 'dxf', fileName: 'plan.dxf', insunits: 5 });
-    expect(document.elevationMm).toBe(0);
+    expect(asLinework(document).elevationMm).toBe(0);
     expect(document.visible).toBe(true);
     // cm → mm (Q4): the (1,1)-(2,1) line lands at (10,10)-(20,10).
-    expect(document.primitives).toEqual([
+    expect(asLinework(document).primitives).toEqual([
       { kind: 'line', start: { x: 10, y: 10 }, end: { x: 20, y: 10 }, sourceLayer: 'WALLS' },
     ]);
     expect(summary).toMatchObject({
@@ -102,7 +109,7 @@ describe('importReferenceDocument (M2 plan T5, Q3/Q4)', () => {
     expect(summary.scaleToMm).toBe(1);
     expect(summary.appliedInsunits).toBe(4);
     const document = store.getState().project.referenceDocuments[summary.documentId];
-    expect(document.primitives[0]).toMatchObject({ start: { x: 1, y: 1 }, end: { x: 2, y: 1 } });
+    expect(asLinework(document).primitives[0]).toMatchObject({ start: { x: 1, y: 1 }, end: { x: 2, y: 1 } });
   });
 
   it('the units override wins over the declared $INSUNITS (Q4)', async () => {
@@ -115,7 +122,7 @@ describe('importReferenceDocument (M2 plan T5, Q3/Q4)', () => {
     expect(summary.unitsAssumed).toBe(false);
     const document = store.getState().project.referenceDocuments[summary.documentId];
     expect(document.source).toMatchObject({ insunits: 6 });
-    expect(document.primitives[0]).toMatchObject({ end: { x: 2000, y: 1000 } });
+    expect(asLinework(document).primitives[0]).toMatchObject({ end: { x: 2000, y: 1000 } });
   });
 
   it('an unknown override code is rejected without mutating anything', async () => {
@@ -157,7 +164,9 @@ describe('importReferenceDocument (M2 plan T5, Q3/Q4)', () => {
     );
     expect(summary.primitiveCount).toBe(0);
     expect(summary.skipped.unsupportedEntities.TEXT).toBe(1);
-    expect(store.getState().project.referenceDocuments[summary.documentId].primitives).toEqual([]);
+    expect(asLinework(store.getState().project.referenceDocuments[summary.documentId]).primitives).toEqual(
+      [],
+    );
   });
 });
 

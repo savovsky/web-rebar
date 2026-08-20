@@ -29,6 +29,7 @@
   --guide-line: 221 83% 63%;
   --wireframe: 222 47% 11%; /* section volume ink — dark on the light viewport */
   --reference-line: 215 16% 47%; /* imported background linework — muted (mirrors --muted-foreground) */
+  --reference-solid: 215 14% 60%; /* unstyled IFC reference solids — muted fill (mirrors --reference-line, lighter for a lit surface) */
 
   /* Chrome */
   --border: 214 32% 91%;
@@ -75,6 +76,7 @@
   --guide-line: 217 91% 70%;
   --wireframe: 210 40% 96%; /* section volume ink — white on the dark viewport */
   --reference-line: 215 20% 65%; /* imported background linework — muted (mirrors --muted-foreground) */
+  --reference-solid: 215 16% 45%; /* unstyled IFC reference solids — muted fill (mirrors --reference-line, darker against the dark viewport) */
   --border: 217 33% 20%;
   --accent: 217 33% 18%;
   --focus-ring: 217 91% 70%;
@@ -99,6 +101,7 @@
   --color-guide-line: hsl(var(--guide-line));
   --color-wireframe: hsl(var(--wireframe));
   --color-reference-line: hsl(var(--reference-line));
+  --color-reference-solid: hsl(var(--reference-solid));
   --color-border: hsl(var(--border));
   --color-accent: hsl(var(--accent));
   --color-focus-ring: hsl(var(--focus-ring));

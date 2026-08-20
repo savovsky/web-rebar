@@ -35,7 +35,9 @@ export function BackgroundsSection() {
             <span className='truncate text-foreground' title={document.name}>
               {document.name}
             </span>
-            <span className='font-mono'>{document.primitives.length}</span>
+            <span className='font-mono'>
+              {document.content === 'solids' ? document.solids.length : document.primitives.length}
+            </span>
             <button
               type='button'
               aria-label={`Remove ${document.name}`}

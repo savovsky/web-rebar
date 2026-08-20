@@ -1,19 +1,38 @@
+import type { ReferenceDocument } from '@/data/models';
 import type { IfcImportResult } from '@/io/ifc-import';
 import { loadIfcApi } from '@/io/web-ifc-loader';
 import type { AppThunk } from '@/stores';
 import type { ProjectState } from '@/stores/project-slice';
-import { addBar, addElement } from '@/stores/project-slice';
+import { addBar, addElement, addReferenceDocument } from '@/stores/project-slice';
 import { CommandError } from './command-error';
 
 export interface ImportIfcModelParams {
   /** IFC-SPF file content (what exportIfc writes: IFC4, mm, Q2 intent psets). */
   buffer: Uint8Array;
+  /** Original file name — the reference document's display name + provenance
+   *  tag when the import yields reference solids (T6.5/Q7). Optional: the
+   *  headless probes need no display name. */
+  fileName?: string;
+}
+
+/** The Q7 reference outcome of an import — null when nothing became a solid
+ *  (e.g. our own export: every geometry-carrying product carries intent). */
+export interface ImportIfcReferenceSummary {
+  documentId: string;
+  /** Distinct foreign products that became solids. */
+  products: number;
+  /** Triangulated parts (≥ products — one per styled material per product). */
+  parts: number;
+  triangles: number;
+  /** True when the file declared no usable length unit (raw assumed mm). */
+  lengthUnitAssumed: boolean;
 }
 
 export interface ImportIfcModelSummary {
   importedWalls: number;
   importedBars: number;
   skipped: IfcImportResult['skipped'];
+  reference: ImportIfcReferenceSummary | null;
 }
 
 /**
@@ -63,17 +82,21 @@ function validateImportDelta(project: ProjectState, parsed: IfcImportResult): vo
 }
 
 /**
- * §N command: import an IFC file into the project model (M2 plan T3). Parses
- * via web-ifc (lazy-loaded like exportIfc — the mapping module is dynamically
- * imported for the same Q1 bundle contract), then dispatches ONE add reducer
- * per entity inside the command's undo scope → exactly ONE undo level per
+ * §N command: import an IFC file into the project model (M2 plan T3, extended
+ * T6.5/Q7). Parses via web-ifc (lazy-loaded like exportIfc — the mapping
+ * module is dynamically imported for the same Q1 bundle contract), then
+ * dispatches ONE add reducer per entity PLUS at most ONE addReferenceDocument
+ * reducer, all inside the command's undo scope → exactly ONE undo level per
  * import (Q4-a; the async-aware undo scope middleware keeps the scope open
- * across the awaits — see undo-middleware.ts). Entities without the Q2 intent
- * psets and non-wall/bar products are skipped and reported, not imported
- * (foreign-file mapping is M4 scope). Importing an entity id that already
- * exists in the project is an error — ids are stable round-trip UUIDs, so a
- * collision means a double import, never a merge (M4 may revisit with id
- * remapping for foreign files).
+ * across the awaits — see undo-middleware.ts). Entities with the Q2 intent
+ * psets become editable walls/bars; geometry-carrying products WITHOUT them
+ * (foreign files — an Advance Steel model) become ONE render-only reference
+ * document of triangulated dummy solids (Q7 — never editable/picked/
+ * sectioned/computed; pset-less walls/bars fold into the solids, the T6.5
+ * in-task decision). Importing an entity id that already exists in the
+ * project is an error — ids are stable round-trip UUIDs, so a collision
+ * means a double import, never a merge (M4 may revisit with id remapping for
+ * foreign files).
  */
 export const importIfcModel =
   (params: ImportIfcModelParams): AppThunk<Promise<ImportIfcModelSummary>> =>
@@ -89,5 +112,33 @@ export const importIfcModel =
     validateImportDelta(getState().project, parsed);
     for (const wall of parsed.walls) dispatch(addElement(wall));
     for (const bar of parsed.bars) dispatch(addBar(bar));
-    return { importedWalls: parsed.walls.length, importedBars: parsed.bars.length, skipped: parsed.skipped };
+    let reference: ImportIfcReferenceSummary | null = null;
+    if (parsed.referenceSolids.parts.length > 0) {
+      const name = params.fileName ?? 'IFC import';
+      const document: ReferenceDocument = {
+        id: crypto.randomUUID(),
+        name,
+        source: { kind: 'ifc', fileName: name },
+        visible: true,
+        content: 'solids',
+        solids: parsed.referenceSolids.parts,
+      };
+      // ONE reducer for the whole document (the plan's F3 door-check note —
+      // no per-part cascade), inside the same command scope → the import
+      // stays exactly ONE undo level.
+      dispatch(addReferenceDocument(document));
+      reference = {
+        documentId: document.id,
+        products: parsed.referenceSolids.products,
+        parts: parsed.referenceSolids.parts.length,
+        triangles: parsed.referenceSolids.triangles,
+        lengthUnitAssumed: parsed.referenceSolids.lengthUnitAssumed,
+      };
+    }
+    return {
+      importedWalls: parsed.walls.length,
+      importedBars: parsed.bars.length,
+      skipped: parsed.skipped,
+      reference,
+    };
   };

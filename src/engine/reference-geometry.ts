@@ -4,9 +4,15 @@
 // LineSegments — the T5 real-file probe reached ~67k primitives per import, so
 // per-primitive meshes/React elements are out of the question. z stays 0; the
 // layer positions the merged geometry at the document's elevationMm.
-import type { ReferencePrimitive } from '@/data/models';
+import type { ReferencePrimitive, ReferenceSolidPart } from '@/data/models';
 
 export const LINE_POSITION_COMPONENTS = 3;
+export const SOLID_POSITION_COMPONENTS = 3;
+export const SOLID_NORMAL_COMPONENTS = 3;
+/** RGBA per vertex — the alpha carries the IFC part alpha × the render
+ *  opacity reduction (baked once here, so the material needs no blending
+ *  tricks beyond `vertexColors` + `transparent`). */
+export const SOLID_COLOR_COMPONENTS = 4;
 
 /** Full-circle tessellation budget: 64 segments per 2π keeps the sagitta
  *  error ≈ 0.12% of the radius (a Ø20 bolt hole → ~0.01 mm; a 10 m site arc
@@ -91,4 +97,65 @@ export function buildReferenceLinePositions(primitives: ReferencePrimitive[]): F
     }
   }
   return new Float32Array(positions);
+}
+
+export interface ReferenceSolidBuffers {
+  positions: Float32Array;
+  normals: Float32Array;
+  /** RGBA per vertex (SOLID_COLOR_COMPONENTS). */
+  colors: Float32Array;
+  indices: Uint32Array;
+}
+
+export interface BuildSolidBuffersOptions {
+  solids: ReferenceSolidPart[];
+  /** Token-resolved RGB for parts with no IFC style (Q7's token fallback). */
+  fallbackColor: { r: number; g: number; b: number };
+  /** Render opacity reduction multiplier (Q7 — reference solids stay ghosted
+   *  context, never visually compete with the model). */
+  opacity: number;
+}
+
+/**
+ * One solids document → ONE merged BufferGeometry's buffers (position, normal,
+ * RGBA color, index) — the ReferenceLayer pattern for Q7 solids: per-part
+ * meshes/React elements are out of the question at the author's
+ * 4,008-product scale (~344k vertices / ~128k triangles in the real-file
+ * probe). Per-part IFC colors become per-vertex colors with the reduced
+ * opacity baked into alpha; parts without a style take the fallback token.
+ */
+export function buildReferenceSolidBuffers(options: BuildSolidBuffersOptions): ReferenceSolidBuffers {
+  const { solids, fallbackColor, opacity } = options;
+  let vertexTotal = 0;
+  let indexTotal = 0;
+  for (const part of solids) {
+    vertexTotal += part.positions.length / SOLID_POSITION_COMPONENTS;
+    indexTotal += part.indices.length;
+  }
+  const positions = new Float32Array(vertexTotal * SOLID_POSITION_COMPONENTS);
+  const normals = new Float32Array(vertexTotal * SOLID_NORMAL_COMPONENTS);
+  const colors = new Float32Array(vertexTotal * SOLID_COLOR_COMPONENTS);
+  const indices = new Uint32Array(indexTotal);
+  let vertexBase = 0;
+  let indexBase = 0;
+  for (const part of solids) {
+    const partVertices = part.positions.length / SOLID_POSITION_COMPONENTS;
+    positions.set(part.positions, vertexBase * SOLID_POSITION_COMPONENTS);
+    normals.set(part.normals, vertexBase * SOLID_NORMAL_COMPONENTS);
+    const color = part.color ?? { ...fallbackColor, a: 1 };
+    const alpha = color.a * opacity;
+    for (let vertex = 0; vertex < partVertices; vertex += 1) {
+      const write = (vertexBase + vertex) * SOLID_COLOR_COMPONENTS;
+      colors[write] = color.r;
+      colors[write + 1] = color.g;
+      colors[write + 2] = color.b;
+      colors[write + 3] = alpha;
+    }
+    for (let index = 0; index < part.indices.length; index += 1) {
+      indices[indexBase + index] = part.indices[index] + vertexBase;
+    }
+    vertexBase += partVertices;
+    indexBase += part.indices.length;
+  }
+  return { positions, normals, colors, indices };
 }

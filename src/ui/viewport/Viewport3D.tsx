@@ -9,6 +9,7 @@ import { BarDraftPreview } from './BarDraftPreview';
 import { BarsLayer } from './BarsLayer';
 import { GroundPlane } from './GroundPlane';
 import { ReferenceLayer } from './ReferenceLayer';
+import { ReferenceSolidsLayer } from './ReferenceSolidsLayer';
 import { SectionCutPreview } from './SectionCutPreview';
 import { SectionVolumesLayer } from './SectionVolumesLayer';
 import { ViewportControls } from './ViewportControls';
@@ -49,6 +50,7 @@ export function Viewport3D() {
         <ViewportControls />
         <GroundPlane />
         <ReferenceLayer />
+        <ReferenceSolidsLayer />
         <WallsLayer />
         <BarsLayer />
         <WallDraftPreview />

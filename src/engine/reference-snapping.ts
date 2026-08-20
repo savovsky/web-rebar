@@ -3,7 +3,7 @@
 // documents are frozen model objects (the M1 T5 finding), so per-document
 // target extraction is cached in a WeakMap keyed by the document — a
 // 67k-primitive import derives its ~200k targets ONCE, not per pointer move.
-import type { ReferenceDocument, ReferencePrimitive } from '@/data/models';
+import type { LineworkReferenceDocument, ReferenceDocument, ReferencePrimitive } from '@/data/models';
 
 export interface ReferenceSnapTarget {
   x: number;
@@ -68,10 +68,12 @@ function collectPrimitiveTargets(collector: TargetCollector, primitive: Referenc
   }
 }
 
-const targetCache = new WeakMap<ReferenceDocument, ReferenceSnapTarget[]>();
+const targetCache = new WeakMap<LineworkReferenceDocument, ReferenceSnapTarget[]>();
 
-/** One document's snap targets — memoized on the frozen document identity. */
-export function getReferenceSnapTargets(document: ReferenceDocument): ReferenceSnapTarget[] {
+/** One document's snap targets — memoized on the frozen document identity.
+ *  LINEWORK documents only: Q7 reference solids (T6.5) are never snap
+ *  targets — the `content` discriminant keeps them out at compile time. */
+export function getReferenceSnapTargets(document: LineworkReferenceDocument): ReferenceSnapTarget[] {
   const cached = targetCache.get(document);
   if (cached) return cached;
   const collector: TargetCollector = { targets: [], elevationMm: document.elevationMm };
@@ -83,7 +85,12 @@ export function getReferenceSnapTargets(document: ReferenceDocument): ReferenceS
 /** Snap targets of every VISIBLE document — hidden backgrounds never snap
  *  (an invisible magnet is a bug, not a feature; task-log decision). */
 export function collectReferenceSnapTargets(documents: ReferenceDocument[]): ReferenceSnapTarget[] {
-  return documents.filter((document) => document.visible).flatMap(getReferenceSnapTargets);
+  return documents
+    .filter(
+      (document): document is LineworkReferenceDocument =>
+        document.content === 'linework' && document.visible,
+    )
+    .flatMap(getReferenceSnapTargets);
 }
 
 export interface FindReferenceSnapOptions {

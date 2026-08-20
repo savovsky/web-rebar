@@ -22,7 +22,24 @@ export const createAppStore = () =>
       undo: undoReducer,
     },
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware().prepend(undoScopeMiddleware).concat(undoListenerMiddleware.middleware),
+      // serializableCheck (dev-only): reference-solid documents hold
+      // Float32/Uint32Array meshes in ProjectModel (M2 plan Q7-a — a dated
+      // §H.1 bend so undo snapshots stay frozen-reference-cheap). Typed
+      // arrays trip the dev non-serializable warnings on every dispatch, so
+      // the solids subtrees are excluded here — narrowly: the reference
+      // document subtrees (state + snapshots) and the solids-bearing action
+      // payloads. Immer itself treats typed arrays as opaque leaves (never
+      // drafted/frozen), so the immutable check is unaffected. The M1 T5
+      // benchmark store (production middleware set) disables both checks
+      // wholesale — nothing to change there.
+      getDefaultMiddleware({
+        serializableCheck: {
+          ignoredActionPaths: ['payload.solids', /^payload\.referenceDocuments\./],
+          ignoredPaths: [/^project\.referenceDocuments\./, /^undo\.(past|future)\.\d+\.referenceDocuments\./],
+        },
+      })
+        .prepend(undoScopeMiddleware)
+        .concat(undoListenerMiddleware.middleware),
   });
 
 export const store = createAppStore();

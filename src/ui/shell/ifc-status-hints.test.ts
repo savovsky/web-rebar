@@ -10,6 +10,7 @@ function summary(partial: Partial<ImportIfcModelSummary>): ImportIfcModelSummary
     importedWalls: 0,
     importedBars: 0,
     skipped: { missingIntentPset: 0, unsupportedElements: 0 },
+    reference: null,
     ...partial,
   };
 }
@@ -45,6 +46,35 @@ describe('formatImportSummary', () => {
     expect(formatImportSummary(summary({ skipped: { missingIntentPset: 0, unsupportedElements: 2 } }))).toBe(
       'Imported 0 walls + 0 bars · skipped 2: 2 unsupported elements',
     );
+  });
+
+  it('reports the Q7 reference outcome (T6.5) between the headline and the skips', () => {
+    expect(
+      formatImportSummary(
+        summary({
+          reference: {
+            documentId: 'doc-1',
+            products: 2242,
+            parts: 2242,
+            triangles: 128284,
+            lengthUnitAssumed: false,
+          },
+          skipped: { missingIntentPset: 0, unsupportedElements: 1766 },
+        }),
+      ),
+    ).toBe(
+      'Imported 0 walls + 0 bars · 2242 reference solids (128284 triangles) · skipped 1766: 1766 unsupported elements',
+    );
+  });
+
+  it('singularizes a single reference solid and flags assumed units', () => {
+    expect(
+      formatImportSummary(
+        summary({
+          reference: { documentId: 'doc-1', products: 1, parts: 1, triangles: 12, lengthUnitAssumed: true },
+        }),
+      ),
+    ).toBe('Imported 0 walls + 0 bars · 1 reference solid (12 triangles) · units not declared — mm assumed');
   });
 });
 

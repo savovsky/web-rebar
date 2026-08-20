@@ -8,12 +8,12 @@
 // unselectable/unmovable by construction.
 import { useEffect, useMemo } from 'react';
 import { BufferGeometry, Float32BufferAttribute } from 'three';
-import type { ReferenceDocument } from '@/data/models';
+import type { LineworkReferenceDocument } from '@/data/models';
 import { LINE_POSITION_COMPONENTS, buildReferenceLinePositions } from '@/engine/reference-geometry';
 import { useAppSelector } from '@/stores/hooks';
 import { useViewportTheme } from './viewport-theme';
 
-function ReferenceDocumentLines({ document, color }: { document: ReferenceDocument; color: string }) {
+function ReferenceDocumentLines({ document, color }: { document: LineworkReferenceDocument; color: string }) {
   // The document is a frozen model object — its identity changes exactly when
   // its content does (Immer structural sharing), so the memo key is sound.
   const geometry = useMemo(() => {
@@ -38,7 +38,7 @@ export function ReferenceLayer() {
   return (
     <>
       {Object.values(documents).map((document) =>
-        document.visible ? (
+        document.content === 'linework' && document.visible ? (
           <ReferenceDocumentLines key={document.id} document={document} color={theme.referenceLine} />
         ) : null,
       )}

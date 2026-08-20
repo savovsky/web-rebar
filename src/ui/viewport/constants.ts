@@ -30,5 +30,10 @@ export const PREVIEW_OPACITY = 0.35;
 /** Grab-fill opacity of the ACTIVE section wireframe volume (inactive volumes
  *  keep an invisible fill so they stay clickable). */
 export const SECTION_VOLUME_FILL_OPACITY = 0.08;
+
+/** Render opacity reduction for IFC reference solids (M2 T6.5, plan Q7 —
+ *  "IFC colors at reduced opacity"): ghosted context, never visually
+ *  competing with the model. Baked into per-vertex alpha by the engine merge. */
+export const REFERENCE_SOLID_OPACITY = 0.65;
 /** Corner handle size (mm) on the active section wireframe volume. */
 export const SECTION_HANDLE_SIZE_MM = 150;

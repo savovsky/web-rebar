@@ -17,19 +17,29 @@ function plural(count: number, singular: string): string {
 
 /**
  * The import summary for the status bar, built from ImportIfcModelSummary:
- * "Imported 2 walls + 1 bar" plus the skip reasons when the file contained
- * foreign content (no design-intent psets / unsupported element types, Q2).
+ * "Imported 2 walls + 1 bar" plus the Q7 reference outcome when foreign
+ * products became render-only solids (T6.5 — "· 2242 reference solids
+ * (128284 triangles)"), plus the skip reasons for what became nothing
+ * (no design-intent data and no geometry / unsupported element types).
  */
 export function formatImportSummary(summary: ImportIfcModelSummary): string {
   const headline = `Imported ${plural(summary.importedWalls, 'wall')} + ${plural(summary.importedBars, 'bar')}`;
+  const segments: string[] = [headline];
+  if (summary.reference !== null) {
+    const { products, triangles, lengthUnitAssumed: isLengthUnitAssumed } = summary.reference;
+    const unitsNote = isLengthUnitAssumed ? ' · units not declared — mm assumed' : '';
+    segments.push(`${plural(products, 'reference solid')} (${plural(triangles, 'triangle')})${unitsNote}`);
+  }
   const { missingIntentPset, unsupportedElements } = summary.skipped;
   const skippedTotal = missingIntentPset + unsupportedElements;
-  if (skippedTotal === 0) return headline;
-  const reasons: string[] = [];
-  if (missingIntentPset > 0)
-    reasons.push(`${plural(missingIntentPset, 'element')} without design-intent data`);
-  if (unsupportedElements > 0) reasons.push(plural(unsupportedElements, 'unsupported element'));
-  return `${headline} · skipped ${skippedTotal}: ${reasons.join(' + ')}`;
+  if (skippedTotal > 0) {
+    const reasons: string[] = [];
+    if (missingIntentPset > 0)
+      reasons.push(`${plural(missingIntentPset, 'element')} without design-intent data`);
+    if (unsupportedElements > 0) reasons.push(plural(unsupportedElements, 'unsupported element'));
+    segments.push(`skipped ${skippedTotal}: ${reasons.join(' + ')}`);
+  }
+  return segments.join(' · ');
 }
 
 /** importIfcModel rejections: INVALID_PARAMS = not an IFC file / double

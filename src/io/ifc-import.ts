@@ -9,9 +9,16 @@
  * statically.
  *
  * Scope (plan §3 + Q2): IfcWallStandardCase + IfcReinforcingBar carrying our
- * Q2 design-intent psets. Entities WITHOUT them (foreign files) are skipped
- * with a reported count — foreign-file re-derivation is M4 scope. Non-wall/bar
- * IfcElement products are likewise skipped and counted.
+ * Q2 design-intent psets. Entities WITHOUT them (foreign files) were
+ * skip-and-report only until T6.5 — since Q7 (author decision 2026-08-18)
+ * geometry-carrying products WITHOUT intent psets are extracted as render-only
+ * reference solids (ifc-solids.ts — render-only dummy solids in
+ * referenceDocuments; intent re-derivation stays M4 scope). Walls/bars without
+ * the intent pset FOLD INTO the solids (the T6.5 in-task decision: they are
+ * geometry-carrying foreign products — Q7's exact wording); only those without
+ * geometry are still counted as missingIntentPset. Non-wall/bar IfcElement
+ * products that became solids leave the unsupportedElements count; the rest
+ * (no geometry, or deliberately excluded openings) stay counted.
  *
  * Coordinates read VERBATIM — model space is Z-up mm, identical to IFC since
  * the T2.5 migration; there is no transform and no inverse (T1 proved SPF
@@ -31,6 +38,7 @@ import type { IfcAPI } from 'web-ifc';
 import { IFCELEMENT, IFCREINFORCINGBAR, IFCRELDEFINESBYPROPERTIES, IFCWALLSTANDARDCASE } from 'web-ifc';
 import type { ReinforcementBar, Vec3, WallElement } from '@/data/models';
 import { decompressIfcGuidToUuid } from './ifc-guid';
+import { type IfcSolidsExtraction, extractIfcReferenceSolids } from './ifc-solids';
 
 export const WALL_INTENT_PSET = 'Pset_WebRebar_Wall';
 export const BAR_INTENT_PSET = 'Pset_WebRebar_ReinforcingBar';
@@ -101,6 +109,10 @@ export interface IfcImportResult {
   walls: WallElement[];
   bars: ReinforcementBar[];
   skipped: IfcImportSkipCounts;
+  /** Q7/T6.5: geometry-carrying products without intent psets, extracted as
+   *  render-only reference solids (parts empty for our own exports — every
+   *  geometry-carrying product there carries intent). */
+  referenceSolids: IfcSolidsExtraction;
 }
 
 interface ReadRequest {
@@ -299,18 +311,15 @@ function barFromLine(mapping: BarMapping): ReinforcementBar {
 
 interface MappingRequest extends ReadRequest {
   intentByExpressId: Map<number, IntentPset>;
-  skipped: IfcImportSkipCounts;
 }
 
-/** Walls with the wall intent pset → WallElement; the rest counted as skipped. */
+/** Walls with the wall intent pset → WallElement; the caller classifies the
+ *  rest (solids vs. skipped) — see parseIfcModel. */
 function mapWalls(req: MappingRequest): WallElement[] {
   const walls: WallElement[] = [];
   for (const expressID of lineIds({ ...req, type: IFCWALLSTANDARDCASE })) {
     const intent = req.intentByExpressId.get(expressID);
-    if (intent?.name !== WALL_INTENT_PSET) {
-      req.skipped.missingIntentPset += 1;
-      continue;
-    }
+    if (intent?.name !== WALL_INTENT_PSET) continue;
     const line = getFlattened<FlatProductLine>({ ...req, expressID });
     walls.push(wallFromLine(entityUuid(line.GlobalId.value, intent), line));
   }
@@ -321,10 +330,7 @@ function mapBars(req: MappingRequest): ReinforcementBar[] {
   const bars: ReinforcementBar[] = [];
   for (const expressID of lineIds({ ...req, type: IFCREINFORCINGBAR })) {
     const intent = req.intentByExpressId.get(expressID);
-    if (intent?.name !== BAR_INTENT_PSET) {
-      req.skipped.missingIntentPset += 1;
-      continue;
-    }
+    if (intent?.name !== BAR_INTENT_PSET) continue;
     const line = getFlattened<FlatBarLine>({ ...req, expressID });
     bars.push(barFromLine({ id: entityUuid(line.GlobalId.value, intent), line, props: intent.props }));
   }
@@ -332,25 +338,50 @@ function mapBars(req: MappingRequest): ReinforcementBar[] {
 }
 
 /**
- * Parses IFC-SPF bytes into internal wall/bar models + a skip report. Opens
- * and closes its own model handle on the injected API instance. Throws on
- * malformed intent-carrying entities (a file claiming our psets but lacking
- * the geometry fails loudly rather than silently dropping content).
+ * Parses IFC-SPF bytes into internal wall/bar models + reference solids + a
+ * skip report. Opens and closes its own model handle on the injected API
+ * instance. Throws on malformed intent-carrying entities (a file claiming
+ * our psets but lacking the geometry fails loudly rather than silently
+ * dropping content).
  */
 export function parseIfcModel(api: IfcAPI, bytes: Uint8Array): IfcImportResult {
   assertSpfEnvelope(bytes);
   const modelID = api.OpenModel(bytes);
   try {
     const req: ReadRequest = { api, modelID };
-    const wallCount = lineIds({ ...req, type: IFCWALLSTANDARDCASE }).length;
-    const barCount = lineIds({ ...req, type: IFCREINFORCINGBAR }).length;
-    const elementCount = lineIds({ ...req, type: IFCELEMENT, includeInherited: true }).length;
+    const wallIds = lineIds({ ...req, type: IFCWALLSTANDARDCASE });
+    const barIds = lineIds({ ...req, type: IFCREINFORCINGBAR });
+    const elementIds = lineIds({ ...req, type: IFCELEMENT, includeInherited: true });
+    const intentByExpressId = collectIntentPsets(req);
+    const mapping: MappingRequest = { ...req, intentByExpressId };
+    const walls = mapWalls(mapping);
+    const bars = mapBars(mapping);
+    // Q7/T6.5: everything geometry-carrying WITHOUT intent psets → reference
+    // solids (pset-less walls/bars fold in — the T6.5 in-task decision).
+    const referenceSolids = extractIfcReferenceSolids({
+      ...req,
+      excludeExpressIds: new Set(intentByExpressId.keys()),
+    });
+    // Skip counts classify only what became NOTHING (neither editable entity
+    // nor solid — products without geometry are ignored, plan Q7). "Lacking
+    // intent" means no pset OR the wrong-kind pset (a wall with the bar pset
+    // is neither mapped nor solid — it lands here, the pre-T6.5 semantics).
+    const wallBarIds = new Set([...wallIds, ...barIds]);
     const skipped: IfcImportSkipCounts = {
-      missingIntentPset: 0,
-      unsupportedElements: elementCount - wallCount - barCount,
+      missingIntentPset:
+        wallIds.filter(
+          (id) =>
+            intentByExpressId.get(id)?.name !== WALL_INTENT_PSET && !referenceSolids.solidExpressIds.has(id),
+        ).length +
+        barIds.filter(
+          (id) =>
+            intentByExpressId.get(id)?.name !== BAR_INTENT_PSET && !referenceSolids.solidExpressIds.has(id),
+        ).length,
+      unsupportedElements: elementIds.filter(
+        (id) => !wallBarIds.has(id) && !referenceSolids.solidExpressIds.has(id),
+      ).length,
     };
-    const mapping: MappingRequest = { ...req, intentByExpressId: collectIntentPsets(req), skipped };
-    return { walls: mapWalls(mapping), bars: mapBars(mapping), skipped };
+    return { walls, bars, skipped, referenceSolids };
   } finally {
     api.CloseModel(modelID);
   }

@@ -76,3 +76,8 @@ Double mouse scroll click => Zoom fit(all?!)
 
 ****************
 Ask for Rust linters...
+
+OK cool - its working! I have couple more quetsions before we close this task.
+1. At some point I will need to "edit" - delete and move (scale) parts of the (solids, lines, etc.) from the imported files (IFC and DXF) - is it hard to be implemented and is it doable?
+2. At some point I will need to split given file (IFC and DXF) in multiple "layers" like the current approach with the checkbox in the right panel - is it hard to be implemented and is it doable?
+3. Is it possble to have options for the IFC import like the DXF import for (mm, cm, m, etc.) - is it hard to be implemented and is it doable?

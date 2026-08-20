@@ -89,7 +89,9 @@ async function runIfcImport(context: TransferContext, file: File): Promise<void>
   dispatch(setCursorHint(IFC_IMPORTING_HINT));
   try {
     const buffer = new Uint8Array(await file.arrayBuffer());
-    const summary = await dispatch(importIfcModel({ buffer }));
+    // fileName feeds the reference document's display name/provenance when a
+    // foreign file imports as solids (T6.5/Q7).
+    const summary = await dispatch(importIfcModel({ buffer, fileName: file.name }));
     dispatch(setCursorHint(formatImportSummary(summary)));
   } catch (error) {
     dispatch(setCursorHint(formatImportError(error)));

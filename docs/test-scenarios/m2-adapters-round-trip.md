@@ -1,7 +1,7 @@
 # M2 Test Scenarios — Adapters Round-Trip (IFC + DXF)
 
 > **Back to:** [Test Scenarios](./README.md) · [M2 tracker](../implementation-plans-and-tasks/m2-adapters-round-trip.md)
-> Created 2026-08-18 (T3 session) — persists the approved T1–T2.5 manual test lists (M2-S01…S03) and records T3's headless IFC round-trip acceptance (M2-S04). Extended 2026-08-18 (T4 session) with the browser round-trip (M2-S05) and the foreign-file skip behavior (M2-S06 — ⚠️ superseded by T6.5/Q7). Extended 2026-08-18 (T5 session) with the headless DXF import-core acceptance (M2-S07). Extended 2026-08-18 (T6 session) with the background-rendering / tracing-snap / Backgrounds-panel / Import-DXF scenarios (M2-S08…S11). T6.5/T7 extend this file next.
+> Created 2026-08-18 (T3 session) — persists the approved T1–T2.5 manual test lists (M2-S01…S03) and records T3's headless IFC round-trip acceptance (M2-S04). Extended 2026-08-18 (T4 session) with the browser round-trip (M2-S05) and the foreign-file skip behavior (M2-S06). Extended 2026-08-18 (T5 session) with the headless DXF import-core acceptance (M2-S07). Extended 2026-08-18 (T6 session) with the background-rendering / tracing-snap / Backgrounds-panel / Import-DXF scenarios (M2-S08…S11). Extended 2026-08-18 (T6.5 session) — M2-S06 REWRITTEN for Q7 (foreign products import as render-only reference solids; the pre-T6.5 skip-only behavior is retired). T7 extends this file next.
 
 ---
 
@@ -45,13 +45,14 @@
 - **When:** File → Export IFC (first use shows the "…IFC module loads on first use" status hint while web-ifc lazy-loads; a `<project name>.ifc` download lands), then File → Import IFC… with that file picked in the file input
 - **Then:** the re-imported wall + bar appear next to the originals; the status bar summarizes from `ImportIfcModelSummary` ("Imported 1 wall + 1 bar"); exactly ONE Ctrl+Z removes the whole import, Ctrl+Shift+Z re-applies it; importing the SAME file a second time is rejected ("Import rejected: … duplicate … id") and changes nothing; a non-IFC file renamed `.ifc` is rejected ("…not an IFC-SPF file…") with NO WASM crash/hang (the SPF-envelope guard); both File entries are disabled while a transfer is in flight; the exported file opens cleanly in Allplan 2022 (wall + bent bar, 0 ignored/defective)
 
-### M2-S06 — Foreign IFC file imports with skip-count summary (pre-T6.5 behavior)
+### M2-S06 — Foreign IFC file imports as render-only reference solids (Q7 — the T6.5 acceptance probe)
 
-**Covers:** T4 (Q2 skip-and-report, exercised on a real foreign file) · **Status:** ✅ manual 2026-08-18 (author — `docs/test-fixtures/ifc/2026.07.12 BE TP APP.ifc`, Advance Steel 2018, IFC2X3 SteelFabricationView, 11 MB) · **⚠️ SUPERSEDED BY T6.5:** when Q7 lands, this file must instead produce ONE render-only reference document with 4,008 solids — update this scenario in the T6.5 commit
+**Covers:** T6.5 (Q7 — §A milestone acceptance sentence 4) · **Status:** ⬜ pending manual (author) · **Headless counterpart:** `src/io/ifc-solids.test.ts` (extraction + the real-file perf tripwire), `src/commands/import-ifc.test.ts` (foreign file → ONE reference document, one undo level; own export → NO reference document), `src/engine/reference-geometry.test.ts` (merged render buffers)
 
-- **Given:** a foreign IFC file with no web-rebar design-intent psets (the Advance Steel export: 1,598 plates / 455 beams / 124 accessories / 60 members / 5 columns / 1,766 openings)
+- **Given:** the app running (`pnpm dev`) and a foreign IFC file with no web-rebar design-intent psets (`docs/test-fixtures/ifc/2026.07.12 BE TP APP.ifc` — Advance Steel 2018, IFC2X3 SteelFabricationView, 11 MB; 1,598 plates / 455 beams / 124 accessories / 60 members / 5 columns / 1,766 openings)
 - **When:** File → Import IFC… with that file
-- **Then:** the import succeeds without a crash; the status bar reports "Imported 0 walls + 0 bars · skipped 4008: 4008 unsupported elements"; the model is unchanged (nothing to undo)
+- **Then:** the import succeeds without a crash; the status bar reports "Imported 0 walls + 0 bars · 2242 reference solids (128284 triangles) · skipped 1766: 1766 unsupported elements" (the 1,766 openings carry no geometry and are ignored); the steel structure RENDERS in the 3D viewport at true mm scale in muted token gray (the file carries no presentation styles → the --reference-solid fallback), ghosted at reduced opacity; the document appears in Building → Backgrounds (visibility checkbox + part count + Remove) and hides/shows/removes from there; hovering/clicking the steel under the Select tool highlights and selects NOTHING (render-only — never picked, snapped, sectioned, or computed); exactly ONE Ctrl+Z removes the whole import (solids document together with any editable entities), Ctrl+Shift+Z re-applies it
+- **And the regression half:** re-importing OUR OWN exported IFC (M2-S05's round-trip file) still yields editable walls/bars and NO reference document — the §A sentence-1 probe stays green
 ### M2-S07 — DXF import core: real files become reference documents at true units (headless)
 
 **Covers:** T5 (Q3 ReferenceDocument model, Q4 units/blocks/bulge, Q6 dxf-parser) · **Status:** ✅ automated headless 2026-08-18 — no user-visible surface in T5 (rendering/UI is T6; M2-S08+ covers the browser flow) · **Headless counterpart:** `src/io/dxf-adapter.test.ts` (end-to-end + real-file probes), `src/io/dxf-mapping.test.ts` + `src/io/dxf-blocks.test.ts` (units/bulge/blocks/OCS), `src/commands/reference-document-commands.test.ts` (command contracts + undo)
