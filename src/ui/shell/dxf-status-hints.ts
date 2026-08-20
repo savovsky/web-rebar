@@ -14,6 +14,10 @@ import type { DxfImportSkips } from '@/io/dxf-adapter';
  *  chunk load (dynamic import inside the importReferenceDocument command). */
 export const DXF_IMPORTING_HINT = 'Importing DXF… (the DXF module loads on first use)';
 
+/** Shown while the section export runs — the first dispatch pays the lazy
+ *  dxf chunk load (dynamic import inside the exportSectionDxf command, T7). */
+export const DXF_SECTION_EXPORTING_HINT = 'Exporting section DXF… (the DXF module loads on first use)';
+
 const MILLIMETRES_INSUNITS = 4;
 
 /** Display names for the units a real building plan can declare (the import
@@ -99,4 +103,19 @@ export function formatDxfImportError(error: unknown): string {
     }
   }
   return 'Import failed: unexpected error (see console)';
+}
+
+/** exportSectionDxf rejections: NOT_FOUND = the requested section does not
+ *  exist (e.g. deleted while the menu was open); branch by code, never on
+ *  message text (§N — the formatImportError/formatExportError contract). */
+export function formatDxfExportError(error: unknown): string {
+  if (error instanceof CommandError) {
+    switch (error.code) {
+      case 'INVALID_PARAMS':
+        return `Export rejected: ${error.message}`;
+      case 'NOT_FOUND':
+        return `Export rejected (unknown section): ${error.message}`;
+    }
+  }
+  return 'Export failed: unexpected error (see console)';
 }

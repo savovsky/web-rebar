@@ -12,6 +12,7 @@ import { deleteElement } from './delete-element';
 import { deleteSection } from './delete-section';
 import { deleteSelection } from './delete-selection';
 import { exportIfc } from './export-ifc';
+import { exportSectionDxf } from './export-section-dxf';
 import { extendBar } from './extend-bar';
 import { importIfcModel } from './import-ifc';
 import { importReferenceDocument } from './import-reference-document';
@@ -32,6 +33,7 @@ export { deleteElement } from './delete-element';
 export { deleteSection } from './delete-section';
 export { deleteSelection } from './delete-selection';
 export { exportIfc } from './export-ifc';
+export { exportSectionDxf } from './export-section-dxf';
 export { extendBar } from './extend-bar';
 export { importIfcModel } from './import-ifc';
 export { importReferenceDocument } from './import-reference-document';
@@ -50,6 +52,7 @@ export type { DeleteBarParams } from './delete-bar';
 export type { DeleteElementParams } from './delete-element';
 export type { DeleteSectionParams } from './delete-section';
 export type { ExportIfcResult } from './export-ifc';
+export type { ExportSectionDxfParams, ExportSectionDxfResult } from './export-section-dxf';
 export type { ExtendBarParams } from './extend-bar';
 export type { ImportIfcModelParams, ImportIfcModelSummary } from './import-ifc';
 export type {
@@ -72,6 +75,7 @@ export const commandRegistry = {
   deleteSection: { name: 'deleteSection', thunk: deleteSection },
   deleteSelection: { name: 'deleteSelection', thunk: deleteSelection },
   exportIfc: { name: 'exportIfc', thunk: exportIfc },
+  exportSectionDxf: { name: 'exportSectionDxf', thunk: exportSectionDxf },
   extendBar: { name: 'extendBar', thunk: extendBar },
   importIfcModel: { name: 'importIfcModel', thunk: importIfcModel },
   importReferenceDocument: { name: 'importReferenceDocument', thunk: importReferenceDocument },

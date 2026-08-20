@@ -21,6 +21,7 @@ import {
   deleteSection,
   deleteSelection,
   exportIfc,
+  exportSectionDxf,
   extendBar,
   importIfcModel,
   importReferenceDocument,
@@ -374,6 +375,9 @@ const commandProbes: Record<CommandName, (fixture: ProbeFixture) => void | Promi
   exportIfc: async ({ store }) => {
     await store.dispatch(exportIfc());
   },
+  exportSectionDxf: async ({ store, sectionId }) => {
+    await store.dispatch(exportSectionDxf({ sectionId }));
+  },
   importIfcModel: async ({ store }) => {
     await store.dispatch(importIfcModel({ buffer: await getImportProbeBytes() }));
   },
@@ -470,6 +474,17 @@ describe('every M0+M1 command is undoable (§E — the review-checklist row that
     const projectBefore = fixture.store.getState().project;
 
     await commandProbes.exportIfc(fixture);
+
+    expect(fixture.store.getState().undo.past).toHaveLength(depthBefore);
+    expect(fixture.store.getState().project).toBe(projectBefore);
+  });
+
+  it('exportSectionDxf records no undo level and mutates nothing — pure read + file output (M2 T7, same precedent as exportIfc)', async () => {
+    const fixture = await createProbeFixture();
+    const depthBefore = fixture.store.getState().undo.past.length;
+    const projectBefore = fixture.store.getState().project;
+
+    await commandProbes.exportSectionDxf(fixture);
 
     expect(fixture.store.getState().undo.past).toHaveLength(depthBefore);
     expect(fixture.store.getState().project).toBe(projectBefore);

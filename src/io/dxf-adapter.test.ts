@@ -101,7 +101,11 @@ describe.skipIf(!hasFixtures)('author fixture probes — the real-file Q4 risk p
     expect(fixtureFiles.length).toBeGreaterThanOrEqual(8);
   });
 
-  it('every file parses, maps to primitives, and honors its declared units', () => {
+  // Generous timeout (the beforeAll rationale, extended 2026-08-18 at T7):
+  // the per-primitive finiteness walk over ~180k real-file primitives exceeds
+  // the 5 s default under full-suite worker contention — the assertions are
+  // unchanged; only the clock budget acknowledges the fixture set's scale.
+  it('every file parses, maps to primitives, and honors its declared units', { timeout: 120_000 }, () => {
     for (const { file, ms, result } of probes) {
       // Census (2026-08-18): all 2507_KOMO files declare cm (5), the Sarafovo file mm (4).
       expect(result.unitsAssumed, file).toBe(false);

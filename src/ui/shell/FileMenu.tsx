@@ -1,13 +1,13 @@
-// File menu (§B.2 top bar, M2 T4 + T6): Import IFC… / Import DXF… /
-// Import DXF with units… / Export IFC. The component is dumb glue (rule 2):
-// it only reads/writes FILES and dispatches the §N commands — importIfcModel/
-// importReferenceDocument/exportIfc are the doorways; web-ifc, dxf-parser and
-// the mapping modules are never touched from UI (the non-SPF-bytes WASM-abort
-// guard lives inside importIfcModel, T3 finding #2). web-ifc and dxf-parser
+// File menu (§B.2 top bar, M2 T4 + T6 + T7): Import IFC… / Import DXF… /
+// Import DXF with units… / Export IFC / Export Section DXF. The component is
+// dumb glue (rule 2): it only owns the file inputs and dispatches through
+// the runners in file-transfers.ts; the §N commands are the doorways and the
+// pure hint modules format the status-bar copy. web-ifc and dxf-parser
 // lazy-load inside the commands on first use; the status hint covers the
 // wait. ALL entries disable while a transfer runs: the undo-scope middleware
-// has a single scope slot and assumes serial command dispatch (T3 finding #3),
-// so concurrent import/export commands are not allowed. Styling: shared menu
+// has a single scope slot and assumes serial command dispatch (T3 finding
+// #3), so concurrent import/export commands are not allowed. Export Section
+// DXF (T7) enables only while a section is active. Styling: shared menu
 // tokens only (rule 6).
 import { useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
@@ -22,22 +22,16 @@ import {
   SubTrigger,
   Trigger,
 } from '@radix-ui/react-dropdown-menu';
-import { exportIfc, importIfcModel, importReferenceDocument } from '@/commands';
-import type { AppDispatch } from '@/stores';
-import { useAppDispatch } from '@/stores/hooks';
-import { setCursorHint } from '@/stores/ui-slice';
-import { DXF_IMPORTING_HINT, formatDxfImportError, formatDxfImportSummary } from './dxf-status-hints';
+import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import {
-  IFC_EXPORTING_HINT,
-  IFC_IMPORTING_HINT,
-  formatExportError,
-  formatImportError,
-  formatImportSummary,
-} from './ifc-status-hints';
+  type TransferContext,
+  runDxfImport,
+  runDxfSectionExport,
+  runIfcExport,
+  runIfcImport,
+} from './file-transfers';
 import { MENU_CONTENT_CLASS, MENU_ITEM_CLASS, MENU_SEPARATOR_CLASS, MENU_TRIGGER_CLASS } from './menu-styles';
 
-/** IFC-SPF = ISO-10303-21 STEP physical file. */
-const IFC_MIME_TYPE = 'application/x-step';
 const IFC_FILE_ACCEPT = '.ifc';
 const DXF_FILE_ACCEPT = '.dxf';
 
@@ -52,73 +46,6 @@ const DXF_UNITS_CHOICES: { label: string; insunits: number }[] = [
   { label: 'Feet (ft)', insunits: 2 },
 ];
 
-/** Blob + object URL + anchor click — the download half of the round-trip. */
-function downloadIfcFile(bytes: Uint8Array, fileName: string): void {
-  // Fresh copy: the result is typed Uint8Array<ArrayBufferLike>, BlobPart
-  // wants ArrayBuffer-backed views.
-  const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: IFC_MIME_TYPE }));
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = fileName;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
-
-interface TransferContext {
-  dispatch: AppDispatch;
-  setIsTransferring: (isTransferring: boolean) => void;
-}
-
-async function runIfcExport({ dispatch, setIsTransferring }: TransferContext): Promise<void> {
-  setIsTransferring(true);
-  dispatch(setCursorHint(IFC_EXPORTING_HINT));
-  try {
-    const { bytes, fileName } = await dispatch(exportIfc());
-    downloadIfcFile(bytes, fileName);
-    dispatch(setCursorHint(`Exported ${fileName}`));
-  } catch (error) {
-    dispatch(setCursorHint(formatExportError(error)));
-  } finally {
-    setIsTransferring(false);
-  }
-}
-
-async function runIfcImport(context: TransferContext, file: File): Promise<void> {
-  const { dispatch, setIsTransferring } = context;
-  setIsTransferring(true);
-  dispatch(setCursorHint(IFC_IMPORTING_HINT));
-  try {
-    const buffer = new Uint8Array(await file.arrayBuffer());
-    // fileName feeds the reference document's display name/provenance when a
-    // foreign file imports as solids (T6.5/Q7).
-    const summary = await dispatch(importIfcModel({ buffer, fileName: file.name }));
-    dispatch(setCursorHint(formatImportSummary(summary)));
-  } catch (error) {
-    dispatch(setCursorHint(formatImportError(error)));
-  } finally {
-    setIsTransferring(false);
-  }
-}
-
-interface DxfImportContext extends TransferContext {
-  insunitsOverride: number | undefined;
-}
-
-async function runDxfImport(context: DxfImportContext, file: File): Promise<void> {
-  const { dispatch, setIsTransferring, insunitsOverride } = context;
-  setIsTransferring(true);
-  dispatch(setCursorHint(DXF_IMPORTING_HINT));
-  try {
-    const text = await file.text();
-    const summary = await dispatch(importReferenceDocument({ text, fileName: file.name, insunitsOverride }));
-    dispatch(setCursorHint(formatDxfImportSummary(summary)));
-  } catch (error) {
-    dispatch(setCursorHint(formatDxfImportError(error)));
-  } finally {
-    setIsTransferring(false);
-  }
-}
-
 export function FileMenu() {
   const dispatch = useAppDispatch();
   const ifcInputRef = useRef<HTMLInputElement>(null);
@@ -128,6 +55,7 @@ export function FileMenu() {
   // reset by the change handler (a cancelled picker leaves it stale — the next
   // menu click always re-sets it, so no wrong override can leak).
   const [dxfInsunitsOverride, setDxfInsunitsOverride] = useState<number | undefined>(undefined);
+  const activeSectionId = useAppSelector((state) => state.ui.activeSectionId);
   const transfer: TransferContext = { dispatch, setIsTransferring };
 
   const onIfcFilePicked = (event: ChangeEvent<HTMLInputElement>) => {
@@ -195,6 +123,15 @@ export function FileMenu() {
               className={MENU_ITEM_CLASS}
             >
               Export IFC
+            </Item>
+            <Item
+              disabled={isTransferring || activeSectionId === null}
+              onSelect={() => {
+                if (activeSectionId !== null) void runDxfSectionExport(transfer, activeSectionId);
+              }}
+              className={MENU_ITEM_CLASS}
+            >
+              Export Section DXF
             </Item>
           </Content>
         </Portal>

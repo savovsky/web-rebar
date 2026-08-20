@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { CommandError } from '@/commands';
 import type { ImportReferenceDocumentSummary } from '@/commands';
-import { formatDxfImportError, formatDxfImportSummary } from './dxf-status-hints';
+import {
+  DXF_SECTION_EXPORTING_HINT,
+  formatDxfExportError,
+  formatDxfImportError,
+  formatDxfImportSummary,
+} from './dxf-status-hints';
 
 function makeSummary(
   overrides: Partial<ImportReferenceDocumentSummary> = {},
@@ -124,5 +129,27 @@ describe('formatDxfImportError', () => {
 
   it('falls back to a generic hint for non-command errors', () => {
     expect(formatDxfImportError(new Error('boom'))).toBe('Import failed: unexpected error (see console)');
+  });
+});
+
+describe('formatDxfExportError (M2 T7 — exportSectionDxf)', () => {
+  it('covers the lazy-load wait with a first-use hint', () => {
+    expect(DXF_SECTION_EXPORTING_HINT).toBe('Exporting section DXF… (the DXF module loads on first use)');
+  });
+
+  it('formats NOT_FOUND as an unknown-section rejection with the command message', () => {
+    const error = new CommandError('NOT_FOUND', 'exportSectionDxf: section not found: abc');
+    expect(formatDxfExportError(error)).toBe(
+      'Export rejected (unknown section): exportSectionDxf: section not found: abc',
+    );
+  });
+
+  it('formats INVALID_PARAMS as a rejection with the command message', () => {
+    const error = new CommandError('INVALID_PARAMS', 'bad params');
+    expect(formatDxfExportError(error)).toBe('Export rejected: bad params');
+  });
+
+  it('falls back to a generic hint for non-command errors', () => {
+    expect(formatDxfExportError(new Error('boom'))).toBe('Export failed: unexpected error (see console)');
   });
 });

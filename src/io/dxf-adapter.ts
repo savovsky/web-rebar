@@ -4,7 +4,9 @@
  * machinery (entity filter with skip counts, bulge → arc, BLOCK/INSERT
  * explosion, OCS conversion, plan projection) lives in dxf-mapping.ts; the 3D
  * affine math in dxf-affine.ts. The DXF EXPORT writer (plan §7, task T7)
- * joins this module later.
+ * lives in dxf-export.ts and is re-exported below (the module seam stays one
+ * doorway): the exportSectionDxf command reaches it through the same dynamic
+ * import as the importer, so the whole DXF stack stays in the one lazy chunk.
  *
  * ⚠️ This module imports dxf-parser STATICALLY: app code may only reach it
  * through a dynamic import (the importReferenceDocument command does — the
@@ -180,3 +182,11 @@ export type {
   DxfImportResult,
   DxfImportSkips,
 } from './dxf-mapping';
+
+// The DXF section EXPORT writer (plan §7, task T7) lives in dxf-export.ts —
+// split out at T7 iteration 1 (the Allplan convention fixes would have pushed
+// this module past the 400-line cap; the T5 sibling-split precedent). It has
+// NO dxf-parser dependency, but re-exporting it here keeps the module seam
+// one doorway: the exportSectionDxf command dynamic-imports this module, so
+// the whole DXF stack (parser + mapping + writer) stays in the one lazy chunk.
+export { DXF_LAYER_BACKGROUND, DXF_LAYER_CONCRETE, DXF_LAYER_REBAR, exportDxfSection } from './dxf-export';
