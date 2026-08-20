@@ -1,6 +1,6 @@
 # ⚠️ TEMP session prompt — M2 T7 (DXF export of the active section view — true 1:1 mm, Q5)
 
-> Point a fresh AI session at this file (or paste its content). **Delete this file once the T7 session has started** — the durable record is the M2 tracker. Created 2026-08-18 after **M2 T6.5** (IFC reference solids ✅ — 326 tests green, shell 1,293.14 kB, dxf chunk 33.85 kB lazy, web-ifc chunks lazy; commit `2a1075d`). Branch `A_MVP_Scope_M2`.
+> Point a fresh AI session at this file (or paste its content). **Delete this file once the T7 session has started** — the durable record is the M2 tracker. Created 2026-08-18 after **M2 T6.5** (IFC reference solids ✅ — 326 tests green, shell 1,293.14 kB, dxf chunk 33.85 kB lazy, web-ifc chunks lazy; commit `737c322`). Branch `A_MVP_Scope_M2`.
 
 I'm working on a browser-based reinforced concrete drawing app ("web-rebar").
 Read C:\work\personal\projects\web-rebar\README.md first — it has session state
