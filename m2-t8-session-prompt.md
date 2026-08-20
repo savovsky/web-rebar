@@ -1,6 +1,6 @@
 # ⚠️ TEMP session prompt — M2 T8 (M2 acceptance pass — the LAST M2 task)
 
-> Point a fresh AI session at this file (or paste its content). **Delete this file once the T8 session has started** — the durable record is the M2 tracker. Created 2026-08-18 after **M2 T7** (DXF export of the active section view ✅ — 344 tests green, shell 1,294.54 kB, dxf chunk 37.05 kB lazy incl. the writer, web-ifc chunks lazy; commit recorded per Rule 9). Branch `A_MVP_Scope_M2`.
+> Point a fresh AI session at this file (or paste its content). **Delete this file once the T8 session has started** — the durable record is the M2 tracker. Created 2026-08-18 after **M2 T7** (DXF export of the active section view ✅ — **author-verified in Allplan 2022** after 3 writer iterations: the ODA/Teigha kernel needed the full R2000 ownership/handle graph — 353 tests green, shell 1,294.54 kB, dxf chunk 45.65 kB lazy incl. the writer, web-ifc chunks lazy; commit `465b04a` + hash-commit `37d4ef3`, pushed). Branch `A_MVP_Scope_M2`.
 
 I'm working on a browser-based reinforced concrete drawing app ("web-rebar").
 Read C:\work\personal\projects\web-rebar\README.md first — it has session state
@@ -28,7 +28,9 @@ acceptance pass** (plan §8; mirrors M0 T11 / M1 T6):
   import); (2) DXF import of a synthetic fixture (built to mimic real-file
   features: cm units, nested blocks, bulges) → expected `ReferenceDocument`;
   (3) DXF export exactness (the T7 test's first case — restate, don't
-  reinvent); (4) the Q7 reference-solids sentence (foreign file → ONE
+  reinvent; the export is AUTHOR-VERIFIED in Allplan 2022 — the ODA ownership
+  graph is load-bearing, so the acceptance test must keep the structure
+  assertions that pin it); (4) the Q7 reference-solids sentence (foreign file → ONE
   reference document with solids + zero editable entities + one undo level;
   our own export → NO reference document — from T6.5's import-ifc tests).
 - Rule-by-rule audit against the root README Review Checklist (verdict table
@@ -43,8 +45,9 @@ acceptance pass** (plan §8; mirrors M0 T11 / M1 T6):
   (docs/implementation-plans-and-tasks/README.md); scenario file
   docs/test-scenarios/m2-adapters-round-trip.md — every approved manual
   scenario through T7 is persisted (M2-S01…S12 — VERIFY completeness, rule 7).
-- Bundle tripwire: defend shell **1,294.54 kB** (T7), dxf chunk 37.05 kB lazy
-  (incl. the writer), web-ifc chunks lazy, no INEFFECTIVE_DYNAMIC_IMPORT.
+- Bundle tripwire: defend shell **1,294.54 kB** (T7), dxf chunk 45.65 kB lazy
+  (incl. the writer in dxf-export/dxf-export-writer/dxf-export-scaffold),
+  web-ifc chunks lazy, no INEFFECTIVE_DYNAMIC_IMPORT.
 - Task log + tracker row (commit `—` until the author commits).
 
 Work on branch A_MVP_Scope_M2, one task at a time: pnpm lint + pnpm test +
