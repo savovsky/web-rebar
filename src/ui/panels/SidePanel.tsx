@@ -1,7 +1,9 @@
-// Right tabbed panel (§B.2): "Building" (storeys/elements — counts only in M0)
-// and "Properties" (context-sensitive, populated by selection from T7 onward).
+// Right tabbed panel (§B.2): "Building" (storeys/elements — counts only in M0,
+// plus the M2 T6 Backgrounds section for imported reference documents) and
+// "Properties" (context-sensitive, populated by selection from T7 onward).
 import { Content, List, Root, Trigger } from '@radix-ui/react-tabs';
 import { useAppSelector } from '@/stores/hooks';
+import { BackgroundsSection } from './BackgroundsSection';
 
 const TRIGGER_CLASS =
   'flex-1 border-b-2 border-transparent px-panel py-1.5 text-xs text-muted-foreground ' +
@@ -42,6 +44,7 @@ export function SidePanel() {
             </div>
           </dl>
         )}
+        <BackgroundsSection />
       </Content>
       <Content value='properties' className='flex-1 overflow-auto p-panel text-xs text-muted-foreground'>
         <p>Select an element to edit its properties.</p>

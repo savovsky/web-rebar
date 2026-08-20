@@ -91,6 +91,8 @@ When a decision must be revisited, update this document and note the revision da
 - Configurable tolerance (5-20px)
 - Dedicated array/divide tool for bar spacing patterns (separate from snapping)
 
+> **Revised 2026-08-18 (M2 T6 — reference tracing snaps):** the Endpoint/Midpoint rows get their first real target — imported reference linework (M2 plan Q3 `referenceDocuments`). Placement drafts (Place Wall on the ground plane, Place Bar on a captured wall face) resolve points against the VISIBLE documents' endpoints/midpoints: an object snap within tolerance beats the grid (High vs. Low priority above); only x/y are snapped — z passes through (bar-face clicks snap in plan and re-project onto the captured face). Arcs contribute their CCW sweep endpoints plus the mid-SWEEP point (a point on the arc, not the chord midpoint); circles contribute nothing (no Center snap row exists yet). Hidden documents never snap — an invisible magnet is a bug, not a feature. The tolerance is world-mm, derived from the grid spacing (half a cell), until the configurable 5–20 px screen aperture above gets its settings UI.
+
 ### B.4 Precision Input
 
 - After placement, typing a number + Enter offsets from snap reference

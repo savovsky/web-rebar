@@ -1,7 +1,7 @@
 # M2 Test Scenarios — Adapters Round-Trip (IFC + DXF)
 
 > **Back to:** [Test Scenarios](./README.md) · [M2 tracker](../implementation-plans-and-tasks/m2-adapters-round-trip.md)
-> Created 2026-08-18 (T3 session) — persists the approved T1–T2.5 manual test lists (M2-S01…S03) and records T3's headless IFC round-trip acceptance (M2-S04). Extended 2026-08-18 (T4 session) with the browser round-trip (M2-S05) and the foreign-file skip behavior (M2-S06 — ⚠️ superseded by T6.5/Q7). Extended 2026-08-18 (T5 session) with the headless DXF import-core acceptance (M2-S07). T6/T7 extend this file next.
+> Created 2026-08-18 (T3 session) — persists the approved T1–T2.5 manual test lists (M2-S01…S03) and records T3's headless IFC round-trip acceptance (M2-S04). Extended 2026-08-18 (T4 session) with the browser round-trip (M2-S05) and the foreign-file skip behavior (M2-S06 — ⚠️ superseded by T6.5/Q7). Extended 2026-08-18 (T5 session) with the headless DXF import-core acceptance (M2-S07). Extended 2026-08-18 (T6 session) with the background-rendering / tracing-snap / Backgrounds-panel / Import-DXF scenarios (M2-S08…S11). T6.5/T7 extend this file next.
 
 ---
 
@@ -60,3 +60,34 @@
 - **When:** each file is parsed (dxf-parser) and mapped into a reference document through the mapping layer
 - **Then:** declared units are honored ($INSUNITS cm → ×10 on the 7 KOMO files, mm → ×1 on the Sarafovo file); blocks/inserts explode to finite plan primitives (nesting, anonymous `*D*` blocks, mirrored inserts, (0,0,−1) OCS content all included); unsupported content (TEXT/MTEXT, SPLINE, ELLIPSE, HATCH, SOLID, DIMENSION, 3DFACE, ATTDEF, 3DSOLID/BODY, curve-fit POLYLINE) is skip-counted per exploded instance — never silently lost; bulges become CCW-normalized arcs at exact geometry; the import is ONE undo step (one Ctrl+Z removes the whole document, redo re-applies it); remove/visibility commands restore exactly on undo; empty content, an empty file name, unparseable content, or an unknown units-override code are rejected and change nothing
 
+### M2-S08 — DXF import via the File menu: background renders at true scale and traces (the doc-11 workflow probe)
+
+**Covers:** T6 (§A milestone acceptance sentence 2 — the workflow half) · **Status:** ✅ manual 2026-08-18 (author) · **Headless counterpart:** `src/engine/reference-snapping.test.ts` + `src/engine/snapping.test.ts` (snap resolution), `src/ui/shell/dxf-status-hints.test.ts` (hint formatting), T5's dxf tests (import core)
+
+- **Given:** the app running (`pnpm dev`) and a KOMO plan fixture (e.g. `2507_KOMO_ IP04-04 - …dxf`)
+- **When:** File → Import DXF… → the fixture is picked
+- **Then:** the status hint summarizes "Imported … — 2442 primitives · units: cm (×10 to mm) · skipped … occurrences: …" (skip counts are exploded occurrences — a HATCH inside a 10×-inserted block counts 10); the linework renders in the muted reference color on the plan at TRUE mm scale; the document appears in the Building tab's Backgrounds section (visibility checkbox + primitive count + Remove); hovering/clicking the linework under the Select tool highlights and selects NOTHING (backgrounds are never model); one Ctrl+Z removes the whole imported document
+
+### M2-S09 — Tracing snaps: Place Wall / Place Bar resolve to background endpoints and midpoints
+
+**Covers:** T6 (§B.3 revised — the Endpoint/Midpoint rows' first real target) · **Status:** ✅ manual 2026-08-18 (author) · **Headless counterpart:** `src/engine/reference-snapping.test.ts` (target extraction incl. arc mid-SWEEP points, closed-polyline closing midpoint, circles contribute none) + `src/engine/snapping.test.ts` (reference-beats-grid, z pass-through, Shift/disabled passthrough)
+
+- **Given:** a visible imported background on the plan (M2-S08)
+- **When:** Place Wall (W) — the pointer hovers within half a grid cell of a background line endpoint or midpoint, then clicks; then the same with Shift held; then Place Bar (B) on a wall side face with path clicks near background endpoints/midpoints
+- **Then:** the crosshair snap marker locks onto the background endpoint/midpoint (object snap beats grid rounding) and the wall starts/ends exactly there — the traced wall follows the background at its true position; Shift (or Snap: OFF) disables ALL snapping and the raw/grid-free point is used; bar path clicks snap in plan and project exactly onto the captured face (no grid re-rounding of a snapped point); hiding the document (Backgrounds checkbox) also disables its snaps — an invisible background never attracts the cursor
+
+### M2-S10 — Backgrounds panel: per-document visibility and remove are undoable
+
+**Covers:** T6 (§B.2 Backgrounds section) · **Status:** ✅ manual 2026-08-18 (author) · **Headless counterpart:** `src/commands/reference-document-commands.test.ts` (T5 — command contracts + exact undo/redo restore)
+
+- **Given:** one or more imported backgrounds listed in Building → Backgrounds
+- **When:** a document's checkbox is unchecked (linework hides), re-checked (linework returns), then Remove is clicked; Ctrl+Z after each action
+- **Then:** visibility flips are instant and render-only; Remove deletes the document; each action is exactly ONE undo level (undo after Remove restores the document with its visibility flag; undo after a toggle restores the previous flag); a removed/hidden document contributes no snap targets
+
+### M2-S11 — DXF import edge cases: units override, in-flight guard, large-file stress
+
+**Covers:** T6 (Q4 override flow + T5 findings consumption) · **Status:** ✅ manual 2026-08-18 (author) · **Headless counterpart:** `src/io/dxf-mapping.test.ts` (units table + override, T5) + `src/ui/shell/dxf-status-hints.test.ts` (assumed-units warning copy)
+
+- **Given:** the app running (`pnpm dev`)
+- **When:** (a) File → Import DXF with units… → Centimetres on a KOMO file, and on the mm Sarafovo file; (b) importing `2507_KOMO - 3D View.dxf` (46 MB, 67k primitives); (c) watching the File menu during a large import
+- **Then:** (a) the cm override on a cm-declared file imports identically to the plain flow, while the same override on the mm file visibly mis-scales it ×10 — proof the override wins (remove that background afterwards); a file with missing/unitless $INSUNITS (if available) ends its hint with "…units not declared — mm assumed (if mis-scaled: remove the background and re-import via File → Import DXF with units…)"; (b) the 46 MB file imports in about a second, renders and orbits without stutter as ONE merged geometry, and one Ctrl+Z removes it; (c) ALL File menu entries are disabled while a transfer runs

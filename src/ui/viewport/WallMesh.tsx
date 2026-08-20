@@ -17,6 +17,8 @@ import type { ThreeEvent } from '@react-three/fiber';
 import { DEFAULT_ELEMENT_APPEARANCE } from '@/data/appearance';
 import type { Vec3, WallElement } from '@/data/models';
 import { getWallFaceFrame, resolveFacePoint } from '@/engine/placement';
+import { type ReferenceSnapTarget, findReferenceSnap } from '@/engine/reference-snapping';
+import { REFERENCE_SNAP_TOLERANCE_GRID_CELLS } from '@/engine/snapping';
 import { getWallTransform } from '@/engine/wall-geometry';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { setSelection } from '@/stores/ui-slice';
@@ -24,11 +26,65 @@ import { CLICK_DRAG_TOLERANCE_PX } from './constants';
 import { setCursorPoint } from './cursor-position';
 import { clearHoverTarget, pickPointerWinner, setHoverTarget, useIsHoverTarget } from './hover-target';
 import { advanceBarDraft, captureBarFace } from './place-bar-draft';
+import { useReferenceSnapTargets } from './reference-snap-targets';
 import { useElementDragOffset, useElementMoveDrag } from './use-element-drag';
-import { useViewportTheme } from './viewport-theme';
+import { type ViewportTheme, useViewportTheme } from './viewport-theme';
 
 /** No drag in flight: the mesh sits at its committed transform. */
 const NO_OFFSET: Vec3 = { x: 0, y: 0, z: 0 };
+
+interface ResolveOnFaceOptions {
+  wall: WallElement;
+  faceNormal: Vec3;
+  event: ThreeEvent<PointerEvent | MouseEvent>;
+  isSnapEnabled: boolean;
+  referenceTargets: ReferenceSnapTarget[];
+  gridSpacingMm: number;
+}
+
+/** Raycast hit → point on the captured face plane (§B.3: a reference
+ *  endpoint/midpoint within tolerance wins over the face-grid snap; the
+ *  projection onto the face plane keeps the result exactly on the face). */
+function resolveOnFacePoint({
+  wall,
+  faceNormal,
+  event,
+  isSnapEnabled,
+  referenceTargets,
+  gridSpacingMm,
+}: ResolveOnFaceOptions): Vec3 {
+  const isSnapActive = isSnapEnabled && !event.nativeEvent.shiftKey; // Shift disables ALL snapping (§B.3)
+  const raw: Vec3 = { x: event.point.x, y: event.point.y, z: event.point.z };
+  const hit = isSnapActive
+    ? findReferenceSnap({
+        point: raw,
+        targets: referenceTargets,
+        toleranceMm: gridSpacingMm * REFERENCE_SNAP_TOLERANCE_GRID_CELLS,
+      })
+    : null;
+  return resolveFacePoint({
+    frame: getWallFaceFrame(wall, faceNormal),
+    // The reference hit snaps in plan (z stays the raw face hit's); a hit
+    // must survive EXACTLY — re-rounding the projected u/v to the grid
+    // would pull the bar path off the traced point.
+    worldPoint: hit ? { x: hit.x, y: hit.y, z: raw.z } : raw,
+    gridSpacingMm,
+    isSnapEnabled: hit === null && isSnapActive,
+  });
+}
+
+interface FillColorOptions {
+  isHovered: boolean;
+  isSelected: boolean;
+  theme: ViewportTheme;
+}
+
+/** Selection outranks hover; both outrank the domain concrete color. */
+function resolveFillColor({ isHovered, isSelected, theme }: FillColorOptions): string {
+  if (isSelected) return theme.selection;
+  if (isHovered) return theme.hover;
+  return DEFAULT_ELEMENT_APPEARANCE.concreteColor;
+}
 
 export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: boolean }) {
   const dispatch = useAppDispatch();
@@ -37,6 +93,7 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
   const draft = useAppSelector((state) => state.ui.placementDraft);
   const isSnapEnabled = useAppSelector((state) => state.ui.snapEnabled);
   const gridSpacingMm = useAppSelector((state) => state.ui.gridSpacingMm);
+  const referenceTargets = useReferenceSnapTargets();
   const transform = getWallTransform(wall);
 
   const isMoveTool = activeTool === 'move';
@@ -45,19 +102,17 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
 
   const isHovered = useIsHoverTarget('wall', wall.id);
   const isDraftHost = draft.kind === 'bar' && draft.hostElementId === wall.id && draft.faceNormal !== null;
-  // Selection outranks hover; both outrank the domain concrete color.
-  let fillColor: string = DEFAULT_ELEMENT_APPEARANCE.concreteColor;
-  if (isHovered) fillColor = theme.hover;
-  if (isSelected) fillColor = theme.selection;
+  const fillColor = resolveFillColor({ isHovered, isSelected, theme });
 
-  /** Raycast hit → point on the captured face plane (projected + grid-snapped). */
   const resolveOnFace = (event: ThreeEvent<PointerEvent | MouseEvent>): Vec3 | null => {
     if (!draft.faceNormal) return null;
-    return resolveFacePoint({
-      frame: getWallFaceFrame(wall, draft.faceNormal),
-      worldPoint: { x: event.point.x, y: event.point.y, z: event.point.z },
+    return resolveOnFacePoint({
+      wall,
+      faceNormal: draft.faceNormal,
+      event,
+      isSnapEnabled,
+      referenceTargets,
       gridSpacingMm,
-      isSnapEnabled: isSnapEnabled && !event.nativeEvent.shiftKey,
     });
   };
 

@@ -24,7 +24,7 @@
 | **State** | Redux Toolkit 2.12 (thunks = §N command layer) |
 | **3D** | Three.js 0.185 + React Three Fiber 9.7 + Drei 10.7 |
 | **PDF** | jsPDF 4.2 |
-| **Structure** | `src/stores/` (project + ui + undo slices, typed hooks), `src/engine/` (WASM bridge + placement/sectioning/section-cut/transform math), `src/io/` (web-ifc lazy loader, IFC export/import mapping + GUID codec — DXF/PDF stubs), `src/commands/` (15 §N commands + registry), `src/ui/` (shell, toolbar, viewport, section-view, panels), `src/data/` (models + DIN/EC2 catalog seed + domain appearance) |
+| **Structure** | `src/stores/` (project + ui + undo slices, typed hooks), `src/engine/` (WASM bridge + placement/sectioning/section-cut/transform math + reference-background tessellation/snapping), `src/io/` (web-ifc lazy loader, IFC export/import mapping + GUID codec, DXF import adapter + mapping — PDF stub), `src/commands/` (18 §N commands + registry), `src/ui/` (shell, toolbar, viewport, section-view, panels), `src/data/` (models + DIN/EC2 catalog seed + domain appearance) |
 
 M0 (One Wall, One Bar) is **✅ complete** — all milestone risks probed: WASM bundle is 34.9 kB raw / 15.6 kB gzip, the §G.1 Tier 1 section algorithm is correct (dot at u = 31 mm for Ø12 @ 25 mm cover), Rust↔TS data passing runs on flat typed arrays end to end.
 
@@ -66,6 +66,7 @@ README.md                              ← YOU ARE HERE — session state & proj
 │   ├── 09-tech-libraries.md           ← All chosen libraries & dependencies (future package.json content)
 │   ├── 10-design-system.md            ← Design tokens & one-place-change styling rules
 │   ├── 11-reinforcement-workflow.md   ← Author's domain workflow: imported backgrounds, element-by-element / floor-by-floor authoring, layer focus isolation
+│   ├── 12-product-positioning.md      ← Product ideas & user-facing positioning (e.g. "3D as IFC, 2D plans as DXF") — idea log, NOT locked decisions
 │   ├── implementation-plans-and-tasks/ ← 🔵 LIVE — approved milestone plans + task state (M0 active)
 │   ├── test-scenarios/                ← 🟢 LIVE — behavioral test scenarios per milestone (manual now, Playwright post-POC)
 │   └── author_notebook.md             ← ⛔ AUTHOR'S PRIVATE notes — AI sessions must NOT read or use it (raw future UI/UX ideas)
