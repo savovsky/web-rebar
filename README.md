@@ -198,6 +198,7 @@ These topics need dedicated discussion sessions before implementation reaches th
 6. **Design tokens only ([doc 10](./docs/10-design-system.md)):** No literal colors, pixel sizes, or font sizes in components — semantic tokens from `tokens.css` only. Domain styling (pen table, rebar colors) comes from project settings, not the UI theme.
 7. **Manual test list (added 2026-08-09):** Every task report ends with a list of what the author must test manually. After the author approves the task, the list is persisted as structured scenarios in [docs/test-scenarios/](./docs/test-scenarios/README.md) — behavior-focused Given/When/Then, stable IDs, updated in the same commit whenever behavior changes.
 8. **Author works in parallel — commit everything on approval (added 2026-08-09):** The author may edit any file (including `docs/author_notebook.md`) while a task is in progress; avoiding collisions is the author's responsibility. When the author approves a task, the task commit includes ALL working-tree changes, not just the session's files. If an exact-match edit fails because of a parallel edit, re-read the file and adapt — never revert the author's changes.
+9. **Closing a task — commit/push/next-session prompt (added 2026-08-18 after the T6.5 closing loop):** the tracker's `Commit:` cell is a placeholder `—` in the task commit (a commit CANNOT contain its own hash — self-reference is mathematically impossible); the task commit is followed IMMEDIATELY by a small `Tracker: record T<n> hash (<hash>)` commit that fills the hash in. **NEVER amend** — amendment is only ever allowed for typo fixes before the hash exists. Session-write sequence on approval: gates green ONCE (no re-running) → task commit → hash-commit → push → the next-session prompt file lands in the hash-commit too. **Hard stop:** the same git/sed/check cycle twice without converging → stop, state the invariant ("a commit cannot contain its own hash"), and follow the two-commit pattern.
 
 ### Review Checklist (for the author)
 
@@ -225,6 +226,8 @@ I'm working on a browser-based reinforced concrete drawing app ("web-rebar").
 Read C:\work\personal\projects\web-rebar\README.md first — it has session state.
 Then read docs/08-architecture-spec.md — it has all locked architecture decisions.
 ```
+
+**Session-prompt convention (temp files, e.g. `m2-t7-session-prompt.md`):** every task session ends with a ready-made prompt for the next task in the repo root; the prompt carries the closing procedure per Rule 9 (task commit → `Tracker: record hash` commit → push → next prompt file in the hash-commit; never amend after the hash exists) and a closing checklist (approve → gates green ONCE → commit → hash-commit → push → prompt file → done). The prompt file is deleted once the session starts — the durable record is the milestone tracker.
 
 **To start M2 implementation (current), use this:**
 

@@ -487,4 +487,6 @@
 
 **Green:** `pnpm lint` ✅ · `pnpm test` ✅ 326 tests / 40 files (312 → +14) · `pnpm build` ✅ (shell 1,293.14 kB — see the tripwire above)
 
-**Commit:** `737c322`
+**Commit:** `737c322` (hash recorded by follow-up commit `994750e` — the reason for the new Rule 9 closing procedure below)
+
+**Closing-procedure note (2026-08-18):** filling this commit cell triggered a self-reference loop (a commit cannot contain its own hash; amending to insert the hash changes the hash — dozens of doomed amend iterations burned before the repo's own follow-up-commit pattern was used). Prevention adopted: **Rule 9 in the root README** — the `Commit:` cell stays `—` in the task commit, a small `Tracker: record T<n> hash (<hash>)` commit follows immediately (the repo's pre-existing pattern, now written down), NEVER amend after the hash exists, and a two-cycle hard stop for any repeating git/sed/check loop. The T7 session prompt carries the rule so the next session inherits it.

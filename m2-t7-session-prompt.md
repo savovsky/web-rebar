@@ -65,3 +65,20 @@ build wall + bar → Section Cut → File → Export Section DXF → open the fi
 real CAD (Allplan 2022 / AutoCAD) → measure: the wall outline is true
 thickness × height, the Ø12 dot is a 12 mm circle, the background is dashed,
 and 1 drawing unit = 1 mm ($INSUNITS=4).
+
+---
+
+## 📌 Closing procedure (Rule 9 — added 2026-08-18 after the T6.5 closing loop)
+
+When the author approves T7:
+
+1. Gates green ONCE (pnpm lint + test + build — no re-running after approval edits).
+2. Task commit with the tracker cell `Commit: —` (a commit CANNOT contain its
+   own hash — self-reference is mathematically impossible).
+3. Follow-up commit `Tracker: record T7 hash (<hash>)` filling the hash in.
+4. **NEVER amend** the task commit after the hash exists (typo fixes before
+   the hash is recorded are the only allowed amendments).
+5. Push `origin A_MVP_Scope_M2`; the NEXT session prompt (T8) lands in the
+   hash-commit too.
+6. **Hard stop:** the same git/sed/check cycle twice without converging →
+   STOP, state the invariant, use the two-commit pattern.
