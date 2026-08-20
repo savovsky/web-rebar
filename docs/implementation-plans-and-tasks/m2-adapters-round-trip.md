@@ -142,7 +142,7 @@
 | T3 | IFC import adapter + `importIfcModel` command + round-trip identical-model probe | the §A round-trip test green (ids, 1e-6 mm, intent) | ✅ Done | `9c8ccf4` |
 | T4 | File menu + IFC import/export UI wiring (lazy web-ifc, downloads, status hints) | manual: browser round-trip; author opens .ifc in external viewer | ✅ Done | `0086791` |
 | T5 | ⚠️ **Fixture gate — check first.** DXF import core: dxf-parser + mapping layer (units, bulge, blocks), ReferenceDocument model (Q3), 3 commands | unit tests: units table, bulge, block explosion, undo | ✅ Done | `b25bfa8` |
-| T6 | ⚠️ **Fixture gate — check first.** Background rendering + endpoint/midpoint tracing snaps + Backgrounds panel section + Import DXF menu | manual: real-file import at true scale; wall traced over it | ✅ Done | — |
+| T6 | ⚠️ **Fixture gate — check first.** Background rendering + endpoint/midpoint tracing snaps + Backgrounds panel section + Import DXF menu | manual: real-file import at true scale; wall traced over it | ✅ Done | `3b2348a` |
 | T6.5 | IFC reference solids: foreign products import as render-only dummy solids (Q7 — author decision 2026-08-18; depends on T5/T6) | headless: reference-document mapping + one-undo probe + perf at 4,008-product scale; manual: the steel model renders, one undo removes it | ⬜ Pending | — |
 | T7 | DXF export of section view: custom writer + `exportSectionDxf` command (Q5) | exact-coordinate headless tests; author measures file in real CAD | ⬜ Pending | — |
 | T8 | M2 acceptance pass: `m2-acceptance.test.ts` + checklist audit + spec/docs/scenarios sweep | verdict table green; lint/test/build green | ⬜ Pending | — |
@@ -438,4 +438,4 @@
 
 **Green:** `pnpm lint` ✅ · `pnpm test` ✅ 312 tests / 39 files (277 → +35) · `pnpm build` ✅ (shell 1,290.85 kB — see the tripwire above)
 
-**Commit:** —
+**Commit:** `3b2348a`
