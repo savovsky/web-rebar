@@ -6,6 +6,7 @@
  * annotations, layouts.
  */
 import type { ConcreteElement } from './elements';
+import type { ReferenceDocument } from './reference-documents';
 import type { ReinforcementBar } from './reinforcement';
 import type { SectionDefinition } from './sections';
 
@@ -25,4 +26,7 @@ export interface ProjectModel {
   elements: Record<string, ConcreteElement>;
   reinforcement: Record<string, ReinforcementBar>;
   sections: Record<string, SectionDefinition>;
+  /** Imported background linework (M2 plan Q3) — inert reference, never
+   *  edited/picked/sectioned/computed; deliberately NOT the Layer Model. */
+  referenceDocuments: Record<string, ReferenceDocument>;
 }

@@ -6,7 +6,7 @@ import type { Vec3 } from '@/data/models';
 
 export interface CursorSnapshot {
   x: number;
-  z: number;
+  y: number;
 }
 
 let rawPoint: Vec3 | null = null;
@@ -20,9 +20,9 @@ export function getCursorRawPoint(): Vec3 | null {
 
 export function setCursorPoint(point: Vec3 | null): void {
   rawPoint = point;
-  const next = point ? { x: Math.round(point.x), z: Math.round(point.z) } : null;
+  const next = point ? { x: Math.round(point.x), y: Math.round(point.y) } : null;
   if (next === null && snapshot === null) return;
-  if (next !== null && snapshot !== null && next.x === snapshot.x && next.z === snapshot.z) return;
+  if (next !== null && snapshot !== null && next.x === snapshot.x && next.y === snapshot.y) return;
   snapshot = next;
   listeners.forEach((emit) => emit());
 }
@@ -38,6 +38,6 @@ export function getCursorSnapshot(): CursorSnapshot | null {
 
 /** Status-bar readout (§B.2): plan coordinates in whole millimetres. */
 export function formatCursorPosition(position: CursorSnapshot | null): string {
-  if (!position) return 'X: — Z: —';
-  return `X: ${position.x} Z: ${position.z}`;
+  if (!position) return 'X: — Y: —';
+  return `X: ${position.x} Y: ${position.y}`;
 }

@@ -30,3 +30,28 @@ export const DEFAULT_SECTION_PEN_TABLE: {
   backgroundLineWidthPx: 1,
   backgroundDashPx: [BACKGROUND_DASH_ON_PX, BACKGROUND_DASH_OFF_PX],
 };
+
+/**
+ * §M.4 pen table seed — mm PLOT weights, the true-mm counterpart of the px
+ * screen seed above (Q5, M2 T7: the mm seed joins the px seed). Consumed by
+ * model-space vector exports at true 1:1 mm (the DXF section writer; the §I
+ * PDF pipeline joins later). Lineweights are print mm and must resolve to a
+ * valid DXF lineweight enum (100ths of mm, restricted set — the writer
+ * validates); the dash pattern is model-mm (scale-on-sheet stays with the
+ * consumer's CAD paper space — Drawing Layouts is not touched). Becomes
+ * per-project settings post-M0.
+ */
+const BACKGROUND_DASH_ON_MM = 6;
+const BACKGROUND_DASH_OFF_MM = 3;
+
+export const DEFAULT_SECTION_PLOT_PEN_TABLE: {
+  concreteOutlineLineweightMm: number;
+  rebarLineweightMm: number;
+  backgroundLineweightMm: number;
+  backgroundDashMm: number[];
+} = {
+  concreteOutlineLineweightMm: 0.5,
+  rebarLineweightMm: 0.35,
+  backgroundLineweightMm: 0.18,
+  backgroundDashMm: [BACKGROUND_DASH_ON_MM, BACKGROUND_DASH_OFF_MM],
+};

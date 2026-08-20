@@ -41,18 +41,18 @@ interface PlanDragDeltaOptions {
   currentGround: Vec3;
 }
 
-/** Plan drag delta between two ground points; y stays 0 — the Move tool drags
+/** Plan drag delta between two ground points; z stays 0 — the Move tool drags
  *  in plan (see the T2 task-log note on vertical deltas). */
 export function planDragDelta(options: PlanDragDeltaOptions): Vec3 {
   const { startGround, currentGround } = options;
-  return { x: currentGround.x - startGround.x, y: 0, z: currentGround.z - startGround.z };
+  return { x: currentGround.x - startGround.x, y: currentGround.y - startGround.y, z: 0 };
 }
 
 // --- transient live offset (§E) ---
 
 export interface ElementDragOffset {
   elementId: string;
-  /** Snapped plan delta from the drag start (y = 0). */
+  /** Snapped plan delta from the drag start (z = 0). */
   delta: Vec3;
 }
 
@@ -100,7 +100,7 @@ interface CommitElementDragOptions {
  */
 export function commitElementDrag(options: CommitElementDragOptions): void {
   const { dispatch, elementId, delta, isSticky } = options;
-  if (Math.hypot(delta.x, delta.z) < DRAG_DELTA_TOLERANCE_MM) return;
+  if (Math.hypot(delta.x, delta.y) < DRAG_DELTA_TOLERANCE_MM) return;
   try {
     dispatch(moveElement({ elementId, delta }));
   } catch (error) {

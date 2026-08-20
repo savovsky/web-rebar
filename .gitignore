@@ -105,6 +105,7 @@ out/
 .tern-port
 .vscode-test
 lib-cov
+test-fixtures
 
 # Bower
 bower_components

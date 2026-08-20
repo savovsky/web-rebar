@@ -1,17 +1,18 @@
-// Invisible ground hit-plane (y = 0): tracks the cursor for the status bar and
+// Invisible ground hit-plane (z = 0): tracks the cursor for the status bar and
 // draft previews, and routes clicks per active tool. Snapping (§B.3) resolves
 // here — Shift disables it while held. 60 FPS pointer data flows into the
 // cursor module, never the store (§E). The Section Cut tool drags here:
 // pointer-down commits the line start, pointer-up finishes the cut (§B.6).
 import type { ThreeEvent } from '@react-three/fiber';
 import type { Vec3 } from '@/data/models';
-import { snapPointToGrid } from '@/engine/snapping';
+import { resolveSnapPoint } from '@/engine/snapping';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { clearSelection } from '@/stores/ui-slice';
 import { CLICK_DRAG_TOLERANCE_PX, GROUND_PLANE_SIZE_MM } from './constants';
 import { setCursorPoint } from './cursor-position';
 import { pickPointerWinner, setHoverTarget } from './hover-target';
 import { advanceWallDraft } from './place-wall-draft';
+import { useReferenceSnapTargets } from './reference-snap-targets';
 import { advanceSectionCut, beginSectionCut, finishSectionCut } from './section-cut-draft';
 
 const LEFT_MOUSE_BUTTON = 0;
@@ -26,11 +27,18 @@ export function GroundPlane() {
   const isSticky = useAppSelector((state) => state.ui.sticky);
   const elements = useAppSelector((state) => state.project.elements);
   const sections = useAppSelector((state) => state.project.sections);
+  const referenceTargets = useReferenceSnapTargets();
 
   const resolvePoint = (event: ThreeEvent<PointerEvent | MouseEvent>): Vec3 => {
     const raw: Vec3 = { x: event.point.x, y: event.point.y, z: event.point.z };
-    if (isSnapEnabled && !event.nativeEvent.shiftKey) return snapPointToGrid(raw, gridSpacingMm);
-    return raw;
+    // §B.3: a reference endpoint/midpoint within tolerance beats the grid;
+    // Shift (or Snap: OFF) disables ALL snapping.
+    return resolveSnapPoint({
+      raw,
+      isSnapEnabled: isSnapEnabled && !event.nativeEvent.shiftKey,
+      referenceTargets,
+      gridSpacingMm,
+    }).point;
   };
 
   const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
@@ -102,8 +110,9 @@ export function GroundPlane() {
   };
 
   return (
+    // PlaneGeometry's default orientation already lies in the XY (ground)
+    // plane facing +Z — no rotation needed in the Z-up model space.
     <mesh
-      rotation-x={-Math.PI / 2}
       onClick={handleClick}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

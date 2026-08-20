@@ -12,9 +12,9 @@ export function resolveNextSectionName(sections: Record<string, SectionDefinitio
 export interface CreateSectionParams {
   /** Display name, e.g. 'S-1'. */
   name: string;
-  /** Section line start in plan (y ignored) — see SectionDefinition. */
+  /** Section line start in plan (z ignored) — see SectionDefinition. */
   lineStart: Vec3;
-  /** Section line end in plan (y ignored). */
+  /** Section line end in plan (z ignored). */
   lineEnd: Vec3;
   /** A point on the viewed side: its side decides the view direction, its
    *  perpendicular distance from the line becomes the view depth (§B.6 —
@@ -55,8 +55,8 @@ export const createSection =
     const section: SectionDefinition = {
       id: crypto.randomUUID(),
       name,
-      lineStart: { x: params.lineStart.x, y: 0, z: params.lineStart.z },
-      lineEnd: { x: params.lineEnd.x, y: 0, z: params.lineEnd.z },
+      lineStart: { x: params.lineStart.x, y: params.lineStart.y, z: 0 },
+      lineEnd: { x: params.lineEnd.x, y: params.lineEnd.y, z: 0 },
       plane: geometry.plane,
       viewDepth: geometry.viewDepthMm,
       targetElementIds: [...params.targetElementIds],

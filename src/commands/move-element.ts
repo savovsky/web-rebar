@@ -20,7 +20,7 @@ export interface MoveElementParams {
  *
  * Walls translate in plan (startPoint/endPoint); baseElevation, thickness,
  * and height are untouched. The full delta applies to hosted bar paths —
- * plan-locked callers (the T4 Move tool) pass delta.y = 0. Selection is
+ * plan-locked callers (the T4 Move tool) pass delta.z = 0. Selection is
  * untouched: ids do not change.
  */
 export const moveElement =

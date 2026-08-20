@@ -22,8 +22,8 @@ const wallParams = {
 };
 
 const barPath = [
-  { x: 0, y: 500, z: 87 },
-  { x: 4000, y: 500, z: 87 },
+  { x: 0, y: 87, z: 500 },
+  { x: 4000, y: 87, z: 500 },
 ];
 
 /** Wall with two hosted bars, both entities selected. */
@@ -74,8 +74,8 @@ describe('deleteSection', () => {
     const sectionId1 = store.dispatch(
       createSection({
         name: 'S-1',
-        lineStart: { x: 2000, y: 0, z: -500 },
-        lineEnd: { x: 2000, y: 0, z: 500 },
+        lineStart: { x: 2000, y: -500, z: 0 },
+        lineEnd: { x: 2000, y: 500, z: 0 },
         depthPoint: { x: 4500, y: 0, z: 0 },
         targetElementIds: [wallId],
       }),
@@ -83,8 +83,8 @@ describe('deleteSection', () => {
     const sectionId2 = store.dispatch(
       createSection({
         name: 'S-2',
-        lineStart: { x: 3000, y: 0, z: -500 },
-        lineEnd: { x: 3000, y: 0, z: 500 },
+        lineStart: { x: 3000, y: -500, z: 0 },
+        lineEnd: { x: 3000, y: 500, z: 0 },
         depthPoint: { x: 5500, y: 0, z: 0 },
         targetElementIds: [wallId],
       }),

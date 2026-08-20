@@ -13,16 +13,29 @@
 // project mutation. This stays fully command-agnostic: future commands are
 // covered automatically with zero undo code (the Q1-b failure mode —
 // remembering a snapshot call per command — does not exist).
+//
+// ASYNC commands (M2 T3's importIfcModel awaits web-ifc, then dispatches
+// per-entity add reducers): the scope stays open until the thunk's promise
+// SETTLES — closing it when the thunk function returned (the M2 T2 finding)
+// let post-await reducers escape the scope and record one undo level PER
+// REDUCER. Holding the scope across the promise preserves both the
+// per-entity action log AND one undo level per command (Q4-a). Known limit:
+// the single scope slot assumes serial command dispatch (the UI dispatch
+// loop); two overlapping async commands would share one scope — acceptable
+// at M2 scale, revisit if concurrent commands ever appear.
 import { type Middleware, createListenerMiddleware, isAnyOf } from '@reduxjs/toolkit';
 import {
   addBar,
   addElement,
+  addReferenceDocument,
   addSection,
   appendBarPoint,
   removeBar,
   removeElement,
+  removeReferenceDocument,
   removeSection,
   resetProject,
+  setReferenceDocumentVisibility,
   translateBar,
   translateElement,
   updateSectionGeometry,
@@ -52,11 +65,22 @@ export const undoScopeMiddleware: Middleware = () => (next) => (action) => {
   if (typeof action !== 'function') return next(action);
   if (activeScope !== null) return next(action); // nested command joins the outer scope
   activeScope = { recorded: false };
+  let result: unknown;
   try {
-    return next(action);
-  } finally {
-    activeScope = null;
+    result = next(action);
+  } catch (error) {
+    activeScope = null; // a command rejecting synchronously still closes its scope
+    throw error;
   }
+  if (result instanceof Promise) {
+    // Async command: hold the scope until the thunk settles, so reducers
+    // dispatched after an await still join this command's ONE undo level.
+    return result.finally(() => {
+      activeScope = null;
+    });
+  }
+  activeScope = null;
+  return result;
 };
 
 /** Minimal shape the listener needs — avoids a type cycle with the store. */
@@ -71,12 +95,15 @@ undoListenerMiddleware.startListening({
   matcher: isAnyOf(
     addBar,
     addElement,
+    addReferenceDocument,
     addSection,
     appendBarPoint,
     removeBar,
     removeElement,
+    removeReferenceDocument,
     removeSection,
     resetProject,
+    setReferenceDocumentVisibility,
     translateBar,
     translateElement,
     updateSectionGeometry,

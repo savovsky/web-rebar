@@ -25,7 +25,7 @@ function applyDraftFrame({ preview, marker, isToolActive, committedPoints }: Pre
   const cursor = getCursorRawPoint();
   if (marker) {
     marker.visible = isToolActive && cursor !== null;
-    if (cursor) marker.position.set(cursor.x, 0, cursor.z);
+    if (cursor) marker.position.set(cursor.x, cursor.y, 0);
   }
   if (!preview) return;
   const startPoint = committedPoints[0] as Vec3 | undefined;
@@ -38,8 +38,8 @@ function applyDraftFrame({ preview, marker, isToolActive, committedPoints }: Pre
   preview.visible = transform.lengthMm >= MIN_PREVIEW_LENGTH_MM;
   if (!preview.visible) return;
   preview.position.set(transform.center.x, transform.center.y, transform.center.z);
-  preview.rotation.set(0, transform.rotationY, 0);
-  preview.scale.set(transform.lengthMm, DEFAULT_WALL_DIMENSIONS.height, DEFAULT_WALL_DIMENSIONS.thickness);
+  preview.rotation.set(0, 0, transform.rotationZ);
+  preview.scale.set(transform.lengthMm, DEFAULT_WALL_DIMENSIONS.thickness, DEFAULT_WALL_DIMENSIONS.height);
 }
 
 export function WallDraftPreview() {
@@ -67,7 +67,7 @@ export function WallDraftPreview() {
       <lineSegments
         ref={markerRef}
         geometry={crosshairGeometry}
-        scale={[gridSpacingMm, 1, gridSpacingMm]}
+        scale={[gridSpacingMm, gridSpacingMm, 1]}
         renderOrder={CROSSHAIR_RENDER_ORDER}
         visible={false}
       >
@@ -88,8 +88,8 @@ export function WallDraftPreview() {
         <lineSegments
           key={index}
           geometry={crosshairGeometry}
-          position={[point.x, 0, point.z]}
-          scale={[gridSpacingMm, 1, gridSpacingMm]}
+          position={[point.x, point.y, 0]}
+          scale={[gridSpacingMm, gridSpacingMm, 1]}
           renderOrder={CROSSHAIR_RENDER_ORDER}
         >
           <lineBasicMaterial color={theme.snapTarget} depthTest={false} />

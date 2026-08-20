@@ -16,12 +16,12 @@ const createStoreWithWall = () => {
   return { store, wallId };
 };
 
-/** Cut line across the wall (footprint z ∈ [-100, 100]); the depth point sits
+/** Cut line across the wall (footprint y ∈ [-100, 100]); the depth point sits
  *  at +X from the line, so the view looks along +X with 2500 mm depth. */
 const sectionParams = (wallId: string) => ({
   name: 'S-1',
-  lineStart: { x: 2000, y: 0, z: -500 },
-  lineEnd: { x: 2000, y: 0, z: 500 },
+  lineStart: { x: 2000, y: -500, z: 0 },
+  lineEnd: { x: 2000, y: 500, z: 0 },
   depthPoint: { x: 4500, y: 0, z: 0 },
   targetElementIds: [wallId],
 });
@@ -33,9 +33,9 @@ describe('createSection', () => {
 
     const section = store.getState().project.sections[sectionId];
     expect(section.name).toBe('S-1');
-    expect(section.lineStart).toEqual({ x: 2000, y: 0, z: -500 });
-    expect(section.lineEnd).toEqual({ x: 2000, y: 0, z: 500 });
-    expect(section.plane.origin).toEqual({ x: 2000, y: 0, z: -500 }); // invariant: origin = lineStart
+    expect(section.lineStart).toEqual({ x: 2000, y: -500, z: 0 });
+    expect(section.lineEnd).toEqual({ x: 2000, y: 500, z: 0 });
+    expect(section.plane.origin).toEqual({ x: 2000, y: -500, z: 0 }); // invariant: origin = lineStart
     expect(section.plane.normal).toEqual({ x: 1, y: 0, z: 0 }); // looks toward the depth point
     expect(section.viewDepth).toBeCloseTo(2500);
     expect(section.targetElementIds).toEqual([wallId]);
@@ -70,7 +70,7 @@ describe('createSection', () => {
   it('rejects a zero-length line and a depth point on the line', () => {
     const { store, wallId } = createStoreWithWall();
     expectCommandError(
-      () => store.dispatch(createSection({ ...sectionParams(wallId), lineEnd: { x: 2000, y: 0, z: -500 } })),
+      () => store.dispatch(createSection({ ...sectionParams(wallId), lineEnd: { x: 2000, y: -500, z: 0 } })),
       'INVALID_PARAMS',
     );
     expectCommandError(
@@ -88,15 +88,15 @@ describe('reshapeSection', () => {
     store.dispatch(
       reshapeSection({
         sectionId,
-        lineStart: { x: 1000, y: 0, z: -500 },
-        lineEnd: { x: 1000, y: 0, z: 500 },
+        lineStart: { x: 1000, y: -500, z: 0 },
+        lineEnd: { x: 1000, y: 500, z: 0 },
         depthPoint: { x: 3500, y: 0, z: 0 },
       }),
     );
 
     const section = store.getState().project.sections[sectionId];
-    expect(section.lineStart).toEqual({ x: 1000, y: 0, z: -500 });
-    expect(section.plane.origin).toEqual({ x: 1000, y: 0, z: -500 });
+    expect(section.lineStart).toEqual({ x: 1000, y: -500, z: 0 });
+    expect(section.plane.origin).toEqual({ x: 1000, y: -500, z: 0 });
     expect(section.plane.normal).toEqual({ x: 1, y: 0, z: 0 });
     expect(section.viewDepth).toBeCloseTo(2500);
     expect(section.targetElementIds).toEqual([wallId]); // still crossing
@@ -109,8 +109,8 @@ describe('reshapeSection', () => {
     store.dispatch(
       reshapeSection({
         sectionId,
-        lineStart: { x: 9000, y: 0, z: -500 },
-        lineEnd: { x: 9000, y: 0, z: 500 },
+        lineStart: { x: 9000, y: -500, z: 0 },
+        lineEnd: { x: 9000, y: 500, z: 0 },
         depthPoint: { x: 9500, y: 0, z: 0 },
       }),
     );
@@ -132,7 +132,7 @@ describe('reshapeSection', () => {
             sectionId,
             lineStart: { x: 0, y: 0, z: 0 },
             lineEnd: { x: 0, y: 0, z: 0 },
-            depthPoint: { x: 0, y: 0, z: 100 },
+            depthPoint: { x: 0, y: 100, z: 0 },
           }),
         ),
       'INVALID_PARAMS',

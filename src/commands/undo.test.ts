@@ -28,14 +28,14 @@ const wallParams = {
 };
 
 const barPath = [
-  { x: 0, y: 500, z: 87 },
-  { x: 4000, y: 500, z: 87 },
+  { x: 0, y: 87, z: 500 },
+  { x: 4000, y: 87, z: 500 },
 ];
 
 const sectionParams = (wallId: string) => ({
   name: 'S-1',
-  lineStart: { x: 2000, y: 0, z: -500 },
-  lineEnd: { x: 2000, y: 0, z: 500 },
+  lineStart: { x: 2000, y: -500, z: 0 },
+  lineEnd: { x: 2000, y: 500, z: 0 },
   depthPoint: { x: 4500, y: 0, z: 0 },
   targetElementIds: [wallId],
 });
@@ -58,8 +58,8 @@ describe('undo core — every M0 command is undo/redo-able', () => {
     const store = createAppStore();
     const wallId = store.dispatch(placeWall(wallParams));
     const barId = store.dispatch(placeBar({ hostElementId: wallId, diameter: 12, path: barPath }));
-    store.dispatch(extendBar({ barId, point: { x: 4000, y: 1500, z: 87 } }));
-    store.dispatch(extendBar({ barId, point: { x: 0, y: 1500, z: 87 } }));
+    store.dispatch(extendBar({ barId, point: { x: 4000, y: 87, z: 1500 } }));
+    store.dispatch(extendBar({ barId, point: { x: 0, y: 87, z: 1500 } }));
     expect(store.getState().project.reinforcement[barId].path).toHaveLength(4);
 
     store.dispatch(undo()); // last bend point
@@ -126,8 +126,8 @@ describe('undo core — every M0 command is undo/redo-able', () => {
     store.dispatch(
       reshapeSection({
         sectionId,
-        lineStart: { x: 1000, y: 0, z: -500 },
-        lineEnd: { x: 1000, y: 0, z: 500 },
+        lineStart: { x: 1000, y: -500, z: 0 },
+        lineEnd: { x: 1000, y: 500, z: 0 },
         depthPoint: { x: 3500, y: 0, z: 0 },
       }),
     );

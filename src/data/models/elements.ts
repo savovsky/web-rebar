@@ -9,20 +9,20 @@ import type { Vec3 } from './geometry';
 export type ElementKind = 'wall';
 
 /**
- * Straight wall defined by its axis in plan (X/Z) plus cross-section params.
+ * Straight wall defined by its axis in plan (X/Y) plus cross-section params.
  * Derived (never stored): length = |endPoint - startPoint|, axis direction,
  * cross-section profile = thickness × height rectangle.
  */
 export interface WallElement {
   id: string;
   kind: 'wall';
-  /** Axis start point in plan; y is ignored (see baseElevation). */
+  /** Axis start point in plan; z is ignored (see baseElevation). */
   startPoint: Vec3;
-  /** Axis end point in plan; y is ignored (see baseElevation). */
+  /** Axis end point in plan; z is ignored (see baseElevation). */
   endPoint: Vec3;
   /** Wall thickness (mm) — cross-section width perpendicular to the axis. */
   thickness: number;
-  /** Wall height (mm) — cross-section height along +Y from baseElevation. */
+  /** Wall height (mm) — cross-section height along +Z from baseElevation. */
   height: number;
   /** Bottom-of-wall elevation (mm). Storey reference arrives with M4. */
   baseElevation: number;

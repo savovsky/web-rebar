@@ -54,13 +54,13 @@ describe('resolveMoveTarget', () => {
 });
 
 describe('planDragDelta', () => {
-  it('subtracts in plan and forces y to 0 (the Move tool drags in plan)', () => {
+  it('subtracts in plan and forces z to 0 (the Move tool drags in plan)', () => {
     expect(
       planDragDelta({
-        startGround: { x: 100, y: 0, z: 200 },
-        currentGround: { x: 450, y: 0, z: 150 },
+        startGround: { x: 100, y: 200, z: 0 },
+        currentGround: { x: 450, y: 150, z: 0 },
       }),
-    ).toEqual({ x: 350, y: 0, z: -50 });
+    ).toEqual({ x: 350, y: -50, z: 0 });
   });
 });
 
@@ -91,8 +91,8 @@ const wallParams = {
 };
 
 const barPath = [
-  { x: 0, y: 500, z: 69 },
-  { x: 4000, y: 500, z: 69 },
+  { x: 0, y: 69, z: 500 },
+  { x: 4000, y: 69, z: 500 },
 ];
 
 /** Wall with one hosted bar, Move tool active (non-sticky unless asked). */
@@ -104,7 +104,7 @@ const createStoreWithWall = (isSticky = false) => {
   return { store, wallId, barId };
 };
 
-const DELTA = { x: 500, y: 0, z: 300 };
+const DELTA = { x: 500, y: 300, z: 0 };
 
 describe('commitElementDrag', () => {
   it('moves the wall AND its hosted bars; one undo level restores both exactly', () => {
@@ -114,8 +114,8 @@ describe('commitElementDrag', () => {
     commitElementDrag({ dispatch: store.dispatch, elementId: wallId, delta: DELTA, isSticky: false });
 
     const { elements, reinforcement } = store.getState().project;
-    expect(elements[wallId].startPoint).toEqual({ x: 500, y: 0, z: 300 });
-    expect(reinforcement[barId].path[0]).toEqual({ x: 500, y: 500, z: 369 });
+    expect(elements[wallId].startPoint).toEqual({ x: 500, y: 300, z: 0 });
+    expect(reinforcement[barId].path[0]).toEqual({ x: 500, y: 369, z: 500 });
 
     store.dispatch(undo());
     expect(store.getState().project).toBe(baseline); // one level, exact reference

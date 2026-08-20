@@ -11,20 +11,20 @@ describe('getWallTransform', () => {
       endPoint: { x: 4000, y: 0, z: 0 },
     });
     expect(transform.lengthMm).toBe(4000);
-    expect(transform.rotationY).toBe(0);
-    expect(transform.center).toEqual({ x: 2000, y: 1400, z: 0 });
+    expect(transform.rotationZ).toBe(0);
+    expect(transform.center).toEqual({ x: 2000, y: 0, z: 1400 });
   });
 
-  it('yaws -90° for a +Z axis so local +X maps onto +Z', () => {
+  it('yaws +90° for a +Y axis so local +X maps onto +Y', () => {
     const transform = getWallTransform({
       ...SECTION,
       startPoint: { x: 0, y: 0, z: 0 },
-      endPoint: { x: 0, y: 0, z: 3000 },
+      endPoint: { x: 0, y: 3000, z: 0 },
     });
-    // Local +X yawed by θ maps to (cosθ, 0, −sinθ) — must equal the axis direction (0, 0, 1).
-    expect(transform.rotationY).toBeCloseTo(-Math.PI / 2);
-    expect(Math.cos(transform.rotationY)).toBeCloseTo(0);
-    expect(-Math.sin(transform.rotationY)).toBeCloseTo(1);
+    // Local +X yawed by θ about +Z maps to (cosθ, sinθ, 0) — must equal the axis direction (0, 1, 0).
+    expect(transform.rotationZ).toBeCloseTo(Math.PI / 2);
+    expect(Math.cos(transform.rotationZ)).toBeCloseTo(0);
+    expect(Math.sin(transform.rotationZ)).toBeCloseTo(1);
   });
 
   it('handles a reversed axis (direction −X)', () => {
@@ -33,7 +33,7 @@ describe('getWallTransform', () => {
       startPoint: { x: 2000, y: 0, z: 0 },
       endPoint: { x: 0, y: 0, z: 0 },
     });
-    expect(transform.rotationY).toBeCloseTo(Math.PI);
+    expect(transform.rotationZ).toBeCloseTo(Math.PI);
     expect(transform.center.x).toBe(1000);
   });
 
@@ -41,10 +41,10 @@ describe('getWallTransform', () => {
     const transform = getWallTransform({
       ...SECTION,
       startPoint: { x: 0, y: 0, z: 0 },
-      endPoint: { x: 300, y: 0, z: 400 },
+      endPoint: { x: 300, y: 400, z: 0 },
     });
     expect(transform.lengthMm).toBeCloseTo(500);
-    expect(transform.rotationY).toBeCloseTo(Math.atan2(-400, 300));
+    expect(transform.rotationZ).toBeCloseTo(Math.atan2(400, 300));
   });
 
   it('elevates the center by baseElevation + height/2', () => {
@@ -54,6 +54,6 @@ describe('getWallTransform', () => {
       startPoint: { x: 0, y: 0, z: 0 },
       endPoint: { x: 1000, y: 0, z: 0 },
     });
-    expect(transform.center.y).toBe(1900);
+    expect(transform.center.z).toBe(1900);
   });
 });

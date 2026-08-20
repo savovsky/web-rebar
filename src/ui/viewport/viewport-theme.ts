@@ -11,6 +11,8 @@ export interface ViewportTheme {
   wireframe: string;
   snapTarget: string;
   preview: string;
+  referenceLine: string;
+  referenceSolid: string;
 }
 
 /** Resolved once per mount — live theme switching arrives with the settings UI. */
@@ -24,6 +26,8 @@ export function useViewportTheme(): ViewportTheme {
       wireframe: readHslToken('--wireframe'),
       snapTarget: readHslToken('--snap-target'),
       preview: readHslToken('--primary'),
+      referenceLine: readHslToken('--reference-line'),
+      referenceSolid: readHslToken('--reference-solid'),
     }),
     [],
   );

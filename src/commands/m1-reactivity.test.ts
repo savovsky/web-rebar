@@ -20,7 +20,9 @@ const WALL_LENGTH_MM = 4000;
 const WALL_THICKNESS_MM = 200;
 const WALL_HEIGHT_MM = 2800;
 const BAR_HEIGHT_MM = 1400;
-/** Expected centerline offset from the +Z face: cover (25) + radius (Ø12/2). */
+/** Expected centerline offset from the +Y face: cover (25) + radius (Ø12/2).
+ *  Section u runs along −y (right = forward × +Z), so the covered +Y face is
+ *  the u-min side of the outline. */
 const EXPECTED_CENTERLINE_OFFSET_MM = 31;
 
 interface Fixture {
@@ -35,7 +37,7 @@ interface Fixture {
 }
 
 /**
- * Wall (4000 × 200 × 2800) + one Ø12 bar at 25 mm cover from the +Z face
+ * Wall (4000 × 200 × 2800) + one Ø12 bar at 25 mm cover from the +Y face
  * (centerline 31 mm inside) + a perpendicular section at x = 2000 looking
  * along +X (2500 mm depth) — the M0 acceptance setup, now edited.
  */
@@ -51,11 +53,11 @@ const createFixture = (): Fixture => {
   );
 
   const wall = store.getState().project.elements[wallId];
-  const frame = getWallFaceFrame(wall, { x: 0, y: 0, z: 1 });
+  const frame = getWallFaceFrame(wall, { x: 0, y: 1, z: 0 });
   const centerline = resolveBarCenterline({
     facePoints: [
-      { x: 500, y: BAR_HEIGHT_MM, z: WALL_THICKNESS_MM / 2 },
-      { x: 3500, y: BAR_HEIGHT_MM, z: WALL_THICKNESS_MM / 2 },
+      { x: 500, y: WALL_THICKNESS_MM / 2, z: BAR_HEIGHT_MM },
+      { x: 3500, y: WALL_THICKNESS_MM / 2, z: BAR_HEIGHT_MM },
     ],
     frame,
     wall,
@@ -69,8 +71,8 @@ const createFixture = (): Fixture => {
   const sectionId = store.dispatch(
     createSection({
       name: 'S-1',
-      lineStart: { x: 2000, y: 0, z: -500 },
-      lineEnd: { x: 2000, y: 0, z: 500 },
+      lineStart: { x: 2000, y: -500, z: 0 },
+      lineEnd: { x: 2000, y: 500, z: 0 },
       depthPoint: { x: 4500, y: 0, z: 0 },
       targetElementIds: [wallId],
     }),
@@ -88,30 +90,31 @@ describe('M1 reactivity — the selector graph re-derives after every edit class
   it('moveElement: outline follows the wall; the dot keeps its 31 mm offset (host-follow) — and the selector is memoized', () => {
     const { store, wallId, sectionId, baseline, baselineURange } = createFixture();
 
-    // Baseline: covered face is +Z (u max); the dot sits 31 mm inside it.
+    // Baseline: covered face is +Y (u min); the dot sits 31 mm inside it.
     const [baselineDot] = baseline.cutBars;
-    expect(baselineURange[1] - baselineDot.center.u).toBeCloseTo(EXPECTED_CENTERLINE_OFFSET_MM);
+    expect(baselineDot.center.u - baselineURange[0]).toBeCloseTo(EXPECTED_CENTERLINE_OFFSET_MM);
     // Memoized: no state change → the identical reference, no recompute.
     expect(selectSectionPrimitives(store.getState(), sectionId)).toBe(baseline);
 
-    // Move the wall 300 mm along +Z — still crossed by the cut plane AND
-    // within the cut line extent (z ∈ [200, 400] ⊂ [-500, 500], §G.1 revised).
-    store.dispatch(moveElement({ elementId: wallId, delta: { x: 0, y: 0, z: 300 } }));
+    // Move the wall 300 mm along +Y — still crossed by the cut plane AND
+    // within the cut line extent (y ∈ [200, 400] ⊂ [-500, 500], §G.1 revised).
+    // u runs along −y → the section content shifts by −300.
+    store.dispatch(moveElement({ elementId: wallId, delta: { x: 0, y: 300, z: 0 } }));
 
     const moved = selectSectionPrimitives(store.getState(), sectionId);
     if (moved === null) throw new Error('expected primitives');
     expect(moved).not.toBe(baseline); // re-derived from the new project state
     expect(moved.concreteOutlines).toHaveLength(1);
     const movedUs = moved.concreteOutlines[0].map((point) => point.u);
-    expect(Math.min(...movedUs)).toBeCloseTo(baselineURange[0] + 300); // outline follows the wall
-    expect(Math.max(...movedUs)).toBeCloseTo(baselineURange[1] + 300);
+    expect(Math.min(...movedUs)).toBeCloseTo(baselineURange[0] - 300); // outline follows the wall
+    expect(Math.max(...movedUs)).toBeCloseTo(baselineURange[1] - 300);
     expect(moved.cutBars).toHaveLength(1);
     const [movedDot] = moved.cutBars;
-    expect(movedDot.center.u).toBeCloseTo(baselineDot.center.u + 300); // the bar followed its host
+    expect(movedDot.center.u).toBeCloseTo(baselineDot.center.u - 300); // the bar followed its host
     expect(movedDot.center.v).toBeCloseTo(BAR_HEIGHT_MM);
     expect(movedDot.diameterMm).toBe(DEFAULT_BAR_DIAMETER_MM);
     // The offset from the covered face survives the move exactly (host-follow).
-    expect(Math.max(...movedUs) - movedDot.center.u).toBeCloseTo(EXPECTED_CENTERLINE_OFFSET_MM);
+    expect(movedDot.center.u - Math.min(...movedUs)).toBeCloseTo(EXPECTED_CENTERLINE_OFFSET_MM);
 
     // One undo restores wall + bar to the pre-move state exactly — the exact
     // project reference comes back, so the memoized selector returns the
@@ -123,10 +126,10 @@ describe('M1 reactivity — the selector graph re-derives after every edit class
   it('moveElement SIDEWAYS beyond the cut line extent: the outline/dot set empties (§G.1 revised — the T4 author scenario)', () => {
     const { store, wallId, sectionId, baseline } = createFixture();
 
-    // The infinite cut plane still crosses the wall after a +Z move — but the
-    // section view is bounded by the drawn line (z ∈ [-500, 500]), so the
+    // The infinite cut plane still crosses the wall after a +Y move — but the
+    // section view is bounded by the drawn line (y ∈ [-500, 500]), so the
     // content must disappear, matching the 3D wireframe volume.
-    store.dispatch(moveElement({ elementId: wallId, delta: { x: 0, y: 0, z: 10_000 } }));
+    store.dispatch(moveElement({ elementId: wallId, delta: { x: 0, y: 10_000, z: 0 } }));
 
     const moved = selectSectionPrimitives(store.getState(), sectionId);
     if (moved === null) throw new Error('expected primitives');

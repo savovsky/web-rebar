@@ -14,7 +14,7 @@ import type { RootState } from '@/stores';
 import { type WallGeometryParams, wallFootprintCorners } from './wall-geometry';
 import { planePolylineIntersection } from './wasm-bridge';
 
-const UNIT_Y: Vec3 = { x: 0, y: 1, z: 0 };
+const UNIT_Z: Vec3 = { x: 0, y: 0, z: 1 };
 const COMPONENTS_PER_POINT = 3;
 /** mm — "on the plane" tolerance, shared by chord and background math. */
 const PLANE_TOLERANCE_MM = 1e-6;
@@ -72,8 +72,9 @@ const normalize = (v: Vec3): Vec3 => {
 /**
  * Orthonormal view frame of a section plane: `forward` (= the plane normal) is
  * the view direction depth is measured along, `right`/`up` span the 2D view.
- * M0 uses vertical planes only (createSection guard), so up is always +Y and
- * right = forward × up never degenerates.
+ * M0 uses vertical planes only (createSection guard), so up is always +Z and
+ * right = forward × up never degenerates. This is the drafting convention:
+ * right = forward × up puts e.g. −Y on the right when looking along +X.
  */
 export interface SectionFrame {
   origin: Vec3;
@@ -84,7 +85,7 @@ export interface SectionFrame {
 
 export function getSectionFrame(plane: Plane): SectionFrame {
   const forward = normalize(plane.normal);
-  return { origin: plane.origin, forward, right: normalize(cross(forward, UNIT_Y)), up: UNIT_Y };
+  return { origin: plane.origin, forward, right: normalize(cross(forward, UNIT_Z)), up: UNIT_Z };
 }
 
 export interface SectionProjection {
@@ -188,7 +189,7 @@ function wallOutlineAtPlane(options: WallOutlineOptions): SectionPoint[] | null 
   const uMin = Math.max(Math.min(uStart, uEnd), extent.uMin);
   const uMax = Math.min(Math.max(uStart, uEnd), extent.uMax);
   if (uMax - uMin < PLANE_TOLERANCE_MM) return null; // grazing touch or fully beyond the line ends
-  const vBase = wall.baseElevation - frame.origin.y;
+  const vBase = wall.baseElevation - frame.origin.z;
   const vTop = vBase + wall.height;
   return [
     { u: uMin, v: vBase },
@@ -220,7 +221,7 @@ export interface WallBackgroundOptions {
  */
 function wallBackgroundLines(options: WallBackgroundOptions): SectionPoint[][] {
   const { wall, frame, viewDepthMm, extent, outline } = options;
-  const vBase = wall.baseElevation - frame.origin.y;
+  const vBase = wall.baseElevation - frame.origin.z;
   const vTop = vBase + wall.height;
   const emittedUs: number[] = [];
   const lines: SectionPoint[][] = [];

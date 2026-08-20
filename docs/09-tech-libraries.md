@@ -38,17 +38,18 @@ The complete list of chosen libraries for the project, with the role of each. Th
 | **@radix-ui/react-tooltip** | ^1.2.16 | Tooltip primitive (M0) | [03](./03-tech-stack.md) |
 | **@radix-ui/react-dialog** | ^1.1.23 | Dialog/modal primitive (M0) | [03](./03-tech-stack.md) |
 | **@radix-ui/react-tabs** | ^1.1.21 | Tabbed panel primitive (M0) | [03](./03-tech-stack.md) |
+| **@radix-ui/react-dropdown-menu** | ^2.1.24 | TopBar menus (M1 Edit menu; M2 File menu) | [03](./03-tech-stack.md) |
+| **web-ifc** | ^0.0.77 | IFC parsing AND writing — import/export adapter (M2; lazy-loaded, never in the shell bundle) | [§D.4](./08-architecture-spec.md#d--wasm--typescript-boundary) |
+| **dxf-parser** | 1.1.2 | DXF import parsing behind our own mapping layer (M2 T5; lazy chunk) | [07](./07-browser-feasibility.md) |
 
 ### Runtime Dependencies — Not Yet Installed
 
 | Package | Role | When | Decided in |
 | --- | --- | --- | --- |
-| **web-ifc** | IFC parsing and writing — import/export adapter | M2 (IFC round-trip) | [§D.4](./08-architecture-spec.md#d--wasm--typescript-boundary) |
 | **rbush** | R-tree spatial index — label/leader collision detection | After M4 (annotation) | [§M.2](./08-architecture-spec.md#m--annotation--labeling-strategy) |
-| **dxf-parser** | DXF import (or custom parser) | When DXF import is needed | [07](./07-browser-feasibility.md) |
 | **shadcn/ui** *(vendored)* | Pre-styled Radix + Tailwind components | When first UI component is built | [03](./03-tech-stack.md) |
 
-**Note on DXF export:** a custom writer (plain text formatting against our own vector primitives) — no library. See [07](./07-browser-feasibility.md).
+**M2 adoption verdicts (2026-08-18, T8):** **web-ifc 0.0.77 writes our IFC4 files** — the §D.4 decision gate (M2 T1) passed on all three criteria: entities + psets survive save/load, doubles round-trip exactly (17-significant-digit SPF), and Allplan 2022 imports the files completely (after three exporter-convention fixes recorded in §D.4). The §D.4 custom-writer fallback is NOT executed. Two geometry-pipeline findings recorded for consumers: `LoadAllGeometry` returns Y-up meters (extraction converts to Z-up model mm) and 0.0.77 cannot mesh `IfcStyledItem` direct items / resolve material-definition colors (per-part colors arrive only where web-ifc resolves them; the token fallback covers the rest). **dxf-parser 1.1.2 (MIT) adopted (Q6)** — parsed all 8 author real-file fixtures (up to 46 MB, ~0.4–0.7 s each) without a failure; the Q6 custom-reader fallback is NOT needed. Known blind spot accepted: CIRCLE group-210 (no plan-circle fixtures exist; the fallback owns the fix if a real file ever needs it). **DXF export: custom writer** (`src/io/dxf-export*.ts`) as decided — grown to the full R2000/AC1015 ownership/handle graph after Allplan 2022's ODA/Teigha-based import rejected the schema-minimal file (M2 T7; author-verified).
 
 **Note on BVBS:** future BVBS (Bundesverband Bewehrungsstahl bending-machine format) export is also a custom text writer. See [§J.4](./08-architecture-spec.md#j--bar-bending-schedule).
 

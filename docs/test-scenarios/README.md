@@ -7,7 +7,7 @@ This folder collects **behavioral test scenarios**, captured session by session 
 
 ## Conventions
 
-- **One file per milestone** for now (`m0-one-wall-one-bar.md`, …) — mirrors [implementation-plans-and-tasks/](../implementation-plans-and-tasks/README.md) and keeps tasks aligned with their manual checks. Later the same records can be **regrouped by flows/features** — the scenario is the atomic unit, the file is just its current grouping.
+- **One file per milestone** for now (`m0-one-wall-one-bar.md`, `m1-edit-and-reactivity.md`, `m2-adapters-round-trip.md`, …) — mirrors [implementation-plans-and-tasks/](../implementation-plans-and-tasks/README.md) and keeps tasks aligned with their manual checks. Later the same records can be **regrouped by flows/features** — the scenario is the atomic unit, the file is just its current grouping.
 - **Stable IDs:** `M0-S01`, `M0-S02`, … — assigned once, never reused or renumbered, so regrouping and automation keep traceability (task ↔ scenario ↔ future spec).
 - **Given/When/Then**, phrased as **user-observable behavior**, never implementation details ("exactly 1 bar with 4 path points", not "appendBarPoint dispatched") — behavior-focused scenarios survive refactors.
 - **Status per scenario:** `✅ manual YYYY-MM-DD` (author verified) · `⬜ manual pending` · `🤖 automated` (post-POC, with spec path).
@@ -53,3 +53,16 @@ This folder collects **behavioral test scenarios**, captured session by session 
 | [M1-S15](./m1-edit-and-reactivity.md#m1-s15--move-shortcut-guards) | Move shortcut guards | M1 T4 | ✅ manual 2026-08-09 |
 | [M1-S16](./m1-edit-and-reactivity.md#m1-s16--section-content-is-bounded-by-the-cut-line) | Section content is bounded by the cut line | M1 T4 | ✅ manual 2026-08-09 |
 | [M1-S17](./m1-edit-and-reactivity.md#m1-s17--milestone-acceptance-move-wall--wallbars-update--section-updates--one-step-undoredo) | Milestone acceptance: move wall → wall+bars update → section updates → one-step undo/redo | M1 T6 | ✅ manual 2026-08-09 |
+| [M2-S01](./m2-adapters-round-trip.md#m2-s01--spike-ifc-file-opens-in-an-external-viewer-web-ifc-write-gate) | Spike IFC file opens in an external viewer (web-ifc write gate) | M2 T1 | ✅ manual 2026-08-18 |
+| [M2-S02](./m2-adapters-round-trip.md#m2-s02--exported-project-opens-in-allplan-with-correct-positions-and-elevations) | Exported project opens in Allplan with correct positions and elevations | M2 T2+T2.5 | ✅ manual 2026-08-18 |
+| [M2-S03](./m2-adapters-round-trip.md#m2-s03--z-up-model-space-viewport-and-tools-behave-unchanged-after-the-migration) | Z-up model space: viewport and tools unchanged after the migration | M2 T2.5 | ✅ manual 2026-08-18 |
+| [M2-S04](./m2-adapters-round-trip.md#m2-s04--ifc-round-trip-export--import-yields-an-identical-model) | IFC round-trip: export → import yields an identical model | M2 T3 | ✅ automated headless 2026-08-18 |
+| [M2-S05](./m2-adapters-round-trip.md#m2-s05--browser-ifc-round-trip-via-the-file-menu) | Browser IFC round-trip via the File menu | M2 T4 | ✅ manual 2026-08-18 |
+| [M2-S06](./m2-adapters-round-trip.md#m2-s06--foreign-ifc-file-imports-as-render-only-reference-solids-q7--the-t65-acceptance-probe) | Foreign IFC file imports as render-only reference solids (Q7) | M2 T6.5 | ⬜ pending manual |
+| [M2-S07](./m2-adapters-round-trip.md#m2-s07--dxf-import-core-real-files-become-reference-documents-at-true-units-headless) | DXF import core: real files become reference documents at true units | M2 T5 | ✅ automated headless 2026-08-18 |
+| [M2-S08](./m2-adapters-round-trip.md#m2-s08--dxf-import-via-the-file-menu-background-renders-at-true-scale-and-traces-the-doc-11-workflow-probe) | DXF import via the File menu: background renders at true scale and traces | M2 T6 | ✅ manual 2026-08-18 |
+| [M2-S09](./m2-adapters-round-trip.md#m2-s09--tracing-snaps-place-wall--place-bar-resolve-to-background-endpoints-and-midpoints) | Tracing snaps: Place Wall / Place Bar resolve to background endpoints and midpoints | M2 T6 | ✅ manual 2026-08-18 |
+| [M2-S10](./m2-adapters-round-trip.md#m2-s10--backgrounds-panel-per-document-visibility-and-remove-are-undoable) | Backgrounds panel: per-document visibility and remove are undoable | M2 T6 | ✅ manual 2026-08-18 |
+| [M2-S11](./m2-adapters-round-trip.md#m2-s11--dxf-import-edge-cases-units-override-in-flight-guard-large-file-stress) | DXF import edge cases: units override, in-flight guard, large-file stress | M2 T6 | ✅ manual 2026-08-18 |
+| [M2-S12](./m2-adapters-round-trip.md#m2-s12--dxf-section-export-the-file-measures-true-in-real-cad-the-t7-acceptance-probe) | DXF section export: the file measures true in real CAD | M2 T7 | ✅ manual 2026-08-18 |
+| [M2-S13](./m2-adapters-round-trip.md#m2-s13--m2-acceptance-pass-the-full-regression-walkthrough-t8) | M2 acceptance pass: the full regression walkthrough | M2 T8 | ⬜ pending manual |

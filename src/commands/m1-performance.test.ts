@@ -105,7 +105,10 @@ const runEditFrame = (project: ReturnType<typeof buildReferenceProject>, runInde
 };
 
 describe('M1 T5 — full-recompute performance (§A risk)', () => {
-  it('reference project builds at the expected scale through the §N commands', () => {
+  // Generous timeouts (the T7/T8 contention rationale — the reference-
+  // scale probe under dev-only RTK checks exceeds the 5 s default when the
+  // full suite shares workers; the perf tripwires themselves are untouched).
+  it('reference project builds at the expected scale through the §N commands', { timeout: 120_000 }, () => {
     const project = buildReferenceProject({ createStore: createBenchmarkStore });
     const state = project.store.getState();
     expect(Object.keys(state.project.elements)).toHaveLength(REFERENCE_WALL_COUNT);
@@ -123,51 +126,55 @@ describe('M1 T5 — full-recompute performance (§A risk)', () => {
     expect(primitives?.cutBars).toHaveLength(10 * REFERENCE_BARS_PER_WALL);
   });
 
-  it('one edit frame (moveElement → section recompute → mesh regen) fits the 16 ms budget', () => {
-    const project = buildReferenceProject({ createStore: createBenchmarkStore });
-    // Warm-up: WASM + JIT + selector caches reach steady state.
-    for (let run = 0; run < WARMUP_RUNS; run++) runEditFrame(project, run);
+  it(
+    'one edit frame (moveElement → section recompute → mesh regen) fits the 16 ms budget',
+    { timeout: 120_000 },
+    () => {
+      const project = buildReferenceProject({ createStore: createBenchmarkStore });
+      // Warm-up: WASM + JIT + selector caches reach steady state.
+      for (let run = 0; run < WARMUP_RUNS; run++) runEditFrame(project, run);
 
-    const frames: FrameTiming[] = [];
-    for (let run = 0; run < TIMED_RUNS; run++) frames.push(runEditFrame(project, WARMUP_RUNS + run));
+      const frames: FrameTiming[] = [];
+      for (let run = 0; run < TIMED_RUNS; run++) frames.push(runEditFrame(project, WARMUP_RUNS + run));
 
-    const dispatch = timingStats(frames.map((frame) => frame.dispatchMs));
-    const openSection = timingStats(frames.map((frame) => frame.openSectionMs));
-    const allSections = timingStats(frames.map((frame) => frame.allSectionsMs));
-    const meshes = timingStats(frames.map((frame) => frame.meshMs));
-    // The plan's §5 probe: the derived-data recompute after the edit — the
-    // ONE open section (what the app re-derives per edit) + the changed
-    // bars' meshes. The all-5-sections number is a conservative bound.
-    const recomputeProbe = timingStats(frames.map((frame) => frame.openSectionMs + frame.meshMs));
-    const recomputeBound = timingStats(frames.map((frame) => frame.allSectionsMs + frame.meshMs));
-    const fullFrame = timingStats(
-      frames.map((frame) => frame.dispatchMs + frame.openSectionMs + frame.meshMs),
-    );
+      const dispatch = timingStats(frames.map((frame) => frame.dispatchMs));
+      const openSection = timingStats(frames.map((frame) => frame.openSectionMs));
+      const allSections = timingStats(frames.map((frame) => frame.allSectionsMs));
+      const meshes = timingStats(frames.map((frame) => frame.meshMs));
+      // The plan's §5 probe: the derived-data recompute after the edit — the
+      // ONE open section (what the app re-derives per edit) + the changed
+      // bars' meshes. The all-5-sections number is a conservative bound.
+      const recomputeProbe = timingStats(frames.map((frame) => frame.openSectionMs + frame.meshMs));
+      const recomputeBound = timingStats(frames.map((frame) => frame.allSectionsMs + frame.meshMs));
+      const fullFrame = timingStats(
+        frames.map((frame) => frame.dispatchMs + frame.openSectionMs + frame.meshMs),
+      );
 
-    console.info(
-      [
-        '[T5 full-recompute @ 50 walls × 20 bars = 1,000 bars + 5 sections]',
-        `  moveElement dispatch (wall + 20 bars, host-follow):  median ${dispatch.medianMs.toFixed(2)} ms (max ${dispatch.maxMs.toFixed(2)}) — ESCALATED, exceeds the budget`,
-        `  selectSectionPrimitives — open section (200 dots):   median ${openSection.medianMs.toFixed(2)} ms (max ${openSection.maxMs.toFixed(2)})`,
-        `  selectSectionPrimitives — all 5 sections (bound):    median ${allSections.medianMs.toFixed(2)} ms (max ${allSections.maxMs.toFixed(2)})`,
-        `  createBarGeometry × 20 changed bars:                 median ${meshes.medianMs.toFixed(2)} ms (max ${meshes.maxMs.toFixed(2)})`,
-        `  §5 PROBE (open section + meshes):                    median ${recomputeProbe.medianMs.toFixed(2)} ms (max ${recomputeProbe.maxMs.toFixed(2)}) — budget ${FRAME_BUDGET_MS} ms`,
-        `  §5 probe bound (all 5 sections + meshes):            median ${recomputeBound.medianMs.toFixed(2)} ms (max ${recomputeBound.maxMs.toFixed(2)})`,
-        `  full frame incl. dispatch (reported, escalated):     median ${fullFrame.medianMs.toFixed(2)} ms (max ${fullFrame.maxMs.toFixed(2)})`,
-      ].join('\n'),
-    );
+      console.info(
+        [
+          '[T5 full-recompute @ 50 walls × 20 bars = 1,000 bars + 5 sections]',
+          `  moveElement dispatch (wall + 20 bars, host-follow):  median ${dispatch.medianMs.toFixed(2)} ms (max ${dispatch.maxMs.toFixed(2)}) — ESCALATED, exceeds the budget`,
+          `  selectSectionPrimitives — open section (200 dots):   median ${openSection.medianMs.toFixed(2)} ms (max ${openSection.maxMs.toFixed(2)})`,
+          `  selectSectionPrimitives — all 5 sections (bound):    median ${allSections.medianMs.toFixed(2)} ms (max ${allSections.maxMs.toFixed(2)})`,
+          `  createBarGeometry × 20 changed bars:                 median ${meshes.medianMs.toFixed(2)} ms (max ${meshes.maxMs.toFixed(2)})`,
+          `  §5 PROBE (open section + meshes):                    median ${recomputeProbe.medianMs.toFixed(2)} ms (max ${recomputeProbe.maxMs.toFixed(2)}) — budget ${FRAME_BUDGET_MS} ms`,
+          `  §5 probe bound (all 5 sections + meshes):            median ${recomputeBound.medianMs.toFixed(2)} ms (max ${recomputeBound.maxMs.toFixed(2)})`,
+          `  full frame incl. dispatch (reported, escalated):     median ${fullFrame.medianMs.toFixed(2)} ms (max ${fullFrame.maxMs.toFixed(2)})`,
+        ].join('\n'),
+      );
 
-    // The plan's probe — the derived-data full recompute after the edit.
-    expect(recomputeProbe.medianMs).toBeLessThan(FRAME_BUDGET_MS);
-    expect(recomputeBound.medianMs).toBeLessThan(FRAME_BUDGET_MS);
-    // The dispatch overage is ESCALATED (see DISPATCH_TRIPWIRE_MS above) —
-    // this only trips on a regression beyond the current architecture.
-    expect(dispatch.medianMs).toBeLessThan(DISPATCH_TRIPWIRE_MS);
-  });
+      // The plan's probe — the derived-data full recompute after the edit.
+      expect(recomputeProbe.medianMs).toBeLessThan(FRAME_BUDGET_MS);
+      expect(recomputeBound.medianMs).toBeLessThan(FRAME_BUDGET_MS);
+      // The dispatch overage is ESCALATED (see DISPATCH_TRIPWIRE_MS above) —
+      // this only trips on a regression beyond the current architecture.
+      expect(dispatch.medianMs).toBeLessThan(DISPATCH_TRIPWIRE_MS);
+    },
+  );
 });
 
 describe('M1 T5 — undo-stack memory (§A risk, Q2-a vs the §E estimate)', () => {
-  it('30 recorded edits retain far less than the §E 5–10 MB/level estimate', () => {
+  it('30 recorded edits retain far less than the §E 5–10 MB/level estimate', { timeout: 120_000 }, () => {
     const project = buildReferenceProject({ createStore: createBenchmarkStore });
     const { store, wallIds } = project;
     const fullSnapshotBytes = JSON.stringify(store.getState().project).length;
