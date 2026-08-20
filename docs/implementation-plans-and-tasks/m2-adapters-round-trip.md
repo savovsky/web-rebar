@@ -581,4 +581,4 @@ Not a feature task — the §A milestone acceptance sentences captured as durabl
 
 **Manual test list (rule 7) — M2-S13 — the milestone-closing smoke run:** re-run the M2 browser set in one session: **M2-S05** (IFC browser round-trip incl. both error paths) → **M2-S06** (Advance Steel foreign IFC renders as reference solids; excluded from picking/snapping) → **M2-S08…S11** (import a real DXF background, trace a wall over it via endpoint/midpoint snaps, toggle/remove via Backgrounds) → **M2-S12** (export the active section to DXF, measure in real CAD). Headless spot-check (optional): `pnpm test m2-acceptance` → 6 green tests. **M2 ✅ COMPLETE.**
 
-**Commit:** `—` (filled by the follow-up hash commit per Rule 9)
+**Commit:** `20cf7d3`
