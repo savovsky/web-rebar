@@ -16,6 +16,7 @@ import { FOREIGN_SOLIDS, buildDanglingHostBarBytes, buildForeignSolidsBytes } fr
 import { createIfcApi } from '@/io/web-ifc-loader';
 import { createAppStore } from '@/stores';
 import type { CommandErrorCode } from './command-error';
+import { sortedBarMarks, stripBarMarks } from './test-utils';
 
 /** The §A fixture: one wall + one bent bar at the 25 mm catalog cover. */
 const WALL_PARAMS = {
@@ -61,10 +62,14 @@ describe('importIfcModel command + §A round-trip acceptance (M2 T3)', () => {
     expect(summary.skipped).toEqual({ missingIntentPset: 0, unsupportedElements: 0 });
     // Identical model (metadata/sections excluded per the §A definition): the
     // imported entity records EQUAL the source's — ids via GlobalId decode,
-    // geometry verbatim (exact doubles), intent exactly equal.
+    // geometry verbatim (exact doubles), intent exactly equal. barMark is
+    // assigned identity bookkeeping (M3 T1, plan Q7 — never in IFC), so it is
+    // normalized out of the comparison like metadata; its assignment is
+    // asserted separately as a complete bijection.
     const imported = target.getState().project;
     expect(imported.elements).toEqual(sourceProject.elements);
-    expect(imported.reinforcement).toEqual(sourceProject.reinforcement);
+    expect(stripBarMarks(imported.reinforcement)).toEqual(stripBarMarks(sourceProject.reinforcement));
+    expect(sortedBarMarks(imported.reinforcement)).toEqual([1, 2]);
     // Q7/T6.5: our own export yields NO reference document — every
     // geometry-carrying product carries intent and stays editable (no
     // duplication as solids).
@@ -93,7 +98,7 @@ describe('importIfcModel command + §A round-trip acceptance (M2 T3)', () => {
   it('merges into a non-empty project: import adds entities, one undo level restores the pre-import state exactly', async () => {
     const { bytes } = await buildAcceptanceBytes();
     const target = createAppStore();
-    target.dispatch(
+    const hostId = target.dispatch(
       placeWall({
         startPoint: { x: 10000, y: 10000, z: 0 },
         endPoint: { x: 14000, y: 10000, z: 0 },
@@ -101,19 +106,42 @@ describe('importIfcModel command + §A round-trip acceptance (M2 T3)', () => {
         height: 2800,
       }),
     );
+    // M3 T1 / Q7-a: one pre-existing individual bar (mark 1) — the import
+    // must re-base its bars onto the project counter (marks 2, 3) instead of
+    // re-issuing the parse-local 1..n, so merge-imports keep marks unique.
+    const existingBarId = target.dispatch(
+      placeBar({
+        hostElementId: hostId,
+        diameter: 12,
+        path: [
+          { x: 10000, y: 10087, z: 700 },
+          { x: 14000, y: 10087, z: 700 },
+        ],
+      }),
+    );
     const preImport = target.getState().project;
-    expect(target.getState().undo.past).toHaveLength(1);
+    expect(target.getState().undo.past).toHaveLength(2);
 
     const summary = await target.dispatch(importIfcModel({ buffer: bytes }));
     expect(summary.importedWalls).toBe(2);
+    expect(summary.importedBars).toBe(2);
     expect(Object.keys(target.getState().project.elements)).toHaveLength(3);
-    expect(target.getState().undo.past).toHaveLength(2);
+    expect(target.getState().undo.past).toHaveLength(3);
+    const bars = Object.values(target.getState().project.reinforcement);
+    expect(bars).toHaveLength(3);
+    expect(bars.find((bar) => bar.id === existingBarId)?.barMark).toBe(1);
+    // The re-base continues from the project counter (1 taken) — the imported
+    // marks form the full assignment {2, 3} (the parse-local order is
+    // normalized away; which imported bar gets 2 vs 3 is not intent).
+    expect(sortedBarMarks(target.getState().project.reinforcement)).toEqual([1, 2, 3]);
+    expect(target.getState().project.nextBarMark).toBe(4);
 
     target.dispatch(undo());
     expect(target.getState().project).toBe(preImport);
     expect(Object.keys(target.getState().project.elements)).toHaveLength(1);
     target.dispatch(redo());
     expect(Object.keys(target.getState().project.elements)).toHaveLength(3);
+    expect(target.getState().project.nextBarMark).toBe(4); // redo re-applies the counter bump too
   });
 
   it('rejects an empty model import cleanly: no entities, no undo level, project reference unchanged', async () => {

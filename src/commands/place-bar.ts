@@ -1,7 +1,7 @@
 import { DEFAULT_DIAMETERS, DEFAULT_STEEL_CATALOG } from '@/data/catalog/steel';
 import type { ElementKind, ReinforcementBar, Vec3 } from '@/data/models';
 import type { AppThunk } from '@/stores';
-import { addBar } from '@/stores/project-slice';
+import { addBar, setNextBarMark } from '@/stores/project-slice';
 import { CommandError } from './command-error';
 
 /** M0 bar diameter default (mm) — the property panel makes this
@@ -68,6 +68,10 @@ export const placeBar =
       throw new CommandError('INVALID_PARAMS', `placeBar: unknown steel grade: ${steelGrade}`);
     }
 
+    // Q7-a: an individual fire-and-forget bar takes the next free mark from
+    // the project counter; the counter advances in the same command scope,
+    // so placement stays ONE undo level.
+    const barMark = getState().project.nextBarMark;
     const bar: ReinforcementBar = {
       id: crypto.randomUUID(),
       hostElementId: params.hostElementId,
@@ -75,7 +79,9 @@ export const placeBar =
       path: params.path,
       coverDistance,
       steelGrade,
+      barMark,
     };
     dispatch(addBar(bar));
+    dispatch(setNextBarMark(barMark + 1));
     return bar.id;
   };

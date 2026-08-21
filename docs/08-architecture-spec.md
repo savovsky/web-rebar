@@ -278,12 +278,17 @@ Complex objects stay in TypeScript. Only geometry data crosses the boundary.
 
 ### F.2 Placement Group Model
 
+> **Revised 2026-08-21 (M3 T1 — the M3 plan's Q3-a composite landed; decision approved 2026-08-18):** `targetFaceId: string` resolves to the composite `{ hostElementId, faceKey }` — a host-local identity that survives host translation/rotation without invalidation (the face frame is re-derived from the host transform on every use) and stays §C-true (stored intent, never a world-space plane or a mesh triangle id). The region is a **face-local rectangle** (`uMin/uMax/vMin/vMax` measured along the face frame) — stored face-local so an arbitrary polygon can extend the shape later (M4 door) without migration. All remaining fields unchanged. `bars: BarId[]` plus the bar-side `placementGroupId` back-reference are the detach handles (Q6 — moving an individual bar breaks it from the group).
+
 ```typescript
 interface PlacementGroup {
   id: string;
-  targetFaceId: string;        // Which element face
+  hostElementId: string;       // Host element (was targetFaceId — revised 2026-08-18, Q3-a)
+  faceKey: ElementFaceKey;     // Stable host-local face of the parametric prism,
+                               // e.g. 'face:negThickness' | 'face:posThickness' | 'face:top' | … (Q3-a)
+  region: FaceRegion;          // Face-local rect: { uMin, uMax, vMin, vMax } (Q3-a)
   barDiameter: number;         // mm
-  barMark: number;             // Position number for schedule
+  barMark: number;             // Position number — ONE mark for all generated bars (Q7-a)
   coverDistance: number;       // mm
   barSpacing: number;          // mm center-to-center
   edgeDistanceStart: number;   // mm from edge
@@ -384,6 +389,8 @@ interface ProjectFile {
 > **Revised 2026-08-18 (M2 T5 — plan Q3 landed):** `referenceDocuments` added to `ProjectModel` — imported background linework (DXF; IFC reference solids join at T6.5 per Q7). Deliberately NOT the deferred Layer Model: no freeze/lock/active-layer/storey/compute-scoping semantics; the source CAD layer name survives only as an inert per-primitive `sourceLayer` tag; `visible` is a document-level render-only flag (stored in the model, hence undoable). Documents store only exploded primitives converted to model mm — never the raw source file text — keeping the record JSON-clean (the Q7-a typed-array bend below applies to T6.5 solids only).
 
 > **Revised 2026-08-18 (M2 plan Q7-a):** `referenceDocuments` (arriving with M2 T5, plan Q3) may carry **typed-array geometry** (Float32 positions + normals / Uint32 indices — verified at T6.5: Immer treats typed arrays as opaque leaves, never drafted/frozen; the dev-only RTK serializable check excludes the reference-document subtrees) for IFC reference solids (T6.5) — a deliberate, dated bend of the "project.json is JSON-clean" contract: meshes live in `ProjectModel` so undo snapshots stay frozen-reference-cheap (the M1 T5 finding), and the §H implementation task will either serialize them (base64) or migrate document geometry to OPFS-binary sidecar files referenced from project.json. The decision lands WITH §H persistence, not before.
+>
+> **Revised 2026-08-21 (M3 T1 — plan Q7-a landed; decision approved 2026-08-18):** `placementGroups` joins `ProjectModel` exactly where this interface already listed it (the anticipated record — no schema bend), alongside the project-level **`nextBarMark` counter** (Q7-a — the next free position number for individuals and groups; user-editing of marks stays with §J). Both are JSON-clean by construction: placement-rule params + bar-id references only, no typed arrays, no mesh data.
 
 ### H.2 What Is NOT Persisted
 

@@ -47,6 +47,7 @@ const makeBar = (path: Vec3[], overrides?: Partial<ReinforcementBar>): Reinforce
   path,
   coverDistance: 25,
   steelGrade: 'B500B',
+  barMark: 1,
   ...overrides,
 });
 

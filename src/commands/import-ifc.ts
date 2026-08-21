@@ -3,7 +3,7 @@ import type { IfcImportResult } from '@/io/ifc-import';
 import { loadIfcApi } from '@/io/web-ifc-loader';
 import type { AppThunk } from '@/stores';
 import type { ProjectState } from '@/stores/project-slice';
-import { addBar, addElement, addReferenceDocument } from '@/stores/project-slice';
+import { addBar, addElement, addReferenceDocument, setNextBarMark } from '@/stores/project-slice';
 import { CommandError } from './command-error';
 
 export interface ImportIfcModelParams {
@@ -111,7 +111,14 @@ export const importIfcModel =
     }
     validateImportDelta(getState().project, parsed);
     for (const wall of parsed.walls) dispatch(addElement(wall));
-    for (const bar of parsed.bars) dispatch(addBar(bar));
+    // M3 T1 / Q7-a: marks never enter IFC, so imported bars take the next
+    // free marks from the project counter here — re-based onto
+    // project.nextBarMark (the parse layer's 1..n is parse-local), keeping
+    // marks unique across merge-imports into a non-empty project. ONE
+    // command scope → the counter bump joins the import's ONE undo level.
+    const firstMark = getState().project.nextBarMark;
+    parsed.bars.forEach((bar, index) => dispatch(addBar({ ...bar, barMark: firstMark + index })));
+    if (parsed.bars.length > 0) dispatch(setNextBarMark(firstMark + parsed.bars.length));
     let reference: ImportIfcReferenceSummary | null = null;
     if (parsed.referenceSolids.parts.length > 0) {
       const name = params.fileName ?? 'IFC import';

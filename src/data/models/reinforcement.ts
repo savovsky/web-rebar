@@ -22,5 +22,19 @@ export interface ReinforcementBar {
   coverDistance: number;
   /** Steel grade catalog key, e.g. 'B500B'. */
   steelGrade: string;
-  // barMark (position number for the schedule) arrives with §J — post-M0.
+  /**
+   * Position number (§J schedule handle — landed at M3 T1 per plan Q7-a; the
+   *  "arrives with §J" placeholder comment resolved 2026-08-21): groups give
+   *  all their generated bars ONE shared mark (the PlacementGroup.barMark);
+   *  individual bars take the next free mark from the project counter at
+   *  placement. User-editing of marks stays §J scope.
+   */
+  barMark: number;
+  /**
+   * Parent placement group (§F.2, M3) — the Q6 detach handle: moveBar clears
+   *  this when a group member is dragged out of the rule (the group's `bars`
+   *  list is updated in the same command). Individuals and Q6-detached bars
+   *  leave it undefined.
+   */
+  placementGroupId?: string;
 }

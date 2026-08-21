@@ -66,3 +66,6 @@ This folder collects **behavioral test scenarios**, captured session by session 
 | [M2-S11](./m2-adapters-round-trip.md#m2-s11--dxf-import-edge-cases-units-override-in-flight-guard-large-file-stress) | DXF import edge cases: units override, in-flight guard, large-file stress | M2 T6 | ✅ manual 2026-08-18 |
 | [M2-S12](./m2-adapters-round-trip.md#m2-s12--dxf-section-export-the-file-measures-true-in-real-cad-the-t7-acceptance-probe) | DXF section export: the file measures true in real CAD | M2 T7 | ✅ manual 2026-08-18 |
 | [M2-S13](./m2-adapters-round-trip.md#m2-s13--m2-acceptance-pass-the-full-regression-walkthrough-t8) | M2 acceptance pass: the full regression walkthrough | M2 T8 | ⬜ pending manual |
+| [M3-T01](./m3-real-bar-placement.md#m3-t01--app-boots-place-wallplace-bar-unchanged-m3-t1) | App boots, Place Wall/Bar unchanged | M3 T1 | ✅ manual 2026-08-21 |
+| [M3-T02](./m3-real-bar-placement.md#m3-t02--bar-removeredo-is-one-undo-step-m3-t1) | Bar remove/redo one undo step | M3 T1 | ✅ manual 2026-08-21 |
+| [M3-T03](./m3-real-bar-placement.md#m3-t03--ifc-round-trip-and-foreign-ifc-solids-unchanged-m3-t1) | IFC round-trip + foreign-IFC solids | M3 T1 | ✅ manual 2026-08-21 |

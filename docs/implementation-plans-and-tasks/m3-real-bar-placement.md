@@ -7,7 +7,7 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **M3: ✅ PLAN APPROVED (2026-08-18)** — Q1–Q8 approved as recommended. M0 ✅, M1 ✅, M2 ✅ complete ([trackers](./README.md); M2: IFC + DXF adapters probed end to end, all four §A acceptance sentences durable headless, author-verified in real CAD). **T1 ⬜ next** on branch `A_MVP_Scope_M3` — gates (`pnpm lint` + `pnpm test` + `pnpm build`) green before review; Rule 9 closing procedure per task (task commit → `Tracker: record T<n> hash` commit → push → next-session prompt file in the hash-commit).
+- **M3: ✅ PLAN APPROVED (2026-08-18)** — Q1–Q8 approved as recommended. M0 ✅, M1 ✅, M2 ✅ complete ([trackers](./README.md); M2: IFC + DXF adapters probed end to end, all four §A acceptance sentences durable headless, author-verified in real CAD). **T1 ✅ complete (2026-08-21)** (see Task Log). **T2 ⬜ next** on branch `A_MVP_Scope_M3` — gates (`pnpm lint` + `pnpm test` + `pnpm build`) green before review; Rule 9 closing procedure per task (task commit → `Tracker: record T<n> hash` commit → push → next-session prompt file in the hash-commit).
 - **M3 scope (§A):** multi-bar placement on a face with spacing, cover, and edge distance — §F.2 **Individual** (fire-and-forget, already shipping since M0 T8 as `placeBar`) **and Group** (rule-based region placement with stored params, edit → regenerate). **Explicitly out:** openings/junctions geometry (M4), §K validation auto-runs (stay on-demand), §L optimization (watch only — M3 *measures*, it does not optimize).
 - **Workflow (same as M0/M1/M2):** implement one task → gates green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
 
@@ -132,7 +132,7 @@
 
 | # | Task | Verify by | State | Commit |
 | --- | --- | --- | --- | --- |
-| T1 | PlacementGroup data model + project-slice reducers (§F.2 revised per Q3/Q7) | reducer-level tests: exact restore, id stability; spec notes dated | ⬜ Pending | — |
+| T1 | PlacementGroup data model + project-slice reducers (§F.2 revised per Q3/Q7) | reducer-level tests: exact restore, id stability; spec notes dated | ✅ Done | — |
 | T2 | Engine math: Rust `generate_bar_group_layout` + TS orchestration (Q1/Q3) | cargo + vitest rule-exactness (count/positions/cover, rotated walls, host-local stability) | ⬜ Pending | — |
 | T3 | §N commands: `placeBarGroup` / `updatePlacementGroup` / `deletePlacementGroup` + registry tripwires | acceptance sentences 1–2 headless; one-undo-level proofs; probe maps updated | ⬜ Pending | — |
 | T4 | Place Bar Group tool (G): face capture, region drag, live preview, param panel (Q4/Q5) | manual UX probe (author, real DXF background); gates green | ⬜ Pending | — |
@@ -145,4 +145,15 @@
 
 ## Task Log
 
-*(empty — implementation has not started; this plan is pending author approval)*
+### ✅ T1 (2026-08-21) — PlacementGroup data model + project-slice reducers
+
+- **Scope as planned, no deviations.** Delivered: `src/data/models/placement-groups.ts` (§F.2-revised `PlacementGroup`), `ReinforcementBar.barMark` + `placementGroupId`, `ProjectModel.placementGroups` + `nextBarMark`, project-slice reducer updates (group add/update/remove + batch `addBars`/`removeBars`), undo-matcher registration, §F.2 + §H.1 + project.ts header dated revision notes.
+- **In-task decisions (records per the plan):**
+  1. **Face-key set (Q3):** `ElementFaceKey` enumerates all SIX prism faces — `'face:negLength' | 'face:posLength' | 'face:negThickness' | 'face:posThickness' | 'face:top' | 'face:bottom'` — never a world-space plane, never a mesh id. All six listed now (not only M3's wall faces) so M4 elements (slab/beam/column — same parametric-prism family, plan scope line) slot in without a type migration; T2's engine samples the subset it needs.
+  2. **Counter home (Q7):** `nextBarMark: number` in `ProjectModel` (root JSON state, starts at 1 — §H-consistent), mutated via the `setNextBarMark` reducer (§N doorway). Undo snapshots restore the counter with the rest of ProjectState (§E), so marks stay exactly consistent.
+  3. **Mark assignment (Q7-a):** `placeBar` reads `project.nextBarMark`, stamps it, advances the counter in the SAME command scope → placement stays ONE undo level. `importIfcModel` carries the ripple: marks never enter IFC (plan IFC row), so its parse layer numbers parse-locally (1..n) and the command re-bases onto the project counter (`setNextBarMark` bump joins the import's ONE undo level) — merge-imports stay mark-unique.
+  4. **"Identical model" normalization (recorded explicitly, no silent deviation):** the M2 §A round-trip definition is ids + geometry + design intent + recorded provenance — `barMark` is **assigned identity bookkeeping, not intent** (it never enters IFC, so it physically cannot round-trip). The M2-era comparisons normalize marks out (`stripBarMarks` / `sortedBarMarks` in `src/commands/test-utils.ts`) and assert the assignment is a complete bijection instead. Consistent with the plan's IFC row; serializing marks through IFC would be a §C/`Pset_WebRebar_BarMark` decision (M4 foreign-intent door), not T1 scope.
+- **Reducer design (per plan):** `updatePlacementGroup` takes the FULL replacement group (wholesale rule recompute — command-side, T3); no partial-patch semantics at reducer level. **Batch `addBars`/`removeBars`** are ONE reducer per batch alongside the `addBar`/`removeBar` singulars (the M2 DXF-document precedent) — T3's regenerate dispatches ONE Immer produce for N bars, avoiding the F3 per-bar-produce class where avoidable.
+- **Verify-by (plan row) met:** reducer-level tests (`src/stores/project-slice.test.ts` — 5 tests) pin exact-reference restore, id stability through regenerate-shaped dispatch, ONE-undo-level per composite dispatch, and the no-op guard; command-level pins in `place-bar.test.ts` (marks 1,2 + counter + undo rollback) and `import-ifc.test.ts` (merge re-base). **365 vitest green** (`pnpm lint` ✅, `pnpm build` ✅). §F.2 + §H.1 notes dated 2026-08-21; `project.ts` header comment resolved. Registry-probe maps unchanged (no new commands — no map entries needed; the tripwire stays armed).
+- **Manual test list (persisted to `docs/test-scenarios/m3-real-bar-placement.md` as M3-T01…T03):** headless task — regression check only (app launch + B/W tools unchanged; one-undo-step remove/redo; IFC export→import round-trip identical + foreign-IFC solids still land).
+- **Build note:** `tsc -b` caught `barFromLine` returning a full `ReinforcementBar` at the new required `barMark`; vitest's transpile had not flagged it. Narrowed to `Omit<ReinforcementBar,'barMark'>` at the parse layer — assign-at-command is now type-enforced.

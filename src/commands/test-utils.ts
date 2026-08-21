@@ -1,5 +1,6 @@
 import { expect } from 'vitest';
 import { CommandError, type CommandErrorCode, exportIfc, placeBar, placeWall } from '@/commands';
+import type { ReinforcementBar } from '@/data/models';
 import { createAppStore } from '@/stores';
 
 /** Assert that fn throws a CommandError with the given code; returns it for message checks. */
@@ -88,3 +89,28 @@ export const getImportProbeBytes = (): Promise<Uint8Array> => {
   })();
   return importProbeBytes;
 };
+
+/**
+ * M3 T1 (plan Q7): `barMark` is assigned IDENTITY bookkeeping, not design
+ * intent — it never enters the IFC adapter (plan IFC row), so the M2-era
+ * round-trip "identical model" checks normalize marks away exactly like
+ * metadata/sections are excluded, and assert the assignment separately (a
+ * bijection over the bars — never a scrambled/partial set). §J user-editing
+ * of marks may later migrate the helper; the exclusion note stays dated here.
+ */
+export const stripBarMarks = (
+  reinforcement: Record<string, ReinforcementBar>,
+): Record<string, Omit<ReinforcementBar, 'barMark'>> =>
+  Object.fromEntries(
+    Object.entries(reinforcement).map(([id, bar]) => {
+      const rest = { ...bar };
+      delete (rest as Partial<ReinforcementBar>).barMark;
+      return [id, rest];
+    }),
+  );
+
+/** Sorted mark multiset — compare against a full assignment, e.g. [1, 2, 3]. */
+export const sortedBarMarks = (reinforcement: Record<string, ReinforcementBar>): number[] =>
+  Object.values(reinforcement)
+    .map((bar) => bar.barMark)
+    .sort((a, b) => a - b);

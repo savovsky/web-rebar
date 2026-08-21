@@ -288,7 +288,9 @@ interface BarMapping {
   props: Record<string, string | number>;
 }
 
-function barFromLine(mapping: BarMapping): ReinforcementBar {
+/** barMark is PROJECT bookkeeping (M3 T1 — it never enters IFC), so the
+ *  mapping returns everything but the mark; mapBars assigns it. */
+function barFromLine(mapping: BarMapping): Omit<ReinforcementBar, 'barMark'> {
   const { id, line, props } = mapping;
   const sweptDisk = findBodyItem<FlatSweptDisk>({ line, entityId: id, what: 'swept-disk' });
   const { HostElementId, CoverDistance, SteelGrade } = props;
@@ -332,7 +334,15 @@ function mapBars(req: MappingRequest): ReinforcementBar[] {
     const intent = req.intentByExpressId.get(expressID);
     if (intent?.name !== BAR_INTENT_PSET) continue;
     const line = getFlattened<FlatBarLine>({ ...req, expressID });
-    bars.push(barFromLine({ id: entityUuid(line.GlobalId.value, intent), line, props: intent.props }));
+    // M3 T1 ripple (§F.2 barMark required): marks are PROJECT bookkeeping —
+    // they never enter IFC (plan scope line: groups/barMark stay out of the
+    // adapter; results are the only exported intent). The parse layer
+    // numbers its bars in parse order (1..n, deterministic); the
+    // importIfcModel command re-bases them onto the project counter.
+    bars.push({
+      ...barFromLine({ id: entityUuid(line.GlobalId.value, intent), line, props: intent.props }),
+      barMark: bars.length + 1,
+    });
   }
   return bars;
 }

@@ -7,6 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { placeBar, placeWall } from '@/commands';
+import { sortedBarMarks, stripBarMarks } from '@/commands/test-utils';
 import type { ProjectModel } from '@/data/models';
 import { createAppStore } from '@/stores';
 import {
@@ -68,8 +69,12 @@ describe('IFC import mapping — IFC4 → internal models (M2 T3)', () => {
     expect(result.skipped.missingIntentPset).toBe(0);
     expect(result.skipped.unsupportedElements).toBe(0);
     // Same ids (GlobalId decode — T2 finding #4), params and paths verbatim.
+    // barMark is parse-local identity bookkeeping (M3 T1 — it never enters
+    // IFC per the plan row), normalized out like metadata/sections; the
+    // parse-level 1..n assignment itself is asserted separately below.
     expect(byId(result.walls)).toEqual(source.elements);
-    expect(byId(result.bars)).toEqual(source.reinforcement);
+    expect(stripBarMarks(byId(result.bars))).toEqual(stripBarMarks(source.reinforcement));
+    expect(sortedBarMarks(byId(result.bars))).toEqual([1, 2]);
   });
 
   it('skips foreign entities with a reported count (Q2): pset-less wall + non-wall/bar element', async () => {

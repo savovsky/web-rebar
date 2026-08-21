@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { placeBar, placeWall } from '@/commands';
+import { placeBar, placeWall, undo } from '@/commands';
 import { DEFAULT_STEEL_CATALOG } from '@/data/catalog/steel';
 import { createAppStore } from '@/stores';
 import { expectCommandError } from './test-utils';
@@ -56,6 +56,27 @@ describe('placeBar', () => {
       () => store.dispatch(placeBar({ ...barParams(wallId), diameter: 15 })),
       'INVALID_PARAMS',
     );
+  });
+
+  it('M3 T1 / Q7-a: individuals take the next free mark and the counter advances in ONE undo level', () => {
+    const { store, wallId } = createStoreWithWall();
+    const firstId = store.dispatch(placeBar(barParams(wallId)));
+    const secondId = store.dispatch(placeBar(barParams(wallId)));
+
+    const project = store.getState().project;
+    expect(project.reinforcement[firstId].barMark).toBe(1);
+    expect(project.reinforcement[secondId].barMark).toBe(2);
+    expect(project.nextBarMark).toBe(3);
+    // Individuals are fire-and-forget — no group back-reference (Q6 handle
+    // stays undefined until T3's group placement).
+    expect(project.reinforcement[firstId].placementGroupId).toBeUndefined();
+    // The counter bump joins the placement command's scope: placeWall +
+    // 2 placeBar = three undo levels, and undo of the second placement
+    // restores BOTH the bar removal AND the counter rollback.
+    expect(store.getState().undo.past).toHaveLength(3);
+    store.dispatch(undo());
+    expect(store.getState().project.reinforcement[secondId]).toBeUndefined();
+    expect(store.getState().project.nextBarMark).toBe(2);
   });
 
   it('accepts multi-segment (bent) paths — one bar with bending places', () => {

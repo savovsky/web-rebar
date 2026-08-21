@@ -43,6 +43,7 @@ import {
 import { FOREIGN_SOLIDS, buildForeignSolidsBytes } from '@/io/ifc-test-fixtures';
 import { createIfcApi } from '@/io/web-ifc-loader';
 import { createAppStore } from '@/stores';
+import { sortedBarMarks, stripBarMarks } from './test-utils';
 
 beforeAll(initWasmFromDisk);
 
@@ -94,10 +95,13 @@ describe('sentence 1 — IFC round-trip: model → exportIfc → importIfcModel 
     // Identical model (metadata/sections excluded per the §A definition): ids
     // via GlobalId decode, geometry EXACT (T1 proved SPF doubles round-trip
     // exactly), design intent (coverDistance, hostElementId, steelGrade,
-    // diameter) exactly equal.
+    // diameter) exactly equal. barMark (M3 T1, plan Q7 — assigned identity,
+    // never in IFC) is normalized out like metadata; the assignment must be
+    // a complete bijection, asserted via sortedBarMarks.
     const imported = target.getState().project;
     expect(imported.elements).toEqual(sourceProject.elements);
-    expect(imported.reinforcement).toEqual(sourceProject.reinforcement);
+    expect(stripBarMarks(imported.reinforcement)).toEqual(stripBarMarks(sourceProject.reinforcement));
+    expect(sortedBarMarks(imported.reinforcement)).toEqual([1, 2]);
 
     // Exactly ONE undo level per import (Q4-a — the async command scope);
     // undo restores the exact pre-import reference, redo re-applies it.
