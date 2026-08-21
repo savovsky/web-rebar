@@ -67,6 +67,8 @@ The complete list of chosen libraries for the project, with the role of each. Th
 
 **WASM principle reminder (§D):** all Rust functions are stateless and pure; only flat arrays cross the boundary.
 
+> **Rust quality gates (author decision, landed 2026-08-21 in response to the T2-ready QoS question):** `core/.cargo/config.toml` codifies three gates that run automatically on **every** cargo invocation — `cargo fmt -- --check` (style hard gate), `cargo clippy -- -D warnings` (lint hard error), and `cargo test`. Clippy runs at `pedantic` deny with `unsafe_code = forbid` crate-wide (§D stateless/pure = no unsafe is a compile-time guarantee). New dependencies must pass both gates plus a scope decision; `cargo audit` (RustSec) and `cargo deny` (duplicates/licences) are the documented T6-parry3d spike companions (not pre-installed, no dependency in the M3 T1 lock file). Gates start with 19 cargo tests + 2 lint fixes already green.
+
 ---
 
 ## Dev Dependencies (npm — installed 2026-08-08)

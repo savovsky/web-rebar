@@ -1,0 +1,23 @@
+# Rust quality gates — automatically active on every cargo invocation in
+# this crate (no prompt/command wording needed). Level up by additive T2+
+# motivation: the gate vocabulary is additive-only, never retro-lowered.
+
+# fmt + clippy + test all run with -D warnings (hard errors, not lints).
+# Documented in docs/09-tech-libraries.md (Rust qa stack) and the
+# implementation-plans-and-tasks/m3-real-bar-placement.md tracker.
+
+[lints.rust]
+# Forbid `unsafe` crate-wide — the app is §D stateless/pure; doc comments and
+# the T2 engine math don't need it. Caught at compile time regardless of
+# clippy.
+unsafe_code = "forbid"
+
+[lints.clippy]
+# pedantic = style + perf + correctness + complexity + suspicious + nursery.
+# minus `must_use_candidate` (too noisy for wasm_bindgen entry points) and
+# minus `missing_errors_doc` (the crate validates via CommandError upstream).
+pedantic = { level = "deny", priority = -1 }
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+# doc_markdown catches AI-generated malformed doc first-lines.
+doc_markdown = "deny"

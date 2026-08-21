@@ -4,6 +4,8 @@
 //! state is held across calls, and geometry crosses the WASM boundary as flat
 //! arrays only (§D.3). Complex objects stay in TypeScript.
 
+#![forbid(unsafe_code)]
+
 use wasm_bindgen::prelude::*;
 
 mod mesh;

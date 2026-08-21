@@ -293,8 +293,17 @@ fn swept_cylinder(points: &[V3], radius: f32, segments: usize) -> MeshData {
 /// Degenerate input (not enough points, zero-length segment, bad diameter)
 /// returns an empty mesh — validation upstream (commands) prevents this.
 #[wasm_bindgen]
-pub fn generate_bar_mesh(path_points: &[f64], diameter: f64, segments: u32, bend_radius: f64) -> MeshData {
-    if path_points.len() % 3 != 0 || path_points.len() < 6 || diameter <= 0.0 || segments < MIN_SEGMENTS {
+pub fn generate_bar_mesh(
+    path_points: &[f64],
+    diameter: f64,
+    segments: u32,
+    bend_radius: f64,
+) -> MeshData {
+    if !path_points.len().is_multiple_of(3)
+        || path_points.len() < 6
+        || diameter <= 0.0
+        || segments < MIN_SEGMENTS
+    {
         return MeshData::empty();
     }
     let points: Vec<V3> = path_points
@@ -345,10 +354,24 @@ mod tests {
     #[test]
     fn degenerate_inputs_yield_empty_mesh() {
         assert!(generate_bar_mesh(&[], 16.0, 20, 30.0).positions.is_empty());
-        assert!(generate_bar_mesh(&[0.0, 0.0, 0.0], 16.0, 20, 30.0).positions.is_empty());
-        assert!(generate_bar_mesh(&[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 16.0, 20, 30.0).positions.is_empty());
-        assert!(generate_bar_mesh(&[0.0, 0.0, 0.0, 1.0, 0.0, 0.0], 0.0, 20, 30.0).positions.is_empty());
-        assert!(generate_bar_mesh(&[0.0, 0.0, 0.0, 1.0, 0.0, 0.0], 16.0, 2, 30.0).positions.is_empty());
+        assert!(generate_bar_mesh(&[0.0, 0.0, 0.0], 16.0, 20, 30.0)
+            .positions
+            .is_empty());
+        assert!(
+            generate_bar_mesh(&[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 16.0, 20, 30.0)
+                .positions
+                .is_empty()
+        );
+        assert!(
+            generate_bar_mesh(&[0.0, 0.0, 0.0, 1.0, 0.0, 0.0], 0.0, 20, 30.0)
+                .positions
+                .is_empty()
+        );
+        assert!(
+            generate_bar_mesh(&[0.0, 0.0, 0.0, 1.0, 0.0, 0.0], 16.0, 2, 30.0)
+                .positions
+                .is_empty()
+        );
     }
 
     #[test]
@@ -373,10 +396,22 @@ mod tests {
         assert_eq!(rounded.len(), 9);
         assert_eq!(rounded[0], [0.0, 0.0, 0.0]); // endpoints never move
         assert_eq!(rounded[8], [500.0, 500.0, 0.0]);
-        assert!((rounded[1][0] - 475.0).abs() < 1e-3, "T1 x = {}", rounded[1][0]);
+        assert!(
+            (rounded[1][0] - 475.0).abs() < 1e-3,
+            "T1 x = {}",
+            rounded[1][0]
+        );
         assert!(rounded[1][1].abs() < 1e-3);
-        assert!((rounded[7][0] - 500.0).abs() < 1e-3, "T2 x = {}", rounded[7][0]);
-        assert!((rounded[7][1] - 25.0).abs() < 1e-3, "T2 y = {}", rounded[7][1]);
+        assert!(
+            (rounded[7][0] - 500.0).abs() < 1e-3,
+            "T2 x = {}",
+            rounded[7][0]
+        );
+        assert!(
+            (rounded[7][1] - 25.0).abs() < 1e-3,
+            "T2 y = {}",
+            rounded[7][1]
+        );
         // Arc midpoint (45°) sits on the arc: distance from the bend center
         // (475, 25, 0) equals the radius.
         let mid = rounded[4];
@@ -405,9 +440,17 @@ mod tests {
         );
         // Bend 1 arc starts at 500 − 20 = 480; bend 2 arc ends at 500 + 20 = 520.
         let first_arc_start = rounded[1];
-        assert!((first_arc_start[0] - 480.0).abs() < 1e-3, "x = {}", first_arc_start[0]);
+        assert!(
+            (first_arc_start[0] - 480.0).abs() < 1e-3,
+            "x = {}",
+            first_arc_start[0]
+        );
         let last_arc_end = rounded[rounded.len() - 2];
-        assert!((last_arc_end[0] - 520.0).abs() < 1e-3, "x = {}", last_arc_end[0]);
+        assert!(
+            (last_arc_end[0] - 520.0).abs() < 1e-3,
+            "x = {}",
+            last_arc_end[0]
+        );
     }
 
     #[test]

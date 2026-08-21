@@ -51,7 +51,10 @@ No §N commands (T3), no UI, no registry/probe-map changes. The WASM runs via
   choice. Q1's parametric face-local sampling is locked: the mesh is derived
   data, never sampled.
 - Gates green ONCE before review: `pnpm lint` + `pnpm test` + `pnpm build`
-  + **cargo test** in `core/` (T2 touches the Rust crate).
+  + **the T2 Rust gate** — `cd core && cargo fmt -- --check && cargo clippy --all-targets -- -D warnings && cargo test` —
+  (T2 touches the Rust crate; the `core/.cargo/config.toml` lints table is documented
+  in docs/09-tech-libraries.md — do not lower pedantic or allow unsafe; the
+  M3 T1 session landed 2 lint fixes + `#![forbid(unsafe_code)]` to make this gate real).
 - Task report ends with the manual test list (rule 7); after author approval
   append to `docs/test-scenarios/m3-real-bar-placement.md`.
 

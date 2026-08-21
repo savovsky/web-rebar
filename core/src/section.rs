@@ -31,7 +31,7 @@ pub fn plane_polyline_intersection(
 ) -> Vec<f64> {
     if plane_origin.len() != COMPONENTS_PER_POINT
         || plane_normal.len() != COMPONENTS_PER_POINT
-        || path_points.len() % COMPONENTS_PER_POINT != 0
+        || !path_points.len().is_multiple_of(COMPONENTS_PER_POINT)
         || path_points.len() < 2 * COMPONENTS_PER_POINT
     {
         return Vec::new();
@@ -117,7 +117,9 @@ mod tests {
     #[test]
     fn path_entirely_on_one_side_yields_nothing() {
         let path = [600.0, 0.0, 0.0, 1000.0, 300.0, 0.0];
-        assert!(plane_polyline_intersection(&PLANE_X500_ORIGIN, &PLANE_X500_NORMAL, &path).is_empty());
+        assert!(
+            plane_polyline_intersection(&PLANE_X500_ORIGIN, &PLANE_X500_NORMAL, &path).is_empty()
+        );
     }
 
     #[test]
@@ -160,9 +162,19 @@ mod tests {
         assert!(plane_polyline_intersection(&[0.0, 0.0], &PLANE_X500_NORMAL, &path).is_empty());
         assert!(plane_polyline_intersection(&PLANE_X500_ORIGIN, &[1.0], &path).is_empty());
         // zero normal
-        assert!(plane_polyline_intersection(&PLANE_X500_ORIGIN, &[0.0, 0.0, 0.0], &path).is_empty());
+        assert!(
+            plane_polyline_intersection(&PLANE_X500_ORIGIN, &[0.0, 0.0, 0.0], &path).is_empty()
+        );
         // fewer than 2 points / ragged flat array
-        assert!(plane_polyline_intersection(&PLANE_X500_ORIGIN, &PLANE_X500_NORMAL, &[0.0, 0.0, 0.0]).is_empty());
-        assert!(plane_polyline_intersection(&PLANE_X500_ORIGIN, &PLANE_X500_NORMAL, &[0.0, 0.0]).is_empty());
+        assert!(plane_polyline_intersection(
+            &PLANE_X500_ORIGIN,
+            &PLANE_X500_NORMAL,
+            &[0.0, 0.0, 0.0]
+        )
+        .is_empty());
+        assert!(
+            plane_polyline_intersection(&PLANE_X500_ORIGIN, &PLANE_X500_NORMAL, &[0.0, 0.0])
+                .is_empty()
+        );
     }
 }
