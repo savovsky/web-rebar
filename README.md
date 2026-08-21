@@ -192,7 +192,7 @@ These topics need dedicated discussion sessions before implementation reaches th
 
 1. **Command layer (§N):** Every mutation of the project model goes through a named command function in `src/commands/`. UI (User Interface) event handlers contain **no business logic** and **never touch the store directly**.
 2. **Dumb components:** React components render and dispatch commands only. No domain math, no validation, no geometry logic inside components.
-3. **Stateless WASM (§D):** Rust/WASM (WebAssembly) functions are pure — no state held across calls; geometry crosses the boundary as flat arrays.
+3. **Stateless WASM (§D):** Rust/WASM (WebAssembly) functions are pure — no state held across calls; geometry crosses the boundary as flat arrays. **Rust gate (added 2026-08-21):** whenever a task touches `core/`, `cd core && cargo fmt -- --check && cargo clippy --all-targets -- -D warnings && cargo test` must be green ONCE before review — `core/.cargo/config.toml` makes the pedantic lints + `unsafe_code = forbid` apply on every cargo invocation automatically, and both gates are documented in [docs/09-tech-libraries.md](./docs/09-tech-libraries.md).
 4. **Data model first:** TypeScript interfaces in `src/data/models/` are defined before UI code that consumes them.
 5. **Doors stay open:** Before any structural decision, check the Deferred Topics table above and §N.
 6. **Design tokens only ([doc 10](./docs/10-design-system.md)):** No literal colors, pixel sizes, or font sizes in components — semantic tokens from `tokens.css` only. Domain styling (pen table, rebar colors) comes from project settings, not the UI theme.
@@ -203,6 +203,7 @@ These topics need dedicated discussion sessions before implementation reaches th
 ### Review Checklist (for the author)
 
 - [ ] `pnpm lint` and `pnpm build` pass (lint includes Prettier formatting + type-checked rules)
+- [ ] **Rust gate green** (whenever `core/` is touched): `cargo fmt -- --check` + `cargo clippy --all-targets -- -D warnings` + `cargo test` (auto-applied via `core/.cargo/config.toml` — author approval recorded 2026-08-21)
 - [ ] Search component files (`src/ui/`) for direct store mutation calls — expected result: **zero** (only command invocations)
 - [ ] Component files contain no domain math, validation, or geometry computation
 - [ ] Every new user action has a corresponding named command with a plain params object
