@@ -28,3 +28,11 @@ Status: ✅ manual 2026-08-21
 **Then** the model round-trips identically (marks are not IFC data, so identity is preserved as geometry/intent); a foreign IFC still lands as reference solids
 
 Status: ✅ manual 2026-08-21
+
+## M3-T04 — Regression after engine-math task (M3 T2)
+
+**Given** the app at M3 T2 (`generate_bar_group_layout` + orchestration landed — no UI touch by design)
+**When** the author launches the app and uses Place Wall (W) and Place Bar (B)
+**Then** both tools behave exactly as before; placed bars keep their cover from all faces; undo/redo clean
+
+Status: ⬜ pending author confirmation

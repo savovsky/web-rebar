@@ -9,6 +9,7 @@
 use wasm_bindgen::prelude::*;
 
 mod mesh;
+mod placement_group;
 mod section;
 
 /// Crate version, surfaced to the app for WASM load verification.

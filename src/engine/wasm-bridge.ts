@@ -93,6 +93,43 @@ export interface PlanePolylineIntersectionParams {
   pathPoints: Float64Array;
 }
 
+export interface GenerateBarGroupLayoutParams {
+  /** Face frame as 12 flat f64: origin, u axis, v axis, outward normal. */
+  faceFrame: Float64Array;
+  /** Face-local region rect [uMin, uMax, vMin, vMax] (mm). */
+  region: Float64Array;
+  /** Placement rule [cover, diameter, spacing, edgeStart, edgeEnd] (mm). */
+  rule: Float64Array;
+  /** true = bars run along the face v axis (spaced along u); false = along u. */
+  isVertical: boolean;
+}
+
+/** §F.2 layout result (M3): flat xyz triples (two endpoints per bar) + count. */
+export interface BarGroupLayoutData {
+  paths: Float64Array;
+  barCount: number;
+}
+
+/**
+ * Parametric face-local group sampling (M3 plan Q1-a): region rect + rule →
+ * straight bar centerlines (pure arithmetic, no mesh). Invalid input yields
+ * an empty layout — TS-side validation (engine/placement-group.ts) rejects
+ * insane params with descriptive errors before the call.
+ */
+export function generateBarGroupLayout(params: GenerateBarGroupLayoutParams): BarGroupLayoutData {
+  const layout = wasmCore.generate_bar_group_layout(
+    params.faceFrame,
+    params.region,
+    params.rule,
+    params.isVertical,
+  );
+  try {
+    return { paths: layout.paths, barCount: layout.barCount() };
+  } finally {
+    layout.free();
+  }
+}
+
 /**
  * §G.1 Tier 1: points where one bar's stored path crosses the section plane
  * (flat xyz triples, empty when nothing crosses). One call per bar; a bent

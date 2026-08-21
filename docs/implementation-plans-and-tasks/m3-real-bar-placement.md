@@ -7,7 +7,7 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **M3: ✅ PLAN APPROVED (2026-08-18)** — Q1–Q8 approved as recommended. M0 ✅, M1 ✅, M2 ✅ complete ([trackers](./README.md); M2: IFC + DXF adapters probed end to end, all four §A acceptance sentences durable headless, author-verified in real CAD). **T1 ✅ complete (2026-08-21)** (see Task Log). **T2 ⬜ next** on branch `A_MVP_Scope_M3` — gates (`pnpm lint` + `pnpm test` + `pnpm build`) green before review; Rule 9 closing procedure per task (task commit → `Tracker: record T<n> hash` commit → push → next-session prompt file in the hash-commit).
+- **M3: ✅ PLAN APPROVED (2026-08-18)** — Q1–Q8 approved as recommended. M0 ✅, M1 ✅, M2 ✅ complete ([trackers](./README.md); M2: IFC + DXF adapters probed end to end, all four §A acceptance sentences durable headless, author-verified in real CAD). **T2 ✅ complete (2026-08-21)** (see Task Log). **T3 ⬜ next** on branch `A_MVP_Scope_M3` — gates (`pnpm lint` + `pnpm test` + `pnpm build`) green before review; Rule 9 closing procedure per task (task commit → `Tracker: record T<n> hash` commit → push → next-session prompt file in the hash-commit).
 - **M3 scope (§A):** multi-bar placement on a face with spacing, cover, and edge distance — §F.2 **Individual** (fire-and-forget, already shipping since M0 T8 as `placeBar`) **and Group** (rule-based region placement with stored params, edit → regenerate). **Explicitly out:** openings/junctions geometry (M4), §K validation auto-runs (stay on-demand), §L optimization (watch only — M3 *measures*, it does not optimize).
 - **Workflow (same as M0/M1/M2):** implement one task → gates green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
 
@@ -133,7 +133,7 @@
 | # | Task | Verify by | State | Commit |
 | --- | --- | --- | --- | --- |
 | T1 | PlacementGroup data model + project-slice reducers (§F.2 revised per Q3/Q7) | reducer-level tests: exact restore, id stability; spec notes dated | ✅ Done | 6fd05df |
-| T2 | Engine math: Rust `generate_bar_group_layout` + TS orchestration (Q1/Q3) | cargo + vitest rule-exactness (count/positions/cover, rotated walls, host-local stability) | ⬜ Pending | — |
+| T2 | Engine math: Rust `generate_bar_group_layout` + TS orchestration (Q1/Q3) | cargo + vitest rule-exactness (count/positions/cover, rotated walls, host-local stability) | ✅ Done | — |
 | T3 | §N commands: `placeBarGroup` / `updatePlacementGroup` / `deletePlacementGroup` + registry tripwires | acceptance sentences 1–2 headless; one-undo-level proofs; probe maps updated | ⬜ Pending | — |
 | T4 | Place Bar Group tool (G): face capture, region drag, live preview, param panel (Q4/Q5) | manual UX probe (author, real DXF background); gates green | ⬜ Pending | — |
 | T5 | Group selection/edit UX + `moveBar` + detach (Q6; §B.5 revisions) | acceptance sentence 3 headless; manual move/detach/regenerate walkthrough | ⬜ Pending | — |
@@ -144,6 +144,19 @@
 ---
 
 ## Task Log
+
+### ✅ T2 (2026-08-21) — Engine math: `generate_bar_group_layout` + TS orchestration
+
+- **Scope as planned, no deviations.** Delivered: `core/src/placement_group.rs` (WASM §D.3 function — flat face frame + region + rule in, flat bar paths + count out; the `MeshData`-style struct with `.free()`), `src/engine/placement-group.ts` orchestration (host + faceKey → FaceFrame via the M0 `wallLocalNormalToWorld`/`getWallFaceFrame` path → WASM call → `applyConcreteCover` clamp → typed 2-point paths), bridge function in `src/engine/wasm-bridge.ts`, insane-param validation throwing in the orchestration (T3 maps it to `CommandError` — plan door check: input validation, not §K).
+- **In-task decisions (records per the plan):**
+  1. **Spacing larger than region → SINGLE bar (plan openly deferred this).** The first bar at the start edge distance is always placed when the edge distances fit inside the region span (edgeStart + edgeEnd ≤ span); further bars while position ≤ span − edgeEnd, with a 1e-9 mm tolerance so an edge-exact final bar lands. Zero bars only when the edges alone exceed the span — and the TS validation rejects that case ("edge distances exceed the region span") before the WASM call, so the Rust zero-bar path is defensive only.
+  2. **Endpoint inset = cover exactly (no radius).** The flat end cap at a centerline endpoint keeps just the cover (the M0 `applyConcreteCover` axisInset rule for a segment running INTO a face); the cylindrical side surface never approaches the region's run-axis edges.
+  3. **Cover-fit validation bound.** Insane params throw when cover + radius ≥ the element half-extent perpendicular to the sampled face (thickness/2 for ±thickness faces, length/2 for ±length faces, height/2 for top/bottom) — a bar that physically cannot sit is rejected, not silently degenerated. Negative/zero spacing, non-finite numbers, degenerate regions, unknown face keys, edges past the region, and 2·cover > run-axis span likewise throw.
+  4. **All six T1 face keys supported for walls** (plan scope line "M3 samples wall box faces only") — the frame derivation via `getWallFaceFrame` is uniform; T5's tool may target any of them (e.g. face:top mats).
+  5. **`applyConcreteCover` stays TS-side.** The WASM signature per the plan carries no wall box; the all-faces clamp reuses the proven M0 function per bar (exact `resolveBarCenterline` semantics), and out-of-face regions clamp to cover rather than error.
+- **Finding (no deviation, recorded):** `applyConcreteCover`'s `normalize(v·(1/len))` rounds mathematically-unit directions to 1−ulp, and `axisInset` then adds ~1e-7 mm of radius inset — pre-existing M0 behavior affecting the individual Place Bar path identically; the vitest tolerance matches the engine (1e-6 mm). Not T2 scope to change M0 math.
+- **Verify-by (plan row) met:** 8 cargo tests (horizontal/vertical walls, both orientations, edge-exact fits, spacing-fallback corpus, invalid-input defense) + 17 vitest tests (rule-exact count/positions/cover over all six faces, rotated-host exactness at 30° yaw, translation invariance = Q3's acceptance core, both in-task decision points pinned, all validation throw classes). **Gates green in one pass:** `pnpm lint` ✅, `pnpm test` ✅ **382 vitest** (365 → +17), `pnpm build` ✅, Rust gate ✅ (`cargo fmt -- --check`, `clippy --all-targets` −D warnings, 27 cargo tests). WASM pkg 34.9 → 38.2 kB raw (+3.3 kB for the new function).
+- **Manual test list (regression only — headless task, no UI touched):** app launches; Place Wall (W) and Place Bar (B) behave exactly as before; placed bars keep cover from all faces; undo/redo unchanged. Will persist as M3-T04 in `docs/test-scenarios/m3-real-bar-placement.md` on approval.
 
 ### ✅ T1 (2026-08-21) — PlacementGroup data model + project-slice reducers
 
