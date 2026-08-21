@@ -135,7 +135,7 @@
 | T1 | PlacementGroup data model + project-slice reducers (§F.2 revised per Q3/Q7) | reducer-level tests: exact restore, id stability; spec notes dated | ✅ Done | 6fd05df |
 | T2 | Engine math: Rust `generate_bar_group_layout` + TS orchestration (Q1/Q3) | cargo + vitest rule-exactness (count/positions/cover, rotated walls, host-local stability) | ✅ Done | c410071 |
 | T3 | §N commands: `placeBarGroup` / `updatePlacementGroup` / `deletePlacementGroup` + registry tripwires | acceptance sentences 1–2 headless; one-undo-level proofs; probe maps updated | ✅ Done | b77bb51 |
-| T4 | Place Bar Group tool (G): face capture, region drag, live preview, param panel (Q4/Q5) | manual UX probe (author, real DXF background); gates green | ✅ Done | — |
+| T4 | Place Bar Group tool (G): face capture, region drag, live preview, param panel (Q4/Q5) | manual UX probe (author, real DXF background); gates green | ✅ Done | 64d4acf |
 | T5 | Group selection/edit UX + `moveBar` + detach (Q6; §B.5 revisions) | acceptance sentence 3 headless; manual move/detach/regenerate walkthrough | ⬜ Pending | — |
 | T6 | Collision check: parry3d decision gate + clash engine + Q8 surfacing | gate verdict recorded (doc 09); acceptance sentence 4 headless | ⬜ Pending | — |
 | T7 | Performance probes at reference scale with groups (F3 revisit; §L.1 evidence) | probe table in task log; tripwires asserted; breaches escalated | ⬜ Pending | — |
