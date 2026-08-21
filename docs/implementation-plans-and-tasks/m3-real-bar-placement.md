@@ -133,7 +133,7 @@
 | # | Task | Verify by | State | Commit |
 | --- | --- | --- | --- | --- |
 | T1 | PlacementGroup data model + project-slice reducers (§F.2 revised per Q3/Q7) | reducer-level tests: exact restore, id stability; spec notes dated | ✅ Done | 6fd05df |
-| T2 | Engine math: Rust `generate_bar_group_layout` + TS orchestration (Q1/Q3) | cargo + vitest rule-exactness (count/positions/cover, rotated walls, host-local stability) | ✅ Done | — |
+| T2 | Engine math: Rust `generate_bar_group_layout` + TS orchestration (Q1/Q3) | cargo + vitest rule-exactness (count/positions/cover, rotated walls, host-local stability) | ✅ Done | c410071 |
 | T3 | §N commands: `placeBarGroup` / `updatePlacementGroup` / `deletePlacementGroup` + registry tripwires | acceptance sentences 1–2 headless; one-undo-level proofs; probe maps updated | ⬜ Pending | — |
 | T4 | Place Bar Group tool (G): face capture, region drag, live preview, param panel (Q4/Q5) | manual UX probe (author, real DXF background); gates green | ⬜ Pending | — |
 | T5 | Group selection/edit UX + `moveBar` + detach (Q6; §B.5 revisions) | acceptance sentence 3 headless; manual move/detach/regenerate walkthrough | ⬜ Pending | — |
