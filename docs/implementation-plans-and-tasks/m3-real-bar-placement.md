@@ -7,7 +7,7 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **M3: ✅ PLAN APPROVED (2026-08-18)** — Q1–Q8 approved as recommended. M0 ✅, M1 ✅, M2 ✅ complete ([trackers](./README.md); M2: IFC + DXF adapters probed end to end, all four §A acceptance sentences durable headless, author-verified in real CAD). **T3 ✅ complete (2026-08-21)** (see Task Log). **T4 ⬜ next** on branch `A_MVP_Scope_M3` — gates (`pnpm lint` + `pnpm test` + `pnpm build`) green before review; Rule 9 closing procedure per task (task commit → `Tracker: record T<n> hash` commit → push → next-session prompt file in the hash-commit).
+- **M3: ✅ PLAN APPROVED (2026-08-18)** — Q1–Q8 approved as recommended. M0 ✅, M1 ✅, M2 ✅ complete ([trackers](./README.md); M2: IFC + DXF adapters probed end to end, all four §A acceptance sentences durable headless, author-verified in real CAD). **T4 ✅ complete (2026-08-21)** (see Task Log). **T5 ⬜ next** on branch `A_MVP_Scope_M3` — gates (`pnpm lint` + `pnpm test` + `pnpm build`) green before review; Rule 9 closing procedure per task (task commit → `Tracker: record T<n> hash` commit → push → next-session prompt file in the hash-commit).
 - **M3 scope (§A):** multi-bar placement on a face with spacing, cover, and edge distance — §F.2 **Individual** (fire-and-forget, already shipping since M0 T8 as `placeBar`) **and Group** (rule-based region placement with stored params, edit → regenerate). **Explicitly out:** openings/junctions geometry (M4), §K validation auto-runs (stay on-demand), §L optimization (watch only — M3 *measures*, it does not optimize).
 - **Workflow (same as M0/M1/M2):** implement one task → gates green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
 
@@ -135,7 +135,7 @@
 | T1 | PlacementGroup data model + project-slice reducers (§F.2 revised per Q3/Q7) | reducer-level tests: exact restore, id stability; spec notes dated | ✅ Done | 6fd05df |
 | T2 | Engine math: Rust `generate_bar_group_layout` + TS orchestration (Q1/Q3) | cargo + vitest rule-exactness (count/positions/cover, rotated walls, host-local stability) | ✅ Done | c410071 |
 | T3 | §N commands: `placeBarGroup` / `updatePlacementGroup` / `deletePlacementGroup` + registry tripwires | acceptance sentences 1–2 headless; one-undo-level proofs; probe maps updated | ✅ Done | b77bb51 |
-| T4 | Place Bar Group tool (G): face capture, region drag, live preview, param panel (Q4/Q5) | manual UX probe (author, real DXF background); gates green | ⬜ Pending | — |
+| T4 | Place Bar Group tool (G): face capture, region drag, live preview, param panel (Q4/Q5) | manual UX probe (author, real DXF background); gates green | ✅ Done | — |
 | T5 | Group selection/edit UX + `moveBar` + detach (Q6; §B.5 revisions) | acceptance sentence 3 headless; manual move/detach/regenerate walkthrough | ⬜ Pending | — |
 | T6 | Collision check: parry3d decision gate + clash engine + Q8 surfacing | gate verdict recorded (doc 09); acceptance sentence 4 headless | ⬜ Pending | — |
 | T7 | Performance probes at reference scale with groups (F3 revisit; §L.1 evidence) | probe table in task log; tripwires asserted; breaches escalated | ⬜ Pending | — |
@@ -144,6 +144,20 @@
 ---
 
 ## Task Log
+
+### ✅ T4 (2026-08-21) — Place Bar Group tool (G): the placement-UX probe
+
+- **Scope as planned.** Delivered: §B.6 activation (ToolId `placeBarGroup` + `G` shortcut + token-driven 24×24 toolbar icon); face capture reusing the Place Bar mechanism (raycast local normal → `faceKeyForLocalNormal` → stable T1 face key + cover side); region definition via the draft pipeline (face projection, grid snap, §B.3-revised reference endpoint/midpoint snaps — tracing off a DXF works); live translucent preview of the generated bars (preallocated line-segment buffer + drawRange, regenerated per frame through T2's `generateBarGroupPaths` — 60 FPS stays out of Redux, §E); Properties-panel params (cover, Ø catalog select, spacing, edge distances, orientation) editable pre-commit; commit → ONE `placeBarGroup` dispatch (T3, ONE undo level); Esc cancels; single-shot auto-return, double-click sticky. §B.6 dated revision note landed (G row: behavior locked → implemented).
+- **Author decision mid-review (2026-08-21 — recorded, supersedes the in-task Q4-a gesture before it landed):** pointer gestures NEVER commit — the commit is **Enter/Space** (`use-bar-group-commit.ts` in AppShell, `isEditableTarget`-guarded). Two separate region actions: **A. whole-face** (Enter with no region drawn) and **B. region** (drag the corners — pointer-up only DEFINES the region; or click-click them: first click = corner A, second = corner B — then Enter). The capture press never doubles as a corner. Rejection keeps face AND region (fix params, re-commit). The face-local region + Enter-commit model is recorded as the template for slab reinforcement later (spec note). The author approved with "works, but there will be changes later" — the gesture is expected to evolve.
+- **In-task decisions (records per the plan):**
+  1. **Rule-param defaults + home:** Ø = the Place Bar default (12), cover = catalog per host kind, **spacing default 150 mm** (typical wall detailing — the catalog carries none), **orientation default vertical**, **edge distances default to the cover** (region-minus-cover case). Params live in a transient module store (`bar-group-params.ts`) and PERSIST across placements for the app session (Figma-style: set Ø/spacing once, place many faces); defaults re-apply on fresh load.
+  2. **`on-face-point.ts` extraction:** the §B.3 snap resolution (reference snap beats grid, Shift disables) moved out of WallMesh into a shared React-free module consumed by BOTH the Place Bar and Place Bar Group flows — Place Bar behavior unchanged (its draft-flow tests green).
+  3. **`rayFacePlanePoint` in `src/engine/placement.ts`:** ray ∩ face plane for captured drags off the mesh surface (the `groundPointFromRay` convention: null on parallel/behind).
+  4. **Preview = centerline segments** in the `--primary` preview color (the BarDraftPreview visual language), depthTest off; insane mid-edit params hide the preview (the commit reports the same message via the T3 CommandError mapping).
+  5. **Draft model:** `PlacementDraft` gains the `faceKey` (§F.2-revised stable host-local identity — T1's M0-deviation comment resolved); region gesture state (anchor / pending click-click corner / defined region) is transient module state, never Redux.
+- **Recorded author direction for T5 (plan §5 scope + one NEW affordance):** Shift+hover over a group member highlights the ENTIRE group as the pre-selection; when the group is selected, the Properties panel re-opens the rule params (edit → `updatePlacementGroup`). The Shift-hover pre-highlight is a §B.5 selection-model addition → dated §B.5 revision note lands in T5, not silently here.
+- **Verify-by (plan row) met:** the manual UX probe RAN — author: "Works, but there will be changes later. Approved." **Gates green in one pass:** `pnpm lint` ✅, `pnpm test` ✅ **413 vitest** (394 → +19: `rayFacePlanePoint` ×3, face-capture/whole-face/drag-region engine math ×8, the React-free draft-flow suite ×8 — actions A/B, ONE undo level, sticky, rejection-keeps-state), `pnpm build` ✅. No Rust touched → the T2 cargo gate stands. No new commands → the registry tripwires untouched.
+- **Manual test list:** persisted as M3-T06…T12 in `docs/test-scenarios/m3-real-bar-placement.md` (rule 7).
 
 ### ✅ T3 (2026-08-21) — §N group commands + registry tripwires
 

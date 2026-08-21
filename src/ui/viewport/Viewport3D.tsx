@@ -6,6 +6,7 @@
 // surface through from the shell.
 import { Canvas } from '@react-three/fiber';
 import { BarDraftPreview } from './BarDraftPreview';
+import { BarGroupDraftPreview } from './BarGroupDraftPreview';
 import { BarsLayer } from './BarsLayer';
 import { GroundPlane } from './GroundPlane';
 import { ReferenceLayer } from './ReferenceLayer';
@@ -55,6 +56,7 @@ export function Viewport3D() {
         <BarsLayer />
         <WallDraftPreview />
         <BarDraftPreview />
+        <BarGroupDraftPreview />
         <SectionCutPreview />
         <SectionVolumesLayer />
       </Canvas>

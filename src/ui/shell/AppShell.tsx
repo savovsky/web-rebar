@@ -6,11 +6,13 @@ import { SectionView } from '@/ui/section-view/SectionView';
 import { Toolbar } from '@/ui/toolbar/Toolbar';
 import { useToolShortcuts } from '@/ui/toolbar/use-tool-shortcuts';
 import { Viewport3D } from '@/ui/viewport/Viewport3D';
+import { useBarGroupCommitKeys } from '@/ui/viewport/use-bar-group-commit';
 import { StatusBar } from './StatusBar';
 import { TopBar } from './TopBar';
 
 export function AppShell() {
   useToolShortcuts();
+  useBarGroupCommitKeys();
   return (
     <div className='flex h-full flex-col bg-background text-foreground'>
       <TopBar />

@@ -57,6 +57,15 @@ export function IconPlaceBar({ className }: ToolIconProps) {
   );
 }
 
+export function IconPlaceBarGroup({ className }: ToolIconProps) {
+  return (
+    <ToolIcon className={className}>
+      <rect x='3' y='5' width='18' height='14' />
+      <path d='M8 8.5v7M12 8.5v7M16 8.5v7' />
+    </ToolIcon>
+  );
+}
+
 export function IconSectionCut({ className }: ToolIconProps) {
   return (
     <ToolIcon className={className}>

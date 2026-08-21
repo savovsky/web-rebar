@@ -4,7 +4,14 @@
 // Crosses the real WASM boundary (initWasmFromDisk).
 import { beforeAll, describe, expect, it } from 'vitest';
 import { ELEMENT_FACE_KEYS, type Vec3, type WallElement } from '@/data/models';
-import { faceFrameForKey, generateBarGroupPaths } from './placement-group';
+import {
+  faceFrameForKey,
+  faceKeyForLocalNormal,
+  faceRegionFromCorners,
+  generateBarGroupPaths,
+  resolveGroupRegion,
+  wholeFaceRegion,
+} from './placement-group';
 import { initWasmFromDisk } from './wasm-test-init';
 
 beforeAll(initWasmFromDisk);
@@ -305,5 +312,118 @@ describe('insane params throw (T3 maps them to CommandError)', () => {
       }),
     ).toThrow(/region/);
     expect(() => generateBarGroupPaths({ ...base, spacingMm: Number.NaN })).toThrow(/finite/);
+  });
+});
+
+// --- T4 tool draft-state math: face capture, whole-face default, drag region ---
+
+describe('faceKeyForLocalNormal (T4 face capture)', () => {
+  it('maps all six box normals to their face keys', () => {
+    expect(faceKeyForLocalNormal({ x: 1, y: 0, z: 0 })).toBe('face:posLength');
+    expect(faceKeyForLocalNormal({ x: -1, y: 0, z: 0 })).toBe('face:negLength');
+    expect(faceKeyForLocalNormal({ x: 0, y: 1, z: 0 })).toBe('face:posThickness');
+    expect(faceKeyForLocalNormal({ x: 0, y: -1, z: 0 })).toBe('face:negThickness');
+    expect(faceKeyForLocalNormal({ x: 0, y: 0, z: 1 })).toBe('face:top');
+    expect(faceKeyForLocalNormal({ x: 0, y: 0, z: -1 })).toBe('face:bottom');
+  });
+});
+
+describe('wholeFaceRegion (T4 Q4-a default shortcut)', () => {
+  it('spans the full face extents for every key class', () => {
+    expect(wholeFaceRegion(WALL, 'face:posThickness')).toEqual({
+      uMin: -2000,
+      uMax: 2000,
+      vMin: -1400,
+      vMax: 1400,
+    });
+    // Length faces: u runs across the thickness, v up the height.
+    expect(wholeFaceRegion(WALL, 'face:posLength')).toEqual({
+      uMin: -100,
+      uMax: 100,
+      vMin: -1400,
+      vMax: 1400,
+    });
+    // Top/bottom: u along the axis, v across the thickness.
+    expect(wholeFaceRegion(WALL, 'face:top')).toEqual({
+      uMin: -2000,
+      uMax: 2000,
+      vMin: -100,
+      vMax: 100,
+    });
+  });
+
+  it('is invariant under host translation and yaw (face-local, Q3)', () => {
+    const cos30 = Math.cos(Math.PI / 6);
+    const sin30 = Math.sin(Math.PI / 6);
+    const yawedWall: WallElement = {
+      ...WALL,
+      startPoint: { x: 1000, y: 2000, z: 0 },
+      endPoint: { x: 1000 + 4000 * cos30, y: 2000 + 4000 * sin30, z: 0 },
+    };
+    const base = wholeFaceRegion(WALL, 'face:posThickness');
+    const yawed = wholeFaceRegion(yawedWall, 'face:posThickness');
+    // Hypot-derived length reintroduces ~1 ulp of float noise under yaw.
+    expectClose(yawed.uMin, base.uMin);
+    expectClose(yawed.uMax, base.uMax);
+    expectClose(yawed.vMin, base.vMin);
+    expectClose(yawed.vMax, base.vMax);
+  });
+
+  it('drives the same rule-exact layout as the hand-written full-face rect', () => {
+    const paths = generateBarGroupPaths({
+      host: WALL,
+      faceKey: 'face:posThickness',
+      region: wholeFaceRegion(WALL, 'face:posThickness'),
+      ...RULE,
+    });
+    expect(paths).toHaveLength(18); // identical to the FULL_FACE_REGION corpus
+    expectClose(paths[0][0].x, 3975);
+    expectClose(paths[0][0].z, 60);
+  });
+});
+
+describe('faceRegionFromCorners (T4 two-corner drag)', () => {
+  // posThickness frame: origin (2000, 100, 1400), u = −X, v = +Z.
+  const frame = faceFrameForKey(WALL, 'face:posThickness');
+  const cornerA: Vec3 = { x: 1000, y: 100, z: 500 }; // face-local (u=1000, v=−900)
+  const cornerB: Vec3 = { x: 3000, y: 100, z: 2000 }; // face-local (u=−1000, v=600)
+  const expected = { uMin: -1000, uMax: 1000, vMin: -900, vMax: 600 };
+
+  it('normalizes either corner order', () => {
+    expect(faceRegionFromCorners({ frame, cornerA, cornerB })).toEqual(expected);
+    expect(faceRegionFromCorners({ frame, cornerA: cornerB, cornerB: cornerA })).toEqual(expected);
+  });
+
+  it('drops the normal component (off-plane corners project onto the face)', () => {
+    const offPlane: Vec3 = { x: 1000, y: 0, z: 500 }; // 100 mm off the face plane
+    expect(faceRegionFromCorners({ frame, cornerA: offPlane, cornerB })).toEqual(expected);
+  });
+});
+
+describe('resolveGroupRegion (T4 gesture → region)', () => {
+  it('returns the whole face when no drag corners are given', () => {
+    expect(
+      resolveGroupRegion({ host: WALL, faceKey: 'face:posThickness', cornerA: null, cornerB: null }),
+    ).toEqual(wholeFaceRegion(WALL, 'face:posThickness'));
+  });
+
+  it('returns the dragged rect when both corners are given', () => {
+    const region = resolveGroupRegion({
+      host: WALL,
+      faceKey: 'face:posThickness',
+      cornerA: { x: 1000, y: 100, z: 500 },
+      cornerB: { x: 3000, y: 100, z: 2000 },
+    });
+    expect(region).toEqual({ uMin: -1000, uMax: 1000, vMin: -900, vMax: 600 });
+    // The dragged region generates a rule-exact sub-layout (the commit path).
+    const paths = generateBarGroupPaths({
+      host: WALL,
+      faceKey: 'face:posThickness',
+      region,
+      ...RULE,
+    });
+    // positions v: −840 + k·150 while ≤ 540 → 10 bars.
+    expect(paths).toHaveLength(10);
+    expectClose(paths[0][0].z, 1400 - 840);
   });
 });

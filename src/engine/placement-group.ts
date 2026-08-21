@@ -11,11 +11,13 @@ import { type FaceFrame, applyConcreteCover, getWallFaceFrame, wallLocalNormalTo
 import { type WallGeometryParams, getWallTransform } from './wall-geometry';
 import { generateBarGroupLayout } from './wasm-bridge';
 
+const dot = (a: Vec3, b: Vec3): number => a.x * b.x + a.y * b.y + a.z * b.z;
+
 /** Element-local box normals per face key (wall local box: +X = axis,
  *  +Y = thickness, +Z = up). The face frame is then re-derived from the host
  *  transform on every call — host translation/rotation follows for free
  *  (M3 plan Q3-a). */
-const FACE_KEY_LOCAL_NORMALS: Record<ElementFaceKey, Vec3> = {
+export const FACE_KEY_LOCAL_NORMALS: Record<ElementFaceKey, Vec3> = {
   'face:negLength': { x: -1, y: 0, z: 0 },
   'face:posLength': { x: 1, y: 0, z: 0 },
   'face:negThickness': { x: 0, y: -1, z: 0 },
@@ -36,6 +38,91 @@ function faceKeyClass(faceKey: ElementFaceKey): FaceKeyClass {
 export function faceFrameForKey(host: WallGeometryParams, faceKey: ElementFaceKey): FaceFrame {
   const worldNormal = wallLocalNormalToWorld(host, FACE_KEY_LOCAL_NORMALS[faceKey]);
   return getWallFaceFrame(host, worldNormal);
+}
+
+/** Face key of a raycast hit face: the mesh-local box normal identifies the
+ *  face exactly (box faces are axis-aligned in local space). The max-dot
+ *  match is exact for box geometry, tolerant of float noise. */
+export function faceKeyForLocalNormal(localNormal: Vec3): ElementFaceKey {
+  let best: ElementFaceKey = 'face:posThickness';
+  let bestDot = Number.NEGATIVE_INFINITY;
+  for (const faceKey of ELEMENT_FACE_KEYS) {
+    const alignment = dot(localNormal, FACE_KEY_LOCAL_NORMALS[faceKey]);
+    if (alignment > bestDot) {
+      bestDot = alignment;
+      best = faceKey;
+    }
+  }
+  return best;
+}
+
+/** Half extents (mm) of the face rect along the frame's in-plane axes — the
+ *  same support-function shape as getWallFaceFrame's halfAlongNormal. Exact
+ *  for the axis-aligned box faces of a parametric prism. */
+function faceHalfExtents(host: WallGeometryParams, frame: FaceFrame): { halfU: number; halfV: number } {
+  const transform = getWallTransform(host);
+  const axis: Vec3 = { x: Math.cos(transform.rotationZ), y: Math.sin(transform.rotationZ), z: 0 };
+  const thicknessDir: Vec3 = { x: -axis.y, y: axis.x, z: 0 };
+  const along = (dir: Vec3): number =>
+    Math.abs(dot(dir, axis)) * (transform.lengthMm / 2) +
+    Math.abs(dot(dir, thicknessDir)) * (host.thickness / 2) +
+    Math.abs(dir.z) * (host.height / 2);
+  return { halfU: along(frame.u), halfV: along(frame.v) };
+}
+
+/** Whole-face region (M3 plan Q4-a default shortcut — "committing without
+ *  dragging fills the captured face"): the full face rect in face-local
+ *  (u,v); the frame origin is the face CENTER for box faces, so the rect is
+ *  symmetric. Edge distances stay rule params (they inset from the rect). */
+export function wholeFaceRegion(host: WallGeometryParams, faceKey: ElementFaceKey): FaceRegion {
+  const frame = faceFrameForKey(host, faceKey);
+  const { halfU, halfV } = faceHalfExtents(host, frame);
+  return { uMin: -halfU, uMax: halfU, vMin: -halfV, vMax: halfV };
+}
+
+export interface FaceRegionFromCornersOptions {
+  frame: FaceFrame;
+  cornerA: Vec3;
+  cornerB: Vec3;
+}
+
+/** Two corner points (on or off the plane — the normal component drops) →
+ *  the normalized face-local region rect, either corner order. */
+export function faceRegionFromCorners(options: FaceRegionFromCornersOptions): FaceRegion {
+  const { frame, cornerA, cornerB } = options;
+  const toFaceLocal = (point: Vec3): { u: number; v: number } => {
+    const relative = {
+      x: point.x - frame.origin.x,
+      y: point.y - frame.origin.y,
+      z: point.z - frame.origin.z,
+    };
+    return { u: dot(relative, frame.u), v: dot(relative, frame.v) };
+  };
+  const a = toFaceLocal(cornerA);
+  const b = toFaceLocal(cornerB);
+  return {
+    uMin: Math.min(a.u, b.u),
+    uMax: Math.max(a.u, b.u),
+    vMin: Math.min(a.v, b.v),
+    vMax: Math.max(a.v, b.v),
+  };
+}
+
+export interface ResolveGroupRegionOptions {
+  host: WallGeometryParams;
+  faceKey: ElementFaceKey;
+  /** Drag anchor corner on the face; null → whole face (Q4-a default). */
+  cornerA: Vec3 | null;
+  /** Drag release corner; null → whole face. */
+  cornerB: Vec3 | null;
+}
+
+/** The group tool's gesture → region resolution (M3 T4): no drag corners =
+ *  the whole-face default shortcut; two corners = the dragged rectangle. */
+export function resolveGroupRegion(options: ResolveGroupRegionOptions): FaceRegion {
+  const { host, faceKey, cornerA, cornerB } = options;
+  if (cornerA === null || cornerB === null) return wholeFaceRegion(host, faceKey);
+  return faceRegionFromCorners({ frame: faceFrameForKey(host, faceKey), cornerA, cornerB });
 }
 
 export interface GenerateBarGroupPathsParams {

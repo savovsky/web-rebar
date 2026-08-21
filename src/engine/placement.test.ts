@@ -6,6 +6,7 @@ import type { WallElement } from '@/data/models';
 import {
   getWallFaceFrame,
   offsetFromFace,
+  rayFacePlanePoint,
   resolveBarCenterline,
   resolveFacePoint,
   wallLocalNormalToWorld,
@@ -220,5 +221,37 @@ describe('resolveBarCenterline — concrete cover against ALL faces', () => {
       radiusMm,
     });
     expect(path[0].y).toBeCloseTo(0);
+  });
+});
+
+describe('rayFacePlanePoint (T4 — captured-drag point source)', () => {
+  // posThickness face of the 4 m wall: plane y = 100, origin (2000, 100, 1400).
+  const frame = getWallFaceFrame(wall, { x: 0, y: 1, z: 0 });
+
+  it('hits the face plane', () => {
+    const point = rayFacePlanePoint({
+      frame,
+      rayOrigin: { x: 1000, y: -500, z: 1400 },
+      rayDirection: { x: 0, y: 1, z: 0 },
+    });
+    expect(point).toEqual({ x: 1000, y: 100, z: 1400 });
+  });
+
+  it('returns null when the ray is parallel to the face', () => {
+    const point = rayFacePlanePoint({
+      frame,
+      rayOrigin: { x: 0, y: -500, z: 1400 },
+      rayDirection: { x: 1, y: 0, z: 0 },
+    });
+    expect(point).toBeNull();
+  });
+
+  it('returns null when the plane is behind the ray', () => {
+    const point = rayFacePlanePoint({
+      frame,
+      rayOrigin: { x: 0, y: 500, z: 1400 },
+      rayDirection: { x: 0, y: 1, z: 0 },
+    });
+    expect(point).toBeNull();
   });
 });

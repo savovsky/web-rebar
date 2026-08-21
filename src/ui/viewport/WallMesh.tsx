@@ -2,7 +2,11 @@
 // Click routing per active tool: Select → select (§B.5); Place Bar → face
 // capture, then bar-path clicks resolved onto the captured face (the raycast
 // hit supplies the local face normal and the world point; engine/placement
-// does the math); Move → pointer-down begins a live-offset drag of the wall
+// does the math); Place Bar Group (M3 T4) → the first press captures the
+// face; presses on the captured face define the region (drag or click-click
+// corners — use-bar-group-drag.ts); Enter/Space commits via the §N
+// placeBarGroup command (use-bar-group-commit.ts);
+// Move → pointer-down begins a live-offset drag of the wall
 // AND its hosted bars (use-element-drag.ts; the offset is transient, the §N
 // moveElement command fires once on pointer-up). Under other tools the click
 // falls through to the ground plane. Concrete is transparent so bars stay visible inside (§L.2) — fill and
@@ -16,62 +20,22 @@
 import type { ThreeEvent } from '@react-three/fiber';
 import { DEFAULT_ELEMENT_APPEARANCE } from '@/data/appearance';
 import type { Vec3, WallElement } from '@/data/models';
-import { getWallFaceFrame, resolveFacePoint } from '@/engine/placement';
-import { type ReferenceSnapTarget, findReferenceSnap } from '@/engine/reference-snapping';
-import { REFERENCE_SNAP_TOLERANCE_GRID_CELLS } from '@/engine/snapping';
 import { getWallTransform } from '@/engine/wall-geometry';
+import type { AppDispatch } from '@/stores';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
-import { setSelection } from '@/stores/ui-slice';
+import { type PlacementDraft, type ToolId, setSelection } from '@/stores/ui-slice';
 import { CLICK_DRAG_TOLERANCE_PX } from './constants';
 import { setCursorPoint } from './cursor-position';
 import { clearHoverTarget, pickPointerWinner, setHoverTarget, useIsHoverTarget } from './hover-target';
+import { resolveOnFacePoint } from './on-face-point';
 import { advanceBarDraft, captureBarFace } from './place-bar-draft';
 import { useReferenceSnapTargets } from './reference-snap-targets';
+import { useBarGroupDrag } from './use-bar-group-drag';
 import { useElementDragOffset, useElementMoveDrag } from './use-element-drag';
 import { type ViewportTheme, useViewportTheme } from './viewport-theme';
 
 /** No drag in flight: the mesh sits at its committed transform. */
 const NO_OFFSET: Vec3 = { x: 0, y: 0, z: 0 };
-
-interface ResolveOnFaceOptions {
-  wall: WallElement;
-  faceNormal: Vec3;
-  event: ThreeEvent<PointerEvent | MouseEvent>;
-  isSnapEnabled: boolean;
-  referenceTargets: ReferenceSnapTarget[];
-  gridSpacingMm: number;
-}
-
-/** Raycast hit → point on the captured face plane (§B.3: a reference
- *  endpoint/midpoint within tolerance wins over the face-grid snap; the
- *  projection onto the face plane keeps the result exactly on the face). */
-function resolveOnFacePoint({
-  wall,
-  faceNormal,
-  event,
-  isSnapEnabled,
-  referenceTargets,
-  gridSpacingMm,
-}: ResolveOnFaceOptions): Vec3 {
-  const isSnapActive = isSnapEnabled && !event.nativeEvent.shiftKey; // Shift disables ALL snapping (§B.3)
-  const raw: Vec3 = { x: event.point.x, y: event.point.y, z: event.point.z };
-  const hit = isSnapActive
-    ? findReferenceSnap({
-        point: raw,
-        targets: referenceTargets,
-        toleranceMm: gridSpacingMm * REFERENCE_SNAP_TOLERANCE_GRID_CELLS,
-      })
-    : null;
-  return resolveFacePoint({
-    frame: getWallFaceFrame(wall, faceNormal),
-    // The reference hit snaps in plan (z stays the raw face hit's); a hit
-    // must survive EXACTLY — re-rounding the projected u/v to the grid
-    // would pull the bar path off the traced point.
-    worldPoint: hit ? { x: hit.x, y: hit.y, z: raw.z } : raw,
-    gridSpacingMm,
-    isSnapEnabled: hit === null && isSnapActive,
-  });
-}
 
 interface FillColorOptions {
   isHovered: boolean;
@@ -86,6 +50,45 @@ function resolveFillColor({ isHovered, isSelected, theme }: FillColorOptions): s
   return DEFAULT_ELEMENT_APPEARANCE.concreteColor;
 }
 
+interface WallClickOptions {
+  dispatch: AppDispatch;
+  event: ThreeEvent<MouseEvent>;
+  activeTool: ToolId;
+  wall: WallElement;
+  draft: PlacementDraft;
+  isDraftHost: boolean;
+  resolveOnFace: (event: ThreeEvent<PointerEvent | MouseEvent>) => Vec3 | null;
+}
+
+/** Click routing per active tool (§B.5/§B.6): Select resolves the pick winner
+ *  (smallest entity wins — the wall YIELDS to its own bars); Place Bar
+ *  captures the face, then extends the bar chain onto it. */
+function handleWallClick(options: WallClickOptions): void {
+  const { dispatch, event, activeTool, wall, draft, isDraftHost, resolveOnFace } = options;
+  if (activeTool === 'select') {
+    // §B.5: smallest entity wins — yield when a hosted bar wins this ray (the
+    // bar sits behind the transparent wall face); a bar hosted by a wall
+    // BEHIND this one never steals the wall's click (pickPointerWinner).
+    const winner = pickPointerWinner(event.intersections);
+    if (winner?.entityType !== 'wall' || winner.id !== wall.id) return;
+    event.stopPropagation(); // keep the ground plane from clearing this selection
+    dispatch(setSelection({ elementIds: [wall.id], barIds: [] }));
+    return;
+  }
+  if (activeTool !== 'placeBar') return;
+  event.stopPropagation();
+  if (isDraftHost) {
+    const point = resolveOnFace(event);
+    if (point) advanceBarDraft({ dispatch, host: wall, draft, point });
+    return;
+  }
+  // Face capture: only before any path point exists — mid-draft clicks on a
+  // different wall are ignored (Esc is the cancel mechanism, §B.6).
+  if (draft.committedPoints.length > 0 || !event.face) return;
+  const local = event.face.normal;
+  captureBarFace({ dispatch, wall, localNormal: { x: local.x, y: local.y, z: local.z } });
+}
+
 export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: boolean }) {
   const dispatch = useAppDispatch();
   const theme = useViewportTheme();
@@ -98,6 +101,8 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
 
   const isMoveTool = activeTool === 'move';
   const moveDrag = useElementMoveDrag({ elementId: wall.id, isMoveTool });
+  const isGroupTool = activeTool === 'placeBarGroup';
+  const groupDrag = useBarGroupDrag({ wall, isGroupTool });
   const dragOffset = useElementDragOffset(wall.id) ?? NO_OFFSET;
 
   const isHovered = useIsHoverTarget('wall', wall.id);
@@ -109,41 +114,16 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
     return resolveOnFacePoint({
       wall,
       faceNormal: draft.faceNormal,
-      event,
-      isSnapEnabled,
+      worldPoint: { x: event.point.x, y: event.point.y, z: event.point.z },
+      isSnapActive: isSnapEnabled && !event.nativeEvent.shiftKey, // Shift disables ALL snapping (§B.3)
       referenceTargets,
       gridSpacingMm,
     });
   };
 
-  const handleSelectClick = (event: ThreeEvent<MouseEvent>) => {
-    // §B.5: smallest entity wins — yield when a hosted bar wins this ray (the
-    // bar sits behind the transparent wall face); a bar hosted by a wall
-    // BEHIND this one never steals the wall's click (pickPointerWinner).
-    const winner = pickPointerWinner(event.intersections);
-    if (winner?.entityType !== 'wall' || winner.id !== wall.id) return;
-    event.stopPropagation(); // keep the ground plane from clearing this selection
-    dispatch(setSelection({ elementIds: [wall.id], barIds: [] }));
-  };
-
-  const handlePlaceBarClick = (event: ThreeEvent<MouseEvent>) => {
-    event.stopPropagation();
-    if (isDraftHost) {
-      const point = resolveOnFace(event);
-      if (point) advanceBarDraft({ dispatch, host: wall, draft, point });
-      return;
-    }
-    // Face capture: only before any path point exists — mid-draft clicks on a
-    // different wall are ignored (Esc is the cancel mechanism, §B.6).
-    if (draft.committedPoints.length > 0 || !event.face) return;
-    const local = event.face.normal;
-    captureBarFace({ dispatch, wall, localNormal: { x: local.x, y: local.y, z: local.z } });
-  };
-
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
     if (event.delta > CLICK_DRAG_TOLERANCE_PX) return; // a drag ended here, not a click
-    if (activeTool === 'select') handleSelectClick(event);
-    if (activeTool === 'placeBar') handlePlaceBarClick(event);
+    handleWallClick({ dispatch, event, activeTool, wall, draft, isDraftHost, resolveOnFace });
   };
 
   const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
@@ -155,6 +135,10 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
       moveDrag.handlePointerMove(event);
       return;
     }
+    if (isGroupTool) {
+      groupDrag.handlePointerMove(event);
+      return;
+    }
     if (activeTool !== 'placeBar' || !isDraftHost) return;
     event.stopPropagation(); // the on-face cursor wins over the ground-plane cursor
     setCursorPoint(resolveOnFace(event));
@@ -162,6 +146,7 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
 
   const handlePointerLeave = () => {
     if (activeTool === 'placeBar' && isDraftHost) setCursorPoint(null);
+    if (isGroupTool && groupDrag.isDraftHost && !groupDrag.isDragging) setCursorPoint(null);
   };
 
   const handlePointerOut = () => {
@@ -181,9 +166,15 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
       ]}
       rotation-z={transform.rotationZ}
       onClick={handleClick}
-      onPointerDown={moveDrag.handlePointerDown}
+      onPointerDown={(event) => {
+        moveDrag.handlePointerDown(event);
+        groupDrag.handlePointerDown(event);
+      }}
       onPointerMove={handlePointerMove}
-      onPointerUp={moveDrag.handlePointerUp}
+      onPointerUp={(event) => {
+        moveDrag.handlePointerUp(event);
+        groupDrag.handlePointerUp(event);
+      }}
       onPointerOut={handlePointerOut}
       onPointerLeave={handlePointerLeave}
       userData={{ entityType: 'wall', entityId: wall.id }}

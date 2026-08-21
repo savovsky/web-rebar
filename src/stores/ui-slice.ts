@@ -2,9 +2,10 @@
 // Transient 60 FPS pointer positions stay in component refs; only
 // click-committed points land in placementDraft.
 import { type PayloadAction, createSlice } from '@reduxjs/toolkit';
-import type { Vec3 } from '@/data/models';
+import type { ElementFaceKey, Vec3 } from '@/data/models';
 
-export type ToolId = 'select' | 'move' | 'placeWall' | 'placeBar' | 'sectionCut' | 'pan' | 'orbit';
+export type ToolId =
+  'select' | 'move' | 'placeWall' | 'placeBar' | 'placeBarGroup' | 'sectionCut' | 'pan' | 'orbit';
 
 interface SelectionState {
   elementIds: string[];
@@ -13,17 +14,22 @@ interface SelectionState {
 
 /**
  * In-progress placement tool input (§B.6). M0 deviation from the plan:
- * `faceId` became `hostElementId` + `faceNormal` — wall faces are not
- * first-class entities until face sampling arrives (M3).
+ * `faceId` became `hostElementId` + `faceNormal` — wall faces were not
+ * first-class entities until face sampling arrived. **Revised 2026-08-21
+ * (M3 T4):** face sampling IS here — a 'barGroup' draft additionally carries
+ * the stable host-local `faceKey` (§F.2 revised, Q3-a); it uses no
+ * committedPoints (the region drag anchor is transient, §E).
  * A 'section' draft carries only the Section Cut drag start in
  * committedPoints[0] (single-shot pointer-down → pointer-up gesture, §B.6).
  */
 export interface PlacementDraft {
-  kind: 'wall' | 'bar' | 'section' | null;
+  kind: 'wall' | 'bar' | 'barGroup' | 'section' | null;
   committedPoints: Vec3[];
   hostElementId: string | null;
   /** Outward normal of the clicked wall face — defines the cover offset direction. */
   faceNormal: Vec3 | null;
+  /** Stable host-local face key of the captured face (bar-group drafts only). */
+  faceKey: ElementFaceKey | null;
   /** The bar the chained flow keeps extending (§B.6) — null until the 2nd path
    *  click creates it. One draft chain = ONE bar with bending places. */
   barId: string | null;
@@ -49,6 +55,7 @@ const emptyDraft: PlacementDraft = {
   committedPoints: [],
   hostElementId: null,
   faceNormal: null,
+  faceKey: null,
   barId: null,
 };
 
@@ -89,13 +96,19 @@ const uiSlice = createSlice({
     },
     startDraft(
       state,
-      action: PayloadAction<{ kind: 'wall' | 'bar' | 'section'; hostElementId?: string; faceNormal?: Vec3 }>,
+      action: PayloadAction<{
+        kind: 'wall' | 'bar' | 'barGroup' | 'section';
+        hostElementId?: string;
+        faceNormal?: Vec3;
+        faceKey?: ElementFaceKey;
+      }>,
     ) {
       state.placementDraft = {
         kind: action.payload.kind,
         committedPoints: [],
         hostElementId: action.payload.hostElementId ?? null,
         faceNormal: action.payload.faceNormal ?? null,
+        faceKey: action.payload.faceKey ?? null,
         barId: null,
       };
       state.isInProgress = true;

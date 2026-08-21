@@ -10,6 +10,7 @@ import {
   IconOrbit,
   IconPan,
   IconPlaceBar,
+  IconPlaceBarGroup,
   IconPlaceWall,
   IconSectionCut,
   IconSelect,
@@ -56,6 +57,13 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     hint: 'Click a wall face, then the bar path — each click adds a segment to one bar · Esc to finish',
     shortcut: SHORTCUT_BY_TOOL.placeBar ?? null,
     icon: IconPlaceBar,
+  },
+  {
+    id: 'placeBarGroup',
+    label: 'Place Bar Group',
+    hint: 'Click a wall face to capture it · drag or click-click a region · Enter places the group · Esc cancels',
+    shortcut: SHORTCUT_BY_TOOL.placeBarGroup ?? null,
+    icon: IconPlaceBarGroup,
   },
   {
     id: 'sectionCut',

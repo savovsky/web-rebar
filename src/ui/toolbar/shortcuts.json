@@ -3,6 +3,7 @@
   "move": "m",
   "placeWall": "w",
   "placeBar": "b",
+  "placeBarGroup": "g",
   "sectionCut": "s",
   "pan": "h"
 }

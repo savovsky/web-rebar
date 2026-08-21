@@ -72,6 +72,27 @@ export function getWallFaceFrame(wall: WallGeometryParams, faceNormal: Vec3): Fa
   };
 }
 
+const RAY_PARALLEL_EPSILON = 1e-9;
+
+export interface RayFacePlanePointOptions {
+  frame: FaceFrame;
+  rayOrigin: Vec3;
+  rayDirection: Vec3;
+}
+
+/** Ray ∩ face plane (mm) — the pointer position for a CAPTURED drag, where
+ *  the cursor may have left the mesh surface (pointer capture keeps events
+ *  flowing; only the ray is reliable). Returns null when the ray is parallel
+ *  to the face or points away from it (the groundPointFromRay convention). */
+export function rayFacePlanePoint(options: RayFacePlanePointOptions): Vec3 | null {
+  const { frame, rayOrigin, rayDirection } = options;
+  const denominator = dot(rayDirection, frame.normal);
+  if (Math.abs(denominator) < RAY_PARALLEL_EPSILON) return null;
+  const t = dot(subtract(frame.origin, rayOrigin), frame.normal) / denominator;
+  if (t < 0) return null;
+  return add(rayOrigin, scale(rayDirection, t));
+}
+
 export interface ResolveFacePointOptions {
   frame: FaceFrame;
   /** Raw raycast hit in model space (need not lie on the face plane). */

@@ -42,9 +42,9 @@ export function GroundPlane() {
   };
 
   const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
-    // While a bar draft runs, the cursor lives on the captured wall face
-    // (tracked by WallMesh), not on the ground.
-    if (draftKind === 'bar') return;
+    // While a bar/group draft runs, the cursor lives on the captured wall
+    // face (tracked by WallMesh), not on the ground.
+    if (draftKind === 'bar' || draftKind === 'barGroup') return;
     // Hover picking (§B.5): every Select/Move-tool move handler resolves the
     // same winner from the same intersection list — idempotent writes, so
     // event order is irrelevant; empty ground resolves to null and clears the

@@ -6,33 +6,23 @@
 // the store (§E).
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { BufferGeometry, Float32BufferAttribute, type LineSegments, Quaternion, Vector3 } from 'three';
+import { BufferGeometry, Float32BufferAttribute, type LineSegments } from 'three';
 import { DEFAULT_BAR_DIAMETER_MM, resolveDefaultCover } from '@/commands/place-bar';
 import type { Vec3, WallElement } from '@/data/models';
 import { getWallFaceFrame, resolveBarCenterline } from '@/engine/placement';
 import { useAppSelector } from '@/stores/hooks';
 import type { PlacementDraft } from '@/stores/ui-slice';
 import { getCursorRawPoint } from './cursor-position';
-import { CROSSHAIR_RENDER_ORDER, createCrosshairGeometry } from './draft-crosshair';
+import { CROSSHAIR_RENDER_ORDER, createCrosshairGeometry, faceOrientation } from './draft-crosshair';
 import { useViewportTheme } from './viewport-theme';
 
 const PREVIEW_LINE_POINTS = 2;
-/** The crosshair geometry's home normal (it lies in the XY ground plane). */
-const UP_VECTOR = new Vector3(0, 0, 1);
-const scratchNormal = new Vector3();
-const scratchQuaternion = new Quaternion();
 
 /** Two-vertex line — endpoints are written imperatively from useFrame. */
 function createPreviewLineGeometry(): BufferGeometry {
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new Float32BufferAttribute(new Float32Array(PREVIEW_LINE_POINTS * 3), 3));
   return geometry;
-}
-
-/** Quaternion rotating the ground-plane crosshair onto the face plane. */
-function faceOrientation(faceNormal: Vec3): Quaternion {
-  scratchNormal.set(faceNormal.x, faceNormal.y, faceNormal.z);
-  return scratchQuaternion.setFromUnitVectors(UP_VECTOR, scratchNormal);
 }
 
 interface PreviewTargets {
@@ -50,7 +40,8 @@ function applyBarDraftFrame({ marker, line, isToolActive, draft, host }: Preview
     marker.visible = isToolActive && cursor !== null;
     if (cursor) {
       marker.position.set(cursor.x, cursor.y, cursor.z);
-      marker.quaternion.copy(faceNormal ? faceOrientation(faceNormal) : scratchQuaternion.identity());
+      if (faceNormal) marker.quaternion.copy(faceOrientation(faceNormal));
+      else marker.quaternion.identity();
     }
   }
   if (!line) return;
