@@ -15,6 +15,7 @@ import { createAppStore } from '@/stores';
 import {
   addBars,
   addPlacementGroup,
+  detachBars,
   removeBars,
   removePlacementGroup,
   setNextBarMark,
@@ -126,6 +127,25 @@ describe('project-slice — placement group + batch bar reducers (M3 T1)', () =>
 
     expect(store.getState().project.placementGroups).toEqual({});
     expect(store.getState().project.reinforcement[bar.id]).toEqual(bar); // untouched — T3 coordinates
+    store.dispatch(undo());
+    expect(store.getState().project).toBe(pre);
+  });
+
+  it('detachBars clears the bar-side group handle (M3 T3 — the Q6 detach primitive) and ONE undo restores it', () => {
+    const store = createAppStore();
+    const bars = [makeGroupBar('bar-1'), makeGroupBar('bar-2')];
+    store.dispatch((dispatch) => {
+      dispatch(addBars(bars));
+      dispatch(addPlacementGroup(makeGroup(['bar-1', 'bar-2'])));
+    });
+    const pre = store.getState().project;
+
+    store.dispatch((dispatch) => void dispatch(detachBars({ ids: ['bar-1', 'bar-2'] })));
+
+    expect(store.getState().project.reinforcement['bar-1'].placementGroupId).toBeUndefined();
+    expect(store.getState().project.reinforcement['bar-2'].placementGroupId).toBeUndefined();
+    // Positions/marks untouched — only the handle is cleared.
+    expect(store.getState().project.reinforcement['bar-1'].barMark).toBe(1);
     store.dispatch(undo());
     expect(store.getState().project).toBe(pre);
   });

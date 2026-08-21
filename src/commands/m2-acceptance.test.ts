@@ -12,8 +12,8 @@
 // graph stay; (4) the Q7 reference-solids sentence (T6.5's import-ifc
 // tests). The rule-by-rule audit lives in the T8 task log (verdict table);
 // the undo-per-command row is enforced by the registry-completeness probe in
-// m1-acceptance.test.ts (all 19 commands — a new command fails it until its
-// undo behavior is decided). Cut bars cross the real WASM boundary
+// command-undo-probes.test.ts (all 22 commands as of M3 T3 — a new command
+// fails it until its undo behavior is decided). Cut bars cross the real WASM boundary
 // (initWasmFromDisk).
 import { beforeAll, describe, expect, it } from 'vitest';
 import {

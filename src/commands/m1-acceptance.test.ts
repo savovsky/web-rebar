@@ -3,7 +3,9 @@
 // section → move the wall → the wall AND its hosted bars update (host-follow,
 // §E revised 2026-08-09) and the open 2D section view updates immediately →
 // undo restores wall+bars to the pre-move state exactly in ONE step, redo
-// re-applies it"; 30 undo levels; every M0+M1 command undoable. Driven
+// re-applies it"; 30 undo levels. The every-command-undoable registry probe
+// moved to command-undo-probes.test.ts at M3 T3 (lint line ceiling — the
+// probe map grows with every command-adding task). Driven
 // headlessly exactly as the tools drive it (the Move tool's commitElementDrag
 // dispatches the same moveElement; the Place Bar tool's face-click resolution
 // is reused for placement). Cut bars cross the real WASM boundary
@@ -12,29 +14,7 @@
 // (performance-probes.ts) — under the dev-only RTK invariant checks the
 // 1,055-command fixture build costs ~44 s (see the T5 task log).
 import { beforeAll, describe, expect, it } from 'vitest';
-import {
-  type CommandName,
-  commandRegistry,
-  createSection,
-  deleteBar,
-  deleteElement,
-  deleteSection,
-  deleteSelection,
-  exportIfc,
-  exportSectionDxf,
-  extendBar,
-  importIfcModel,
-  importReferenceDocument,
-  moveElement,
-  placeBar,
-  placeWall,
-  redo,
-  removeReferenceDocument,
-  reshapeSection,
-  setActiveSection,
-  setReferenceDocumentVisibility,
-  undo,
-} from '@/commands';
+import { createSection, moveElement, placeBar, placeWall, redo, setActiveSection, undo } from '@/commands';
 import { createBenchmarkStore } from '@/commands/performance-probes';
 import { DEFAULT_BAR_DIAMETER_MM, resolveDefaultCover } from '@/commands/place-bar';
 import {
@@ -42,12 +22,10 @@ import {
   type ReferenceStore,
   buildReferenceProject,
 } from '@/commands/reference-project';
-import { MINIMAL_REFERENCE_DXF, getImportProbeBytes } from '@/commands/test-utils';
 import { getWallFaceFrame, resolveBarCenterline } from '@/engine/placement';
 import { type SectionPrimitives, selectSectionPrimitives } from '@/engine/sectioning';
 import { initWasmFromDisk } from '@/engine/wasm-test-init';
 import { createAppStore } from '@/stores';
-import { setSelection } from '@/stores/ui-slice';
 
 beforeAll(initWasmFromDisk);
 
@@ -303,205 +281,5 @@ describe('30 undo levels (§E)', () => {
     store.dispatch(undo());
     expect(store.getState().project).toBe(afterFiveEdits);
     expect(store.getState().ui.cursorHint).toBe('Nothing to undo');
-  });
-});
-
-interface ProbeFixture {
-  store: ReturnType<typeof createAppStore>;
-  wallId: string;
-  barId: string;
-  sectionId: string;
-  referenceDocumentId: string;
-}
-
-const STRAIGHT_BAR_PATH = [
-  { x: 0, y: 87, z: 500 },
-  { x: WALL_LENGTH_MM, y: 87, z: 500 },
-];
-
-/** Fresh wall + bar + section + reference document per probe — four recorded
- *  levels of history. Async: importReferenceDocument dynamically loads the
- *  dxf-adapter module (the M2 lazy-loading contract). */
-const createProbeFixture = async (): Promise<ProbeFixture> => {
-  const store = createAppStore();
-  const wallId = store.dispatch(placeWall(WALL_PARAMS));
-  const barId = store.dispatch(
-    placeBar({ hostElementId: wallId, diameter: DEFAULT_BAR_DIAMETER_MM, path: STRAIGHT_BAR_PATH }),
-  );
-  const sectionId = store.dispatch(createSection(sectionParams(wallId)));
-  const { documentId } = await store.dispatch(
-    importReferenceDocument({ text: MINIMAL_REFERENCE_DXF, fileName: 'probe.dxf' }),
-  );
-  return { store, wallId, barId, sectionId, referenceDocumentId: documentId };
-};
-
-/** One dispatch per registry command against the probe fixture. Async
- *  commands (exportIfc/importIfcModel — lazy web-ifc; importReferenceDocument
- *  — lazy dxf-adapter) return the dispatch promise. */
-const commandProbes: Record<CommandName, (fixture: ProbeFixture) => void | Promise<void>> = {
-  placeWall: ({ store }) => {
-    store.dispatch(placeWall({ ...WALL_PARAMS, baseElevation: 3000 }));
-  },
-  placeBar: ({ store, wallId }) => {
-    store.dispatch(placeBar({ hostElementId: wallId, diameter: 16, path: STRAIGHT_BAR_PATH }));
-  },
-  extendBar: ({ store, barId }) => {
-    store.dispatch(extendBar({ barId, point: { x: WALL_LENGTH_MM, y: 87, z: 1500 } }));
-  },
-  createSection: ({ store, wallId }) => {
-    store.dispatch(
-      createSection({
-        name: 'S-2',
-        lineStart: { x: 1000, y: -500, z: 0 },
-        lineEnd: { x: 1000, y: 500, z: 0 },
-        depthPoint: { x: 3500, y: 0, z: 0 },
-        targetElementIds: [wallId],
-      }),
-    );
-  },
-  reshapeSection: ({ store, sectionId }) => {
-    store.dispatch(
-      reshapeSection({
-        sectionId,
-        lineStart: { x: 1000, y: -500, z: 0 },
-        lineEnd: { x: 1000, y: 500, z: 0 },
-        depthPoint: { x: 3500, y: 0, z: 0 },
-      }),
-    );
-  },
-  setActiveSection: ({ store, sectionId }) => {
-    store.dispatch(setActiveSection({ sectionId }));
-  },
-  exportIfc: async ({ store }) => {
-    await store.dispatch(exportIfc());
-  },
-  exportSectionDxf: async ({ store, sectionId }) => {
-    await store.dispatch(exportSectionDxf({ sectionId }));
-  },
-  importIfcModel: async ({ store }) => {
-    await store.dispatch(importIfcModel({ buffer: await getImportProbeBytes() }));
-  },
-  importReferenceDocument: async ({ store }) => {
-    await store.dispatch(importReferenceDocument({ text: MINIMAL_REFERENCE_DXF, fileName: 'probe-2.dxf' }));
-  },
-  removeReferenceDocument: ({ store, referenceDocumentId }) => {
-    store.dispatch(removeReferenceDocument({ documentId: referenceDocumentId }));
-  },
-  setReferenceDocumentVisibility: ({ store, referenceDocumentId }) => {
-    store.dispatch(setReferenceDocumentVisibility({ documentId: referenceDocumentId, visible: false }));
-  },
-  moveElement: ({ store, wallId }) => {
-    store.dispatch(moveElement({ elementId: wallId, delta: MOVE_DELTA }));
-  },
-  deleteBar: ({ store, barId }) => {
-    store.dispatch(deleteBar({ id: barId }));
-  },
-  deleteElement: ({ store, wallId }) => {
-    store.dispatch(deleteElement({ id: wallId }));
-  },
-  deleteSection: ({ store, sectionId }) => {
-    store.dispatch(deleteSection({ sectionId }));
-  },
-  deleteSelection: ({ store, wallId }) => {
-    store.dispatch(setSelection({ elementIds: [wallId], barIds: [] }));
-    store.dispatch(deleteSelection());
-  },
-  undo: ({ store }) => {
-    store.dispatch(undo());
-  },
-  redo: ({ store }) => {
-    store.dispatch(redo());
-  },
-};
-
-describe('every M0+M1 command is undoable (§E — the review-checklist row that was N/A in M0)', () => {
-  it('probes cover EVERY registry command — a future command fails here until its undo behavior is decided', () => {
-    expect(Object.keys(commandProbes).sort()).toEqual(Object.keys(commandRegistry).sort());
-  });
-
-  it('each project-mutating command records exactly ONE undo level and restores the exact pre-command reference on undo/redo', async () => {
-    const mutating: CommandName[] = [
-      'placeWall',
-      'placeBar',
-      'extendBar',
-      'createSection',
-      'reshapeSection',
-      'moveElement',
-      'deleteBar',
-      'deleteElement',
-      'deleteSection',
-      'deleteSelection',
-      'importIfcModel',
-      'importReferenceDocument',
-      'removeReferenceDocument',
-      'setReferenceDocumentVisibility',
-    ];
-    for (const name of mutating) {
-      const fixture = await createProbeFixture();
-      const before = fixture.store.getState().project;
-      const depthBefore = fixture.store.getState().undo.past.length;
-
-      // Awaiting is type-neutral: sync probes return void, async ones
-      // (exportIfc/importIfcModel — lazy web-ifc load) a promise.
-      await commandProbes[name](fixture);
-
-      const after = fixture.store.getState().project;
-      expect(after, name).not.toBe(before);
-      expect(fixture.store.getState().undo.past, name).toHaveLength(depthBefore + 1);
-
-      fixture.store.dispatch(undo());
-      expect(fixture.store.getState().project, name).toBe(before); // exact frozen reference
-      fixture.store.dispatch(redo());
-      expect(fixture.store.getState().project, name).toBe(after);
-    }
-  });
-
-  it('setActiveSection records no undo level — undo covers project state only (§E)', async () => {
-    const fixture = await createProbeFixture();
-    const depthBefore = fixture.store.getState().undo.past.length;
-    const projectBefore = fixture.store.getState().project;
-
-    void commandProbes.setActiveSection(fixture);
-
-    expect(fixture.store.getState().undo.past).toHaveLength(depthBefore);
-    expect(fixture.store.getState().project).toBe(projectBefore);
-    expect(fixture.store.getState().ui.activeSectionId).toBe(fixture.sectionId);
-  });
-
-  it('exportIfc records no undo level and mutates nothing — pure read + file output (M2 T2, same precedent as setActiveSection)', async () => {
-    const fixture = await createProbeFixture();
-    const depthBefore = fixture.store.getState().undo.past.length;
-    const projectBefore = fixture.store.getState().project;
-
-    await commandProbes.exportIfc(fixture);
-
-    expect(fixture.store.getState().undo.past).toHaveLength(depthBefore);
-    expect(fixture.store.getState().project).toBe(projectBefore);
-  });
-
-  it('exportSectionDxf records no undo level and mutates nothing — pure read + file output (M2 T7, same precedent as exportIfc)', async () => {
-    const fixture = await createProbeFixture();
-    const depthBefore = fixture.store.getState().undo.past.length;
-    const projectBefore = fixture.store.getState().project;
-
-    await commandProbes.exportSectionDxf(fixture);
-
-    expect(fixture.store.getState().undo.past).toHaveLength(depthBefore);
-    expect(fixture.store.getState().project).toBe(projectBefore);
-  });
-
-  it('undo/redo themselves are never recorded', async () => {
-    const fixture = await createProbeFixture();
-    const depthBefore = fixture.store.getState().undo.past.length;
-    const projectBefore = fixture.store.getState().project;
-
-    void commandProbes.undo(fixture);
-    expect(fixture.store.getState().undo.past).toHaveLength(depthBefore - 1);
-    expect(fixture.store.getState().undo.future).toHaveLength(1);
-
-    void commandProbes.redo(fixture);
-    expect(fixture.store.getState().undo.past).toHaveLength(depthBefore);
-    expect(fixture.store.getState().undo.future).toHaveLength(0);
-    expect(fixture.store.getState().project).toBe(projectBefore);
   });
 });

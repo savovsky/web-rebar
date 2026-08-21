@@ -36,3 +36,11 @@ Status: ✅ manual 2026-08-21
 **Then** both tools behave exactly as before; placed bars keep their cover from all faces; undo/redo clean
 
 Status: ⬜ pending author confirmation
+
+## M3-T05 — Regression after §N group-commands task (M3 T3)
+
+**Given** the app at M3 T3 (`placeBarGroup` / `updatePlacementGroup` / `deletePlacementGroup` landed — headless task, no UI touch by design)
+**When** the author launches the app and works the existing tools: Place Wall (W), Place Bar (B) incl. chained bends, Move (M), Delete, undo/redo through the sequence
+**Then** all existing workflows behave exactly as before: individuals place fire-and-forget with cover kept from all faces; every edit is one undo step; the group commands are command-layer only (no UI yet — T4/T5)
+
+Status: ⬜ pending author confirmation

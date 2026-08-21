@@ -90,6 +90,17 @@ const projectSlice = createSlice({
     removePlacementGroup(state, action: PayloadAction<{ id: string }>) {
       delete state.placementGroups[action.payload.id];
     },
+    /** M3 T3 — the Q6 detach primitive: clears the bar-side group handle so
+     *  the bars become individuals (deletePlacementGroup's removeBars:false
+     *  path; T5's moveBar reuses it for single-bar drag-detach). The group's
+     *  membership list (`bars`) is command-side bookkeeping — the command
+     *  updates it in the same scope. */
+    detachBars(state, action: PayloadAction<{ ids: string[] }>) {
+      for (const id of action.payload.ids) {
+        const bar = state.reinforcement[id];
+        if (bar) delete bar.placementGroupId;
+      }
+    },
     /** Chained placement (§B.6): grow one bar's path — the bar stays a single
      *  position with bending places (see the extendBar command). */
     appendBarPoint(state, action: PayloadAction<{ id: string; point: Vec3 }>) {
@@ -179,6 +190,7 @@ export const {
   addReferenceDocument,
   addSection,
   appendBarPoint,
+  detachBars,
   removeBar,
   removeBars,
   removeElement,
