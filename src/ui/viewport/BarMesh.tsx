@@ -1,8 +1,12 @@
 // One bar = one swept-cylinder mesh from the WASM core (engine/bar-geometry,
 // Q1-b typed arrays). Geometry is derived data — memoized per bar object and
-// disposed on change/unmount, never stored (§E/§H.2). Plain meshes in M0;
-// InstancedMesh per diameter arrives at M3 (§L.1 — superseded scope line: M3
-// measures, post-M3 optimizes). Click selects only under the Select tool
+// disposed on change/unmount, never stored (§E/§H.2). One plain mesh per
+// bar — InstancedMesh per diameter is POST-M3 (§L.1; the dated "arrives at
+// M3" comment superseded 2026-08-22, M3 T8, per the plan scope line): M3 T7
+// MEASURED the per-bar-mesh cost — 1,000 meshes = 1,000 draw calls at
+// reference scale (→ ~50,000 at the §L.1 50K-bar target vs ≈10 instanced),
+// ~1.2–2.7 s CPU per full rebuild at 50K — recorded as the M4 planning
+// input; M3 optimizes nothing. Click selects only under the Select tool
 // (§B.5); a bar inside transparent concrete (§L.2) is directly clickable:
 // ALL Select clicks/hovers resolve through pickPointerWinner
 // (hover-target.ts — smallest entity wins, a bar beats its own host wall), so

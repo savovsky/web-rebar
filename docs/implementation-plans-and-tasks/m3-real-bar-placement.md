@@ -7,7 +7,7 @@
 
 ## ▶️ Current State (read this first in a fresh session)
 
-- **M3: ✅ PLAN APPROVED (2026-08-18)** — Q1–Q8 approved as recommended. M0 ✅, M1 ✅, M2 ✅ complete ([trackers](./README.md); M2: IFC + DXF adapters probed end to end, all four §A acceptance sentences durable headless, author-verified in real CAD). **T7 ✅ complete (2026-08-22)** (see Task Log). **T8 ⬜ next** on branch `A_MVP_Scope_M3` — gates (`pnpm lint` + `pnpm test` + `pnpm build`) green before review; Rule 9 closing procedure per task (task commit → `Tracker: record T<n> hash` commit → push → next-session prompt file in the hash-commit).
+- **M3: ✅ COMPLETE (2026-08-22)** — Q1–Q8 approved 2026-08-18; T1–T8 all done on branch `A_MVP_Scope_M3` (see Task Log). The five §A acceptance sentences are durable headless (1–4, `src/commands/m3-acceptance.test.ts`) + author-run manual UX probe (5); the rule-by-rule checklist audit is green (T8 verdict tables). M0 ✅, M1 ✅, M2 ✅ complete ([trackers](./README.md)). **Next: the M4 planning session** — inputs recorded: the T7 probe table (§L.1 draw-call/CPU evidence at the 50K-bar target; F3 revisit resolved accept-at-scale, both 100 ms tripwires armed) and the T8 open items (clash-reporting for `placeBar`/`moveElement`, host-cascade for groups, cargo audit/deny on a CI/MSVC host).
 - **M3 scope (§A):** multi-bar placement on a face with spacing, cover, and edge distance — §F.2 **Individual** (fire-and-forget, already shipping since M0 T8 as `placeBar`) **and Group** (rule-based region placement with stored params, edit → regenerate). **Explicitly out:** openings/junctions geometry (M4), §K validation auto-runs (stay on-demand), §L optimization (watch only — M3 *measures*, it does not optimize).
 - **Workflow (same as M0/M1/M2):** implement one task → gates green → present changes + manual test list → **author reviews and commits (all working-tree changes, rule 8)** → next task.
 
@@ -139,11 +139,64 @@
 | T5 | Group selection/edit UX + `moveBar` + detach (Q6; §B.5 revisions) | acceptance sentence 3 headless; manual move/detach/regenerate walkthrough | ✅ Done | 68d706d |
 | T6 | Collision check: parry3d decision gate + clash engine + Q8 surfacing | gate verdict recorded (doc 09); acceptance sentence 4 headless | ✅ Done | 033aba9 |
 | T7 | Performance probes at reference scale with groups (F3 revisit; §L.1 evidence) | probe table in task log; tripwires asserted; breaches escalated | ✅ Done | 6aada6d |
-| T8 | M3 acceptance pass: `m3-acceptance.test.ts` + checklist audit + docs/scenarios sweep | verdict table green; lint/test/build green | ⬜ Pending | — |
+| T8 | M3 acceptance pass: `m3-acceptance.test.ts` + checklist audit + docs/scenarios sweep | verdict table green; lint/test/build green | ✅ Done | — |
 
 ---
 
 ## Task Log
+
+### ✅ T8 (2026-08-22) — M3 acceptance pass: `m3-acceptance.test.ts` + checklist audit + docs/scenarios sweep
+
+- **Scope as planned (plan §8), mirroring M0 T11 / M1 T6 / M2 T8.** Not a feature task — the §A milestone acceptance sentences captured as durable headless tests, the rule-by-rule audit of T1–T7 against the root README Rules for Implementation Sessions + Review Checklist (incl. the undo-per-command row), and the docs/scenarios sweep. **Zero app-behavior impact:** one new test file + a test-helper extraction + docs/comments. **No audit gap surfaced** — the scenario sweep needed no M3-S01… additions (see the docs sweep below).
+- **Durable artifact:** `src/commands/m3-acceptance.test.ts` (5 tests across the four headless sentences; sentence 5 is the manual UX probe — persisted as M3-T06…T26, author-run ✅ 2026-08-21/22). Restated from the task-level suites ("restate, don't reinvent" — the M2 T8 pattern); group placement crosses the real WASM boundary (`initWasmFromDisk`):
+  1. **Sentence 1 — group placement, rule-exact (from T3's `placement-group-commands.test.ts`):** a wall built through the §N commands → `placeBarGroup` → the generated bars satisfy the stored rule EXACTLY — 18 bars (count derived from region/spacing/edges), centerlines equal to the T2 engine output in layout order, cover kept from ALL element faces (the M0 `applyConcreteCover` clamp: 31 mm off the captured face, run-axis endpoints inset the cover exactly from the end faces), `hostElementId` set, ONE shared `barMark` per Q7 — exactly ONE undo level removes group + bars; redo re-applies.
+  2. **Sentence 2 — group edit/regenerate, exact-restore (T3):** TWO consecutive edits — spacing 150→250 (11 bars; old ids gone; engine-exact) then cover + Ø + edge distances + orientation in ONE patch (40 mm / Ø16 / 100/100 / horizontal→vertical → 16 bars stepping x = 3900…150, run-axis z inset 40…2760 by the cover exactly, the steel grade carried over, the group mark kept — no mark consumed) — ONE undo level per edit restores the pre-edit group AND its previous bars exactly (exact frozen references both ways through the 4-level chain).
+  3. **Sentence 3 — host-follow + detach (T5's `move-bar.test.ts`):** `moveElement` carries the group's bars (§E revised) and the stored host-local rule is untouched; a post-move regenerate is rule-exact against the MOVED face (engine-exact, cover offset y = 369 — the Q3 host-local params make this free); `moveBar` on a member detaches it (Q6 — out of `group.bars`, handle cleared, mark kept) and a same-rule regenerate refills the vacated slot while the detached bar stays independent; the 6-command sequence unwinds ONE undo level per command with exact frozen references.
+  4. **Sentence 4 — collision probe, exact + non-blocking (T6's `bar-clash.test.ts`):** a group over pre-existing individuals flags EXACTLY the clashing pairs (a coincident pair at 0 mm, an 8 mm pair — the clean control and the pre-existing individual↔individual pair correctly absent; deterministic sorted report); a second overlapping group flags all 18 cross-group pairs at 8 mm; placement stays NON-BLOCKING (§K.4) and ONE undo level removes the clashing placement.
+- **Helper extraction (the M2 T8 pattern — no duplicated test logic):** the clash-report helpers (`clashPairKey` / `clashMap` / `expectClashesSorted` / `expectClashDistance`) moved from `bar-clash.test.ts` into `test-utils.ts`; the T6 suite imports them (behavior unchanged — its 8 tests stay green).
+
+**Checklist verdict (rule → status → evidence):**
+
+| Rule | Status | Evidence |
+| --- | --- | --- |
+| 1 — Command layer (§N) | ✅ | Zero `project-slice`/`undo-slice` imports in `src/ui/` (grep); every UI dispatch is a registry command or a §B.6-sanctioned ui-slice action (grep of all `dispatch(` call sites — M3's additions: `placeBarGroup`/`updatePlacementGroup`/`moveBar`/`movePlacementGroup`/`checkBarClashes` + the ui-slice `setClashWarning`) |
+| 2 — Dumb components | ✅ | `Math.*` in `src/ui/` limited to `Math.hypot` ×2 (pointer travel), `Math.round` ×3 (canvas/cursor px), `Math.min` ×1 (preview buffer clamp) — display concerns; ALL group/clash math in `src/engine/` + `core/` |
+| 3 — Stateless WASM (§D) | ✅ | No `static mut`/`OnceCell`/`RefCell`/`Mutex`/`thread_local`/`lazy_static` in `core/src/` (grep); M3's Rust additions (`placement_group.rs`, `collision.rs`) are pure flat-array functions; `unsafe_code = forbid` crate-wide; the Rust gate ran green at T2/T6 (43 cargo tests) — T8 touches no `core/` |
+| 4 — Data model first | ✅ | T1's models (`placement-groups.ts`, `barMark`, `placementGroups`, `nextBarMark`) landed before every consumer (T2 engine → T3 commands → T4/T5 UI) |
+| 5 — Doors stay open | ✅ | The plan door check holds as built: `PlacementGroup` carries NO visibility/freeze/lock semantics (Layer Model deferred; `checkBarClashes({ scopeBarIds? })` is the recorded active-layer seam); §K stays on-demand (criteria settings deferred — now captured in §K.1); the IFC adapter untouched (groups export as their result bars; the `Pset_WebRebar_PlacementGroup` door open); the collision engine is model-wide bar PAIRS (openings/junctions slot in at M4); regions stored face-local (the polygon door); host-reshape regenerate stays a recorded non-decision; reference backgrounds never sampled/picked; the §B.5 parked hover-table work still parked; the §B.3 Array tool NOT absorbed by Bar Group |
+| 6 — Design tokens only | ✅ | Zero hex/`px`/`font-size` literals in `src/ui/` outside `tokens.css` (grep); M3's clash highlight reuses the existing `--danger` token; the G icon and the draft previews are token-driven |
+| 7 — Manual test list per task | ✅ | Every M3 task report ended with one; persisted as M3-T01…T27 + M3-T28 (this task — the milestone-closing walkthrough) |
+| 8 — Parallel edits / commit sweep | ✅ | Working tree clean at session start (HEAD `2fb95f4`); exact-match edits only; the T8 prompt file consumed at session start (the durable record is this tracker) |
+| Checklist — lint + build pass | ✅ | See the verification run |
+| Checklist — zero store mutations in `src/ui/` | ✅ | Covered under rule 1 |
+| Checklist — WASM stateless / flat arrays | ✅ | Covered under rule 3 |
+| **Checklist — Undo/redo (§E) works for every newly added command** | **✅** | The registry-completeness tripwire (`command-undo-probes.test.ts` — the probe map covers EVERY registry command; a future command fails it until its undo behavior is decided): **all 25 commands** — 19 mutating record exactly ONE undo level with exact frozen-reference restore both ways (M3's five: `placeBarGroup` / `updatePlacementGroup` / `deletePlacementGroup` / `moveBar` / `movePlacementGroup`); `setActiveSection` / `exportIfc` / `exportSectionDxf` / `checkBarClashes` are pure reads (zero levels, each pinned); `undo`/`redo` never recorded |
+| Checklist — Deferred Topics unblocked | ✅ | Covered under rule 5; the door check holds after T1–T7 as built |
+
+**Milestone acceptance verdict (the five §A sentences):**
+
+| # | Sentence | Verdict | Evidence |
+| --- | --- | --- | --- |
+| 1 | Group placement, rule-exact + ONE undo level | ✅ headless | `m3-acceptance.test.ts` sentence 1 (+ the T3 suite) |
+| 2 | Group edit/regenerate, exact-restore | ✅ headless | `m3-acceptance.test.ts` sentence 2 (+ the T3 suite) |
+| 3 | Host-follow + detach | ✅ headless | `m3-acceptance.test.ts` sentence 3 (+ the T5 suite) |
+| 4 | Collision probe, exact + non-blocking | ✅ headless | `m3-acceptance.test.ts` sentence 4 (+ the T6 suite) |
+| 5 | Placement UX (G over a traced DXF background; double-click group edit; B unchanged) | ✅ manual (author) | T4/T5/T6 walkthroughs approved 2026-08-21/22 — scenarios M3-T06…T26 ✅; the milestone-closing re-run is M3-T28 (⬜ pending) |
+| Risks | Face sampling · collision detection · placement UX | ✅ probed | T2 (parametric face-local sampling, Q1) · T6 (parry3d-f64 gate PASSED — doc 09 verdict) · T4 (author: "Works, but there will be changes later. Approved.") |
+
+**Verification run (gates green ONCE before review):** `pnpm lint` ✅ (one find during the pass, fixed in-task: the extracted clash helper's `1e-9` tolerance literal tripped `no-magic-numbers` in the non-test `test-utils.ts` — named `CLASH_DISTANCE_TOLERANCE_MM`) · `pnpm test` **483/483** across 57 files (478 + 5 new acceptance tests; the T7 worker cap held — 43.5 s wall) · `pnpm build` ✅ — shell `index-*.js` **1,322.57 kB** (unchanged from T7 — the acceptance pass adds tests/docs only), core wasm 46.27 kB raw / 19.26 kB gzip, dxf-adapter 45.65 kB lazy, web-ifc chunks lazy, **no INEFFECTIVE_DYNAMIC_IMPORT** · **Rust gate N/A** (T8 touches no `core/` — the T2/T6 gate stands at 43 cargo tests).
+
+**Docs sweep (all dated):** §F.2 finalized model revision (2026-08-21 — the Q3-a `{ hostElementId, faceKey }` composite + Q7 `barMark`), §B.5 bar-move/Shift-hover/double-click rows (2026-08-22, T5), §B.6 G row (2026-08-21, T4 — locked → implemented + the Enter-commit author decision), §H.1 `placementGroups`/`nextBarMark` note + the `project.ts` header resolution (2026-08-21, T1), doc 09 parry3d verdict (2026-08-22, T6 — all three gate criteria + numbers + the cargo audit/deny deferral) — all verified present/accurate, NO gaps. **Changed this task:** the `BarMesh.tsx` InstancedMesh comment superseded per the scope line (dated 2026-08-22 — M3 *measured*: T7's §L.1 evidence is the record; post-M3 optimizes); §K.1 dated M3 note added (the clash check as the first on-demand §K.1 entry point; the user-editable-criteria future requirement captured; the `scopeBarIds` active-layer seam; the §K.3 validator still unimplemented); plans index M3 row → ✅ Complete; scenario file + index extended with M3-T28; root README session state → M3 ✅ COMPLETE (lands in the hash commit per the closing checklist).
+
+**Open items recorded for the author (raised in the audit per the T8 brief — NO in-task action, T8 adds no features):**
+
+1. **`placeBar` / `moveElement` are NOT clash-reporting** (T6 in-task decisions 4/5, raised again as directed): a host move can carry bars into a clash unreported, and the B tool runs no placement-time check — the on-demand Collision Check covers both after the fact. Adding `placeBar` is a one-line engine call + a result-type change rippling into the M0/M1 acceptance fixtures; `moveElement` likewise on the cascade path. **Author decision (M4 scope candidate).**
+2. **Host-cascade for groups OPEN** (T3 decision 6 / T5 door): `deleteElement` leaves orphan group records that can never regenerate (`NOT_FOUND`-guarded — the sections precedent). **Author decision (M4 scope candidate).**
+3. **cargo audit / cargo deny deferral recorded** (T6): the windows-gnu install failure on the T6 host was environmental (not a crate finding); the RustSec/licence run belongs to a CI/MSVC host. Recorded in doc 09 and here.
+4. **User-editable clash criteria in a settings panel** — recorded FUTURE requirement (author 2026-08-22: "not now"); now captured in the dated §K.1 note.
+5. **The `{timeout: 120_000}` pattern** now spans 8 test files (the M1 T5 contention rationale — worker-shared suites; no timing semantics asserted). One line added to the root README tooling note (lands with the README state update in the hash commit); the author accepted the T7 bumps as-is — veto welcome.
+
+**Manual test list (rule 7) — M3-T28, the milestone-closing walkthrough:** run the M3 browser set in one session — M3-T04/T05 (regression smoke: app boots, W/B/M/Delete/undo unchanged; subsumes the two pending headless-task regressions) → M3-T06…T12 (Place Bar Group: whole-face + region placement over a traced DXF background) → M3-T13…T18 (moves, detach, refill, group edit) → M3-T19…T26 (clash warnings, Collision Check, mesh case, Esc). Optional headless spot-check: `pnpm test m3-acceptance` → 5 green tests.
 
 ### ✅ T7 (2026-08-22) — Performance probes at reference scale with groups (the scheduled F3 revisit + §L.1 evidence)
 

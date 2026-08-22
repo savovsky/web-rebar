@@ -16,9 +16,9 @@ import {
   undo,
   updatePlacementGroup,
 } from '@/commands';
-import type { BarClash } from '@/engine/collision';
 import { initWasmFromDisk } from '@/engine/wasm-test-init';
 import { createAppStore } from '@/stores';
+import { clashMap, clashPairKey, expectClashDistance, expectClashesSorted } from './test-utils';
 
 beforeAll(initWasmFromDisk);
 
@@ -61,26 +61,6 @@ const placeIndividual = (options: {
     }),
   );
 
-/** Pair key, order-normalized (UUID order is not predictable). */
-const pairKey = (idA: string, idB: string): string => [idA, idB].sort().join('|');
-
-/** The clashes as a comparable map: pair key → exact min distance. */
-const clashMap = (clashes: BarClash[]): Map<string, number> =>
-  new Map(clashes.map((clash) => [pairKey(clash.barIdA, clash.barIdB), clash.minDistanceMm]));
-
-const expectSorted = (clashes: BarClash[]): void => {
-  const keys = clashes.map((clash) => `${clash.barIdA}|${clash.barIdB}`);
-  expect(keys).toEqual([...keys].sort((a, b) => a.localeCompare(b)));
-};
-
-/** Exact distances, tolerant of the face-frame float noise (the T2-recorded
- *  `normalize` rounding, ~1e-13 mm) — the engine is exact; the generated
- *  PATHS carry sub-nanometer noise. */
-const expectDistance = (actual: number | undefined, expectedMm: number): void => {
-  expect(actual).toBeDefined();
-  expect(Math.abs((actual ?? Number.NaN) - expectedMm)).toBeLessThan(1e-9);
-};
-
 const createStoreWithWall = () => {
   const store = createAppStore();
   const wallId = store.dispatch(placeWall(WALL_PARAMS));
@@ -108,13 +88,13 @@ describe('T6 acceptance sentence 4 — collision probe', () => {
     const groupBar660 = result.barIds[4];
     const clashes = clashMap(result.clashes);
     expect(clashes.size).toBe(2);
-    expectDistance(clashes.get(pairKey(groupBar660, barA)), 0);
-    expectDistance(clashes.get(pairKey(groupBar660, barB)), 8);
+    expectClashDistance(clashes.get(clashPairKey(groupBar660, barA)), 0);
+    expectClashDistance(clashes.get(clashPairKey(groupBar660, barB)), 8);
     // No false positives: the clean control appears in NO pair, and the
     // pre-existing barA↔barB clash (no group bar involved) is not reported.
     expect([...clashes.keys()].some((key) => key.includes(barC))).toBe(false);
-    expect(clashes.has(pairKey(barA, barB))).toBe(false);
-    expectSorted(result.clashes);
+    expect(clashes.has(clashPairKey(barA, barB))).toBe(false);
+    expectClashesSorted(result.clashes);
   });
 
   it('a second overlapping group flags every cross-group pair (18 × distance 8)', () => {
@@ -131,7 +111,7 @@ describe('T6 acceptance sentence 4 — collision probe', () => {
     const setA = new Set(groupA.barIds);
     const setB = new Set(groupB.barIds);
     for (const clash of groupB.clashes) {
-      expectDistance(clash.minDistanceMm, 8);
+      expectClashDistance(clash.minDistanceMm, 8);
       // Every pair is one A bar × one B bar.
       const ids = [clash.barIdA, clash.barIdB];
       expect(ids.filter((id) => setA.has(id))).toHaveLength(1);
@@ -141,7 +121,7 @@ describe('T6 acceptance sentence 4 — collision probe', () => {
     expect(
       new Set(groupB.clashes.flatMap((c) => [c.barIdA, c.barIdB]).filter((id) => setB.has(id))).size,
     ).toBe(18);
-    expectSorted(groupB.clashes);
+    expectClashesSorted(groupB.clashes);
   });
 
   it('a clean group reports no clashes (no false positives)', () => {
@@ -161,7 +141,7 @@ describe('T6 acceptance sentence 4 — collision probe', () => {
 
     const intoClash = store.dispatch(moveBar({ barId: barA, delta: { x: 0, y: 0, z: -40 } }));
     expect(intoClash.clashes).toHaveLength(1);
-    expectDistance(clashMap(intoClash.clashes).get(pairKey(barA, group.barIds[4])), 0);
+    expectClashDistance(clashMap(intoClash.clashes).get(clashPairKey(barA, group.barIds[4])), 0);
 
     const backOut = store.dispatch(moveBar({ barId: barA, delta: { x: 0, y: 0, z: 15 } }));
     expect(backOut.clashes).toEqual([]); // z = 675: 15 mm clear of the 660 bar
@@ -178,7 +158,7 @@ describe('T6 acceptance sentence 4 — collision probe', () => {
       updatePlacementGroup({ groupId: group.groupId, patch: { edgeDistanceStart: 100 } }),
     );
     expect(updated.clashes).toHaveLength(1);
-    expectDistance(clashMap(updated.clashes).get(pairKey(barA, updated.barIds[4])), 0);
+    expectClashDistance(clashMap(updated.clashes).get(clashPairKey(barA, updated.barIds[4])), 0);
     // The report carries the REGENERATED ids (the old set is gone).
     expect(group.barIds).not.toContain(updated.barIds[4]);
     expect(store.getState().project.reinforcement[updated.barIds[4]]?.path[0]?.z).toBeCloseTo(700, 9);
@@ -196,7 +176,7 @@ describe('T6 acceptance sentence 4 — collision probe', () => {
     );
     expect(moved.region.vMin).toBe(-1360);
     expect(moved.clashes).toHaveLength(1);
-    expectDistance(clashMap(moved.clashes).get(pairKey(barA, moved.barIds[4])), 0);
+    expectClashDistance(clashMap(moved.clashes).get(clashPairKey(barA, moved.barIds[4])), 0);
   });
 
   it('a perpendicular same-plane MESH (vertical group over horizontal group) flags every crossing at placement', () => {
@@ -211,7 +191,7 @@ describe('T6 acceptance sentence 4 — collision probe', () => {
     expect(vertical.clashes).toHaveLength(18 * 26);
     const horizontalIds = new Set(horizontal.barIds);
     for (const clash of vertical.clashes) {
-      expectDistance(clash.minDistanceMm, 0);
+      expectClashDistance(clash.minDistanceMm, 0);
       // Every pair crosses one horizontal and one vertical bar.
       expect([clash.barIdA, clash.barIdB].filter((id) => horizontalIds.has(id))).toHaveLength(1);
     }

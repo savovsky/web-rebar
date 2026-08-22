@@ -220,3 +220,11 @@ Status: ✅ manual 2026-08-22
 **Then** all 478 tests pass (the previously flaky timeout/budget-class tests stay green under load), the run finishes FASTER than before (~40 s wall), and the console shows the four T7 probe tables (group regenerate, collision check, section recompute, per-bar-mesh)
 
 Status: ✅ manual 2026-08-22
+
+## M3-T28 — M3 acceptance pass: the full regression walkthrough (M3 T8)
+
+**Given** the app running (`pnpm dev`) — headless counterpart: `src/commands/m3-acceptance.test.ts` (the §A sentences 1–4) + the registry-completeness probe in `src/commands/command-undo-probes.test.ts` (all 25 commands)
+**When** the full M3 regression pass is run as one session: **M3-T04/T05** (the regression smoke — app boots, W/B/M/Delete/undo behave exactly as at M2; subsumes the two pending headless-task regressions) → **M3-T06…T12** (the Place Bar Group tool — whole-face and dragged/click-click regions over a traced DXF background, rejection/sticky/Esc behavior) → **M3-T13…T18** (bar moves, group-bar detach + regenerate refill, group selection + rule edit, Shift+hover group move, group delete) → **M3-T19…T26** (placement-time clash warnings non-blocking, the Collision Check button, the same-plane mesh case, Esc dismissal, color precedence)
+**Then** every listed scenario behaves as persisted; the milestone is confirmed end-to-end in the browser; headless spot-check (optional): `pnpm test m3-acceptance` → 5 green tests
+
+Status: ⬜ pending author confirmation

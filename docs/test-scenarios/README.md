@@ -93,3 +93,4 @@ This folder collects **behavioral test scenarios**, captured session by session 
 | [M3-T25](./m3-real-bar-placement.md#m3-t25--esc-dismisses-the-clash-warning-m3-t6-review-amendment) | Esc dismisses the clash warning | M3 T6 | ✅ manual 2026-08-22 |
 | [M3-T26](./m3-real-bar-placement.md#m3-t26--clash-color-precedence--regression-m3-t6) | Clash color precedence + regression | M3 T6 | ✅ manual 2026-08-22 |
 | [M3-T27](./m3-real-bar-placement.md#m3-t27--full-test-suite-green-under-a-busy-machine-m3-t7) | Full test suite green under a busy machine | M3 T7 | ✅ manual 2026-08-22 |
+| [M3-T28](./m3-real-bar-placement.md#m3-t28--m3-acceptance-pass-the-full-regression-walkthrough-m3-t8) | M3 acceptance pass: full regression walkthrough | M3 T8 | ⬜ pending manual |

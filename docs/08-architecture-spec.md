@@ -507,6 +507,8 @@ Future: export schedule data to BVBS format for direct bending machine input. Cl
 
 **Decision:** On-demand — user clicks "Validate." Applied only to layers currently in edit mode.
 
+> **M3 note (2026-08-22, T6/T8):** the bar-vs-bar clash check is the first concrete on-demand entry point — the §N `checkBarClashes` command (the top-bar Collision Check button; read-only, zero undo levels) plus non-blocking §K.4-style warnings riding the placement/edit commands (`placeBarGroup` / `updatePlacementGroup` / `movePlacementGroup` / `moveBar` — exact clash reports in the command results, status-bar hint + `--danger` highlight, nothing blocked/auto-moved). The criterion is fixed for M3 (clash = centerline distance < r₁ + r₂); **user-editable criteria values in a settings panel are a recorded FUTURE requirement (author 2026-08-22: "not now")**. `checkBarClashes({ scopeBarIds? })` is the active-layer scoping seam — layers arrive with the Layer Model (deferred topic, before M4); until then ONE implicit active layer = all model bars. The §K.3 rule table (cover/spacing/edge/… validator) remains unimplemented — the clash check is a placement-time engine probe, not the validator.
+
 ### K.2 Code Standard
 
 **Decision:** Start with DIN/EC2. Other country codes added later via JSON rule files.

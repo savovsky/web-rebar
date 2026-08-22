@@ -1,6 +1,7 @@
 import { expect } from 'vitest';
 import { CommandError, type CommandErrorCode, exportIfc, placeBar, placeWall } from '@/commands';
 import type { ReinforcementBar } from '@/data/models';
+import type { BarClash } from '@/engine/collision';
 import { createAppStore } from '@/stores';
 
 /** Assert that fn throws a CommandError with the given code; returns it for message checks. */
@@ -114,3 +115,31 @@ export const sortedBarMarks = (reinforcement: Record<string, ReinforcementBar>):
   Object.values(reinforcement)
     .map((bar) => bar.barMark)
     .sort((a, b) => a - b);
+
+/* Clash-report helpers (M3 T6) — shared by bar-clash.test.ts and the M3 T8
+ * acceptance restatement (the M2 T8 extraction pattern: no duplicated test
+ * logic across the task-level suite and the milestone suite). */
+
+/** Pair key, order-normalized (UUID order is not predictable). */
+export const clashPairKey = (idA: string, idB: string): string => [idA, idB].sort().join('|');
+
+/** The clashes as a comparable map: pair key → exact min distance. */
+export const clashMap = (clashes: BarClash[]): Map<string, number> =>
+  new Map(clashes.map((clash) => [clashPairKey(clash.barIdA, clash.barIdB), clash.minDistanceMm]));
+
+/** Reports are deterministically sorted (within-pair normalized, pairs by id). */
+export const expectClashesSorted = (clashes: BarClash[]): void => {
+  const keys = clashes.map((clash) => `${clash.barIdA}|${clash.barIdB}`);
+  expect(keys).toEqual([...keys].sort((a, b) => a.localeCompare(b)));
+};
+
+/** Exact-distance tolerance (mm): covers the face-frame float noise (the
+ *  T2-recorded `normalize` rounding, ~1e-13 mm) — the engine is exact; the
+ *  generated PATHS carry sub-nanometer noise. */
+const CLASH_DISTANCE_TOLERANCE_MM = 1e-9;
+
+/** Exact distances within CLASH_DISTANCE_TOLERANCE_MM. */
+export const expectClashDistance = (actual: number | undefined, expectedMm: number): void => {
+  expect(actual).toBeDefined();
+  expect(Math.abs((actual ?? Number.NaN) - expectedMm)).toBeLessThan(CLASH_DISTANCE_TOLERANCE_MM);
+};
