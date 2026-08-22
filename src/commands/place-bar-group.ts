@@ -3,8 +3,10 @@
 // rule-exactly by the T2 orchestration (generateBarGroupPaths). One shared
 // barMark from the project counter per Q7-a; ONE undo level (the T1 batch
 // addBars + group reducer + setNextBarMark bump join the command scope, the
-// placeBar precedent). Collision checking is T6 scope — placement stays
-// non-blocking here (§K.4 door open).
+// placeBar precedent). T6 (Q8, §K.4): the clash check runs over the new bars
+// against the PROSPECTIVE model (pre-dispatch, pure) and the exact report
+// rides the command result — placement is NON-BLOCKING, nothing is
+// auto-moved (the §K "Fit to Code" door stays closed).
 import { DEFAULT_DIAMETERS, DEFAULT_STEEL_CATALOG } from '@/data/catalog/steel';
 import {
   ELEMENT_FACE_KEYS,
@@ -14,6 +16,7 @@ import {
   type ReinforcementBar,
   type Vec3,
 } from '@/data/models';
+import { type BarClash, findBarClashes } from '@/engine/collision';
 import { generateBarGroupPaths } from '@/engine/placement-group';
 import type { AppThunk } from '@/stores';
 import { addBars, addPlacementGroup, setNextBarMark } from '@/stores/project-slice';
@@ -47,6 +50,9 @@ export interface PlaceBarGroupResult {
   groupId: string;
   /** Generated bar ids in layout order (the group's membership list). */
   barIds: string[];
+  /** Exact clash report (Q8, §K.4 — non-blocking): pairs involving the new
+   *  bars, sorted by id; empty when nothing clashes. */
+  clashes: BarClash[];
 }
 
 /** Shared validation for group placement AND regenerate (the T3 doorway):
@@ -165,8 +171,15 @@ export const placeBarGroup =
       orientation: params.orientation,
       bars: bars.map((bar) => bar.id),
     };
+    // Q8 clash report over the PROSPECTIVE model (existing bars + the new
+    // ones) — computed before any dispatch so the check is pure and the
+    // command stays non-blocking by construction (§K.4).
+    const clashes = findBarClashes({
+      bars: [...Object.values(state.project.reinforcement), ...bars],
+      involvingIds: group.bars,
+    });
     dispatch(addBars(bars));
     dispatch(addPlacementGroup(group));
     dispatch(setNextBarMark(barMark + 1));
-    return { groupId, barIds: group.bars };
+    return { groupId, barIds: group.bars, clashes };
   };

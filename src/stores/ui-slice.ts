@@ -3,6 +3,7 @@
 // click-committed points land in placementDraft.
 import { type PayloadAction, createSlice } from '@reduxjs/toolkit';
 import type { ElementFaceKey, Vec3 } from '@/data/models';
+import type { BarClash } from '@/engine/collision';
 
 export type ToolId =
   'select' | 'move' | 'placeWall' | 'placeBar' | 'placeBarGroup' | 'sectionCut' | 'pan' | 'orbit';
@@ -50,6 +51,14 @@ interface UiState {
   placementDraft: PlacementDraft;
   /** Which section the dockable 2D panel shows (§B.2). */
   activeSectionId: string | null;
+  /** The minimal §K.4 clash affordance (M3 T6, Q8 — NON-BLOCKING): the exact
+   *  pairs of the last clash-reporting command (placeBarGroup / moveBar /
+   *  movePlacementGroup / regenerate), or null when the last report was
+   *  clean. Clashing bars highlight in the viewport danger color; the status
+   *  bar carries the formatted warning. This is a transient WARNING layer —
+   *  it is not re-derived on undo/redo (§K validation stays on-demand; the
+   *  next clash-reporting command replaces it). */
+  clashWarning: { pairs: BarClash[] } | null;
   /** Grid snapping (§B.3) — status-bar toggle, consumed by viewport tools from T7. */
   snapEnabled: boolean;
   /** Grid spacing in mm (§B.3 default 100). */
@@ -73,6 +82,7 @@ const initialState: UiState = {
   selection: { elementIds: [], barIds: [], placementGroupIds: [] },
   placementDraft: emptyDraft,
   activeSectionId: null,
+  clashWarning: null,
   snapEnabled: true,
   gridSpacingMm: 100,
 };
@@ -132,6 +142,9 @@ const uiSlice = createSlice({
     setActiveSection(state, action: PayloadAction<string | null>) {
       state.activeSectionId = action.payload;
     },
+    setClashWarning(state, action: PayloadAction<{ pairs: BarClash[] } | null>) {
+      state.clashWarning = action.payload;
+    },
     toggleSnap(state) {
       state.snapEnabled = !state.snapEnabled;
     },
@@ -143,6 +156,7 @@ export const {
   clearDraft,
   clearSelection,
   setActiveSection,
+  setClashWarning,
   setCursorHint,
   setDraftBarId,
   setInProgress,

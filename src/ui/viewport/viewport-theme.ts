@@ -8,6 +8,8 @@ export interface ViewportTheme {
   gridSection: string;
   selection: string;
   hover: string;
+  /** §K.4 clash warning (M3 T6) — clashing bars render in the danger token. */
+  danger: string;
   wireframe: string;
   snapTarget: string;
   preview: string;
@@ -23,6 +25,7 @@ export function useViewportTheme(): ViewportTheme {
       gridSection: readHslToken('--primary'),
       selection: readHslToken('--selection'),
       hover: readHslToken('--hover'),
+      danger: readHslToken('--danger'),
       wireframe: readHslToken('--wireframe'),
       snapTarget: readHslToken('--snap-target'),
       preview: readHslToken('--primary'),

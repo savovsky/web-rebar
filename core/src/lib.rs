@@ -8,6 +8,7 @@
 
 use wasm_bindgen::prelude::*;
 
+mod collision;
 mod mesh;
 mod placement_group;
 mod section;

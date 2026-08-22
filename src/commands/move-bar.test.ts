@@ -68,7 +68,7 @@ describe('moveBar — individual bar', () => {
 
     const result = store.dispatch(moveBar({ barId, delta: { x: 100, y: 300, z: 0 } }));
 
-    expect(result).toEqual({ barId, detachedFromGroupId: undefined });
+    expect(result).toEqual({ barId, detachedFromGroupId: undefined, clashes: [] });
     const bar = store.getState().project.reinforcement[barId];
     expect(bar.path[0]).toEqual({ x: 100, y: 387, z: 500 });
     expect(bar.path[1]).toEqual({ x: 4100, y: 387, z: 500 });
@@ -92,7 +92,7 @@ describe('moveBar — group member (Q6-a detach-on-move)', () => {
     const result = store.dispatch(moveBar({ barId, delta: { x: 0, y: 300, z: 0 } }));
     const postMove = store.getState().project;
 
-    expect(result).toEqual({ barId, detachedFromGroupId: groupId });
+    expect(result).toEqual({ barId, detachedFromGroupId: groupId, clashes: [] });
     // Detached: out of the membership list, handle cleared, mark kept.
     const group = postMove.placementGroups[groupId];
     expect(group.bars).toHaveLength(EXPECTED_BAR_COUNT - 1);

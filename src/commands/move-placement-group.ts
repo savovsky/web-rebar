@@ -12,9 +12,11 @@
 // AND bars exactly (the nested thunk joins this command's scope, Q4-a).
 // Plan-locked drags (z = 0 from the Move tool) map fully on top/bottom faces
 // and along-u on vertical side faces (v is ±Z there); a delta with no face-
-// plane component is invalid, not a silent no-op. Like placeBarGroup, this
-// collision stays T6 scope — moving is non-blocking (§K.4 door open, Q8).
+// plane component is invalid, not a silent no-op. T6 (Q8, §K.4): the clash
+// report of the nested regenerate propagates into this result — the group
+// move is NON-BLOCKING like every placement command.
 import type { FaceRegion, PlacementGroup, Vec3 } from '@/data/models';
+import type { BarClash } from '@/engine/collision';
 import { worldToFaceLocalDelta } from '@/engine/placement-group';
 import type { AppThunk } from '@/stores';
 import { CommandError } from './command-error';
@@ -33,6 +35,9 @@ export interface MovePlacementGroupResult {
   region: FaceRegion;
   /** The NEW generated bar ids in layout order (regenerate contract). */
   barIds: string[];
+  /** Exact clash report (Q8, §K.4 — non-blocking), propagated from the
+   *  nested regenerate; empty when nothing clashes. */
+  clashes: BarClash[];
 }
 
 /** mm — a delta whose face-plane projection is below this on BOTH axes is a
@@ -82,7 +87,11 @@ export const movePlacementGroup =
       vMax: group.region.vMax + dv,
     };
     // Nested command: the regenerate machinery + rule validation live in
-    // updatePlacementGroup; it joins THIS command's ONE undo level (Q4-a).
-    const { barIds } = dispatch(updatePlacementGroup({ groupId: params.groupId, patch: { region } }));
-    return { groupId: params.groupId, region, barIds };
+    // updatePlacementGroup; it joins THIS command's ONE undo level (Q4-a),
+    // and its Q8 clash report (computed over the same prospective model)
+    // propagates unchanged.
+    const { barIds, clashes } = dispatch(
+      updatePlacementGroup({ groupId: params.groupId, patch: { region } }),
+    );
+    return { groupId: params.groupId, region, barIds, clashes };
   };

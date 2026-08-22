@@ -42,9 +42,11 @@ interface BarMeshProps {
   isSelected: boolean;
   /** The bar's parent group is selected (§B.5 double-click, M3 T5). */
   isGroupSelected: boolean;
+  /** The bar is in the §K.4 clash warning layer (M3 T6 — danger color). */
+  isClashing: boolean;
 }
 
-export function BarMesh({ bar, isSelected, isGroupSelected }: BarMeshProps) {
+export function BarMesh({ bar, isSelected, isGroupSelected, isClashing }: BarMeshProps) {
   const dispatch = useAppDispatch();
   const theme = useViewportTheme();
   const isSelectActive = useAppSelector((state) => state.ui.activeTool === 'select');
@@ -114,9 +116,11 @@ export function BarMesh({ bar, isSelected, isGroupSelected }: BarMeshProps) {
     }
   };
 
-  // Selection (own or whole-group) outranks hover; both outrank the domain
-  // rebar color.
+  // Selection (own or whole-group) outranks hover; hover outranks the §K.4
+  // clash warning (interaction feedback wins over the warning — recorded in
+  // the M3 T6 task log); the warning outranks the domain rebar color.
   let color: string = DEFAULT_ELEMENT_APPEARANCE.rebarColor;
+  if (isClashing) color = theme.danger;
   if (isHovered || isMoveHovered || isGroupHovered) color = theme.hover;
   if (isSelected || isGroupSelected) color = theme.selection;
 

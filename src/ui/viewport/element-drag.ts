@@ -17,8 +17,10 @@ import { moveBar } from '@/commands/move-bar';
 import { moveElement } from '@/commands/move-element';
 import { movePlacementGroup } from '@/commands/move-placement-group';
 import type { Vec3 } from '@/data/models';
+import type { BarClash } from '@/engine/collision';
 import type { AppDispatch } from '@/stores';
 import { setCursorHint, setTool } from '@/stores/ui-slice';
+import { surfaceClashReport } from '@/ui/clash-surfacing';
 import { type HoverTarget, pickPointerWinner, setHoverPinned } from './hover-target';
 
 /** mm — a shorter final delta commits nothing (a click, not a drag). */
@@ -120,13 +122,18 @@ interface CommitElementDragOptions {
 export function commitElementDrag(options: CommitElementDragOptions): void {
   const { dispatch, target, delta, isSticky } = options;
   if (Math.hypot(delta.x, delta.y) < DRAG_DELTA_TOLERANCE_MM) return;
+  // Q8 surfacing (§K.4, M3 T6): the bar/group-move commands return exact
+  // clash reports — surfaced AFTER the tool transition below so the warning
+  // hint survives setTool's hint reset. moveElement is not clash-reporting
+  // (T6 scope line; recorded in the task log).
+  let clashes: BarClash[] | null = null;
   try {
     if (target.entityType === 'bar') {
-      dispatch(moveBar({ barId: target.id, delta }));
+      clashes = dispatch(moveBar({ barId: target.id, delta })).clashes;
     } else if (target.entityType === 'barGroup') {
       // Group move (M3 T5, author direction): region re-target + rule-exact
       // regenerate inside one movePlacementGroup command.
-      dispatch(movePlacementGroup({ groupId: target.id, delta }));
+      clashes = dispatch(movePlacementGroup({ groupId: target.id, delta })).clashes;
     } else {
       dispatch(moveElement({ elementId: target.id, delta }));
     }
@@ -136,4 +143,5 @@ export function commitElementDrag(options: CommitElementDragOptions): void {
     return;
   }
   if (!isSticky) dispatch(setTool({ tool: 'select' }));
+  if (clashes !== null) surfaceClashReport(dispatch, clashes);
 }

@@ -13,6 +13,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
   type CommandName,
+  checkBarClashes,
   commandRegistry,
   createSection,
   deleteBar,
@@ -113,6 +114,9 @@ const createProbeFixture = async (): Promise<ProbeFixture> => {
  *  commands (exportIfc/importIfcModel — lazy web-ifc; importReferenceDocument
  *  — lazy dxf-adapter) return the dispatch promise. */
 const commandProbes: Record<CommandName, (fixture: ProbeFixture) => void | Promise<void>> = {
+  checkBarClashes: ({ store }) => {
+    store.dispatch(checkBarClashes());
+  },
   placeWall: ({ store }) => {
     store.dispatch(placeWall({ ...WALL_PARAMS, baseElevation: 3000 }));
   },
@@ -285,6 +289,18 @@ describe('every registered command is undoable (§E — the M1 T6 registry-compl
 
     expect(fixture.store.getState().undo.past).toHaveLength(depthBefore);
     expect(fixture.store.getState().project).toBe(projectBefore);
+  });
+
+  it('checkBarClashes records no undo level and mutates no project state — read-only §K.1 on-demand check (M3 T6); the ui clash-warning layer updates (§E: undo covers project state only)', async () => {
+    const fixture = await createProbeFixture();
+    const depthBefore = fixture.store.getState().undo.past.length;
+    const projectBefore = fixture.store.getState().project;
+
+    void commandProbes.checkBarClashes(fixture);
+
+    expect(fixture.store.getState().undo.past).toHaveLength(depthBefore);
+    expect(fixture.store.getState().project).toBe(projectBefore);
+    expect(fixture.store.getState().ui.cursorHint).toContain('Collision check');
   });
 
   it('undo/redo themselves are never recorded', async () => {

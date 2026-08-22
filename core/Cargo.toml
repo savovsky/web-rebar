@@ -9,6 +9,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 wasm-bindgen = "0.2"
+parry3d-f64 = { version = "0.30.2", default-features = false, features = ["std", "dim3", "f64"] }
 
 [profile.release]
 opt-level = 3

@@ -11,6 +11,7 @@ import type { PlacementGroupPatch } from '@/commands';
 import { DEFAULT_DIAMETERS } from '@/data/catalog/steel';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { setCursorHint } from '@/stores/ui-slice';
+import { surfaceClashReport } from '@/ui/clash-surfacing';
 import { PARAM_FIELD_CLASS, PARAM_LABEL_CLASS, ParamNumberField } from './param-fields';
 
 export function PlacementGroupPanel({ groupId }: { groupId: string }) {
@@ -21,10 +22,13 @@ export function PlacementGroupPanel({ groupId }: { groupId: string }) {
   }
 
   /** One field edit = ONE updatePlacementGroup dispatch (one undo level);
-   *  false → the field reverts (the stored rule did not change). */
+   *  false → the field reverts (the stored rule did not change). Q8 (M3 T6):
+   *  the regenerate's exact clash report surfaces as a warning — the edit
+   *  already committed (§K.4 non-blocking). */
   const commitPatch = (patch: PlacementGroupPatch): boolean => {
     try {
-      dispatch(updatePlacementGroup({ groupId, patch }));
+      const result = dispatch(updatePlacementGroup({ groupId, patch }));
+      surfaceClashReport(dispatch, result.clashes);
       return true;
     } catch (error) {
       if (!(error instanceof CommandError)) throw error;

@@ -148,3 +148,67 @@ Status: ✅ manual 2026-08-22
 **Then** Delete removes the group WITH its bars as ONE undo level (exact restore on undo); deleting a single group bar also removes it from the group's membership; everything else behaves exactly as at T4
 
 Status: ✅ manual 2026-08-22
+
+## M3-T19 — Placement-time clash warning, non-blocking (M3 T6, Q8)
+
+**Given** a wall with individually placed bars (B tool)
+**When** the author places a group (G) whose bars cross/overlap them
+**Then** the placement SUCCEEDS (nothing blocked, nothing auto-moved); the status bar shows the clash warning (pair count + closest centerline distance); the clashing bars render in the danger (red) color
+
+Status: ✅ manual 2026-08-22
+
+## M3-T20 — Moving a bar into and out of a clash (M3 T6)
+
+**Given** a placement group on a wall face and the Move tool (M) active
+**When** the author drags an individual bar into a group bar, then back out
+**Then** moving in: the move commits, the warning + red highlight appear; moving back out: the warning clears and the bars return to normal color
+
+Status: ✅ manual 2026-08-22
+
+## M3-T21 — Group move into a clash (M3 T6)
+
+**Given** a placement group and a bar in its potential path
+**When** the author Shift+drags the group into a clash with it
+**Then** the group move commits (region re-target + rule-exact regenerate), the warning surfaces; ONE undo step restores the pre-move region and bars exactly
+
+Status: ✅ manual 2026-08-22
+
+## M3-T22 — Group rule edit into a clash (M3 T6)
+
+**Given** a selected group (double-click a group bar)
+**When** the author edits spacing/cover in the Properties panel so the regenerated bars clash, then edits back
+**Then** the edit commits, the warning surfaces with exact pairs; editing back regenerates cleanly and clears the warning
+
+Status: ✅ manual 2026-08-22
+
+## M3-T23 — Collision Check button (M3 T6 review amendment, §K.1 on-demand)
+
+**Given** clashing bars placed through ANY flow (including the B tool, which runs no placement-time check)
+**When** the author clicks Collision Check in the top bar, then fixes the clash (move/delete) and clicks again
+**Then** first click: status-bar warning + red highlight appear over the exact clashing bars; second click: "Collision check: no clashes (N bars checked)" hint and the red clears; the check is read-only (no undo level, nothing changes)
+
+Status: ✅ manual 2026-08-22
+
+## M3-T24 — Same-plane perpendicular mesh (M3 T6 review amendment)
+
+**Given** a horizontal bar group on a wall face
+**When** the author places a vertical group on the same face with the same cover (bars share one plane)
+**Then** the placement warns with every crossing (e.g. 18 × 26 = 468 pairs at 0.0 mm); Collision Check re-reports the same pairs at any later time
+
+Status: ✅ manual 2026-08-22
+
+## M3-T25 — Esc dismisses the clash warning (M3 T6 review amendment)
+
+**Given** clash-red bars showing (from a placement or the Collision Check button)
+**When** the author presses Escape
+**Then** the red highlight and the status-bar warning disappear (the selection also clears, per §B.5); a later Collision Check re-reports the clashes if they still exist
+
+Status: ✅ manual 2026-08-22
+
+## M3-T26 — Clash color precedence + regression (M3 T6)
+
+**Given** clashing bars
+**When** the author hovers/selects them, and also works all prior flows with NO clashes present
+**Then** selection and hover colors outrank the red warning while interacting; with nothing clashing, every prior placement/edit flow behaves exactly as at T5 (no warnings, no red bars)
+
+Status: ✅ manual 2026-08-22

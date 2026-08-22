@@ -130,6 +130,39 @@ export function generateBarGroupLayout(params: GenerateBarGroupLayoutParams): Ba
   }
 }
 
+export interface CheckBarCollisionsParams {
+  /** Every bar's centerline concatenated as flat xyz triples (mm). */
+  pathPoints: Float64Array;
+  /** n + 1 point-offsets: bar k's points are `offsets[k] .. offsets[k+1]`. */
+  pathOffsets: Uint32Array;
+  /** One radius (mm, diameter / 2) per bar. */
+  radii: Float64Array;
+}
+
+/** Bar-vs-bar clash report (M3 T6): flat INDEX pairs (a < b, ascending) into
+ *  the caller's bar array + the parallel minimum centerline distance (mm).
+ *  Ids stay TS-side per §D.3. */
+export interface BarClashPairsData {
+  pairs: Uint32Array;
+  distances: Float64Array;
+}
+
+/**
+ * §D.2 clash check (M3 T6, plan Q2 — parry3d-f64 primitive, gate PASSED
+ * 2026-08-22): bars as polylines + radii in, clash pairs out (a pair clashes
+ * when its minimum centerline distance is strictly below r₁ + r₂). Model-wide
+ * pairs with AABB pre-filters; deterministic ascending pair order.
+ */
+export function checkBarCollisions(params: CheckBarCollisionsParams): BarClashPairsData {
+  const report = wasmCore.check_bar_collisions(params.pathPoints, params.pathOffsets, params.radii);
+  try {
+    return { pairs: report.pairs, distances: report.distances };
+  } finally {
+    // Getters copy into JS-owned arrays — release the WASM-side struct immediately.
+    report.free();
+  }
+}
+
 /**
  * §G.1 Tier 1: points where one bar's stored path crosses the section plane
  * (flat xyz triples, empty when nothing crosses). One call per bar; a bent

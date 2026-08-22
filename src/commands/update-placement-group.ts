@@ -10,6 +10,7 @@
 // identity, not the bars' generation).
 import { DEFAULT_STEEL_CATALOG } from '@/data/catalog/steel';
 import type { FaceRegion, PlacementGroup, ReinforcementBar } from '@/data/models';
+import { type BarClash, findBarClashes } from '@/engine/collision';
 import type { AppThunk } from '@/stores';
 import {
   addBars,
@@ -41,6 +42,9 @@ export interface UpdatePlacementGroupResult {
   groupId: string;
   /** The NEW generated bar ids in layout order (the old set is gone). */
   barIds: string[];
+  /** Exact clash report (Q8, §K.4 — non-blocking): pairs involving the
+   *  regenerated bars, sorted by id; empty when nothing clashes. */
+  clashes: BarClash[];
 }
 
 /** Command-side partial-patch merge (T1: the reducer replaces wholesale) —
@@ -118,8 +122,14 @@ export const updatePlacementGroup =
       placementGroupId: group.id,
     }));
     const barIds = bars.map((bar) => bar.id);
+    // Q8 clash report over the PROSPECTIVE model (the group's old bars
+    // replaced by the regenerated ones) — computed before any dispatch so
+    // the regenerate stays non-blocking by construction (§K.4).
+    const replacedIds = new Set(group.bars);
+    const surviving = Object.values(state.project.reinforcement).filter((bar) => !replacedIds.has(bar.id));
+    const clashes = findBarClashes({ bars: [...surviving, ...bars], involvingIds: barIds });
     dispatch(removeBars({ ids: group.bars }));
     dispatch(addBars(bars));
     dispatch(updatePlacementGroupReducer({ ...rule, bars: barIds }));
-    return { groupId: group.id, barIds };
+    return { groupId: group.id, barIds, clashes };
   };

@@ -15,7 +15,11 @@
 // host-local (Q3-a), so "move the group" = move the host (§E host-follow,
 // already shipping). The T4-recorded Shift+hover pre-selection therefore
 // feeds group DELETE (deleteSelection → deletePlacementGroup) only.
+// T6 (Q8, §K.4): the clash check runs over the moved bar against the
+// PROSPECTIVE model (pre-dispatch, pure) — the exact report rides the
+// result; the move is NON-BLOCKING.
 import type { Vec3 } from '@/data/models';
+import { type BarClash, findBarClashes } from '@/engine/collision';
 import type { AppThunk } from '@/stores';
 import {
   detachBars,
@@ -36,6 +40,9 @@ export interface MoveBarResult {
   /** Set when the bar was a group member: the group it detached from
    *  (Q6-a). Absent for individual bars. */
   detachedFromGroupId?: string;
+  /** Exact clash report (Q8, §K.4 — non-blocking): pairs involving the moved
+   *  bar at its NEW position, sorted by id; empty when nothing clashes. */
+  clashes: BarClash[];
 }
 
 export const moveBar =
@@ -56,8 +63,21 @@ export const moveBar =
       throw new CommandError('INVALID_PARAMS', 'moveBar: delta must be non-zero');
     }
 
-    // Validation passed — side effects start. Q6-a detach: membership list
-    // (group-side) and the handle (bar-side) both clear in this scope.
+    // Validation passed. Q8 clash report over the PROSPECTIVE model — the
+    // moved bar at its translated path against every other bar — computed
+    // before any dispatch (pure, non-blocking by construction, §K.4).
+    const translatedPath = bar.path.map((point) => ({
+      x: point.x + params.delta.x,
+      y: point.y + params.delta.y,
+      z: point.z + params.delta.z,
+    }));
+    const prospective = Object.values(getState().project.reinforcement).map((other) =>
+      other.id === params.barId ? { ...other, path: translatedPath } : other,
+    );
+    const clashes = findBarClashes({ bars: prospective, involvingIds: [params.barId] });
+
+    // Side effects start. Q6-a detach: membership list (group-side) and the
+    // handle (bar-side) both clear in this scope.
     let detachedFromGroupId: string | undefined;
     const groupId = bar.placementGroupId;
     if (groupId !== undefined) {
@@ -71,5 +91,5 @@ export const moveBar =
       detachedFromGroupId = groupId;
     }
     dispatch(translateBar({ id: params.barId, delta: params.delta }));
-    return { barId: params.barId, detachedFromGroupId };
+    return { barId: params.barId, detachedFromGroupId, clashes };
   };

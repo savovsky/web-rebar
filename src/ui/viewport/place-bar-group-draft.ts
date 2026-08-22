@@ -20,9 +20,11 @@
 import { CommandError } from '@/commands/command-error';
 import { placeBarGroup } from '@/commands/place-bar-group';
 import type { ElementFaceKey, FaceRegion, Vec3, WallElement } from '@/data/models';
+import type { BarClash } from '@/engine/collision';
 import { resolveGroupRegion } from '@/engine/placement-group';
 import type { AppDispatch } from '@/stores';
 import { clearDraft, setCursorHint, setSelection, setTool, startDraft } from '@/stores/ui-slice';
+import { surfaceClashReport } from '@/ui/clash-surfacing';
 import { getBarGroupParams } from './bar-group-params';
 
 export const HINT_CAPTURE_FACE =
@@ -102,11 +104,14 @@ interface CommitBarGroupOptions {
 /** Enter/Space commit: the defined region, or the whole face when none was
  *  drawn (the two Q4-a actions A/B). The §N placeBarGroup command runs ONCE
  *  → ONE undo level; the new group's bars become the selection (the placeBar
- *  precedent). */
+ *  precedent). T6 (Q8): the exact clash report in the result is surfaced
+ *  AFTER the tool transition (setTool/clearDraft reset the hint — the
+ *  §K.4 warning must survive them); placement stays non-blocking. */
 export function commitBarGroup(options: CommitBarGroupOptions): void {
   const { dispatch, host, faceKey, isSticky } = options;
   const region = getDefinedRegion() ?? resolveGroupRegion({ host, faceKey, cornerA: null, cornerB: null });
   const params = getBarGroupParams();
+  let clashes: BarClash[];
   try {
     const result = dispatch(
       placeBarGroup({
@@ -122,6 +127,7 @@ export function commitBarGroup(options: CommitBarGroupOptions): void {
       }),
     );
     dispatch(setSelection({ elementIds: [], barIds: result.barIds, placementGroupIds: [] }));
+    clashes = result.clashes;
   } catch (error) {
     if (!(error instanceof CommandError)) throw error;
     // Keep the captured face AND the region: fix the params and re-commit.
@@ -130,11 +136,12 @@ export function commitBarGroup(options: CommitBarGroupOptions): void {
   }
   clearRegionState();
   // Single-shot auto-return (§B.6 rule 1); sticky keeps the tool (rule 2).
-  // setTool already resets the draft and the hint.
+  // Both exits reset the hint — the clash warning (if any) is re-applied last.
   if (isSticky) {
     dispatch(clearDraft());
-    dispatch(setCursorHint(HINT_CAPTURE_FACE));
-    return;
+    if (clashes.length === 0) dispatch(setCursorHint(HINT_CAPTURE_FACE));
+  } else {
+    dispatch(setTool({ tool: 'select' }));
   }
-  dispatch(setTool({ tool: 'select' }));
+  surfaceClashReport(dispatch, clashes);
 }
