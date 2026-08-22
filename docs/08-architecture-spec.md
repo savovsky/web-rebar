@@ -104,11 +104,12 @@ When a decision must be revisited, update this document and note the revision da
 | Action | Behavior |
 | --- | --- |
 | Hover entity under the Select tool | Pre-selection highlight (hover token) shows exactly which entity a click would select (added 2026-08-09) |
-| Hover entity under the Move tool | "Highlighted = what will move": a WALL winner highlights the wall AND its hosted bars (they move together — host-follow §E); a BAR winner highlights the bar alone and a drag from it does NOTHING (bar-relative moves are M3 scope — the host wall must not move either) (added 2026-08-09) |
+| Hover entity under the Move tool | "Highlighted = what will move": a WALL winner highlights the wall AND its hosted bars (they move together — host-follow §E); a BAR winner highlights the bar alone (added 2026-08-09). **Revised 2026-08-22 (M3 T5):** the bar branch activates — a bar winner now DRAGS the bar (`moveBar`: an individual bar translates; a group member DETACHES from its group first, per the M3 plan Q6 — one undo level restores membership + position). The host wall never moves when the bar won the pick. |
+| Shift+hover over a group member bar | Pre-selection highlight of the ENTIRE placement group (all member bars) — the group can then be deleted together via Delete, or MOVED together: with the Move tool active, a pointer-down WITH SHIFT held starts the group drag (author direction 2026-08-22; the T4-recorded direction's move half). A group has no world position of its own — its region is host-local (M3 plan Q3) — so the group move re-targets the region: the drag delta projects onto the face frame, the region shifts, and `movePlacementGroup` regenerates the bars rule-exactly (one undo level; the host wall is untouched). Without Shift, a drag from a group member still detaches/moves the single bar (M3 plan Q6). |
 | Click element in viewport | Select, deselect others |
 | Ctrl+Click | Add/remove from selection |
 | Drag-select (marquee) | Select all intersecting |
-| Double-click bar | Select parent bar group |
+| Double-click bar | Select parent bar group (first real target landed 2026-08-22, M3 T5: group selection is derived through the bar's `placementGroupId` — no new entity type in the picking order; the Properties panel re-opens the group's rule params, edits dispatch `updatePlacementGroup` and regenerate live) |
 | Escape | Deselect all / cancel tool → Select |
 | Shift+scroll wheel | Cycle through overlapping objects under cursor |
 

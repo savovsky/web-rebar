@@ -31,9 +31,13 @@ export const deleteElement =
     dispatch(removeElement({ id: params.id }));
 
     const { selection } = state.ui;
+    // Group selection survives (the T3 decision: group records survive host
+    // deletion like sections — they can never regenerate, updatePlacementGroup
+    // guards NOT_FOUND); only element/bar references prune.
     const pruned = {
       elementIds: selection.elementIds.filter((id) => id !== params.id),
       barIds: selection.barIds.filter((id) => !hostedBarIds.includes(id)),
+      placementGroupIds: selection.placementGroupIds,
     };
     const didSelectionChange =
       pruned.elementIds.length !== selection.elementIds.length ||

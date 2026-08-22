@@ -26,7 +26,7 @@ import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { type PlacementDraft, type ToolId, setSelection } from '@/stores/ui-slice';
 import { CLICK_DRAG_TOLERANCE_PX } from './constants';
 import { setCursorPoint } from './cursor-position';
-import { clearHoverTarget, pickPointerWinner, setHoverTarget, useIsHoverTarget } from './hover-target';
+import { clearHoverTarget, pickPointerWinner, setHoverFromPick, useIsHoverTarget } from './hover-target';
 import { resolveOnFacePoint } from './on-face-point';
 import { advanceBarDraft, captureBarFace } from './place-bar-draft';
 import { useReferenceSnapTargets } from './reference-snap-targets';
@@ -72,7 +72,7 @@ function handleWallClick(options: WallClickOptions): void {
     const winner = pickPointerWinner(event.intersections);
     if (winner?.entityType !== 'wall' || winner.id !== wall.id) return;
     event.stopPropagation(); // keep the ground plane from clearing this selection
-    dispatch(setSelection({ elementIds: [wall.id], barIds: [] }));
+    dispatch(setSelection({ elementIds: [wall.id], barIds: [], placementGroupIds: [] }));
     return;
   }
   if (activeTool !== 'placeBar') return;
@@ -100,7 +100,7 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
   const transform = getWallTransform(wall);
 
   const isMoveTool = activeTool === 'move';
-  const moveDrag = useElementMoveDrag({ elementId: wall.id, isMoveTool });
+  const moveDrag = useElementMoveDrag({ target: { entityType: 'wall', id: wall.id }, isMoveTool });
   const isGroupTool = activeTool === 'placeBarGroup';
   const groupDrag = useBarGroupDrag({ wall, isGroupTool });
   const dragOffset = useElementDragOffset(wall.id) ?? NO_OFFSET;
@@ -128,7 +128,7 @@ export function WallMesh({ wall, isSelected }: { wall: WallElement; isSelected: 
 
   const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
     if (activeTool === 'select') {
-      setHoverTarget(pickPointerWinner(event.intersections));
+      setHoverFromPick(pickPointerWinner(event.intersections), event.nativeEvent.shiftKey);
       return;
     }
     if (isMoveTool) {

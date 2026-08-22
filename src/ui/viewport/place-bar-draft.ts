@@ -78,7 +78,7 @@ export function advanceBarDraft({ dispatch, host, draft, point }: AdvanceBarDraf
         placeBar({ hostElementId: host.id, diameter: DEFAULT_BAR_DIAMETER_MM, path: centerline }),
       );
       dispatch(setDraftBarId(barId));
-      dispatch(setSelection({ elementIds: [], barIds: [barId] }));
+      dispatch(setSelection({ elementIds: [], barIds: [barId], placementGroupIds: [] }));
     }
     dispatch(addDraftPoint(point));
     dispatch(setCursorHint(HINT_NEXT_SEGMENT));

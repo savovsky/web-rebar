@@ -24,6 +24,7 @@ export function EditMenu() {
       !state.ui.isInProgress &&
       (state.ui.selection.elementIds.length > 0 ||
         state.ui.selection.barIds.length > 0 ||
+        state.ui.selection.placementGroupIds.length > 0 ||
         state.ui.activeSectionId !== null),
   );
   return (

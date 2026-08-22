@@ -117,6 +117,24 @@ export interface ResolveGroupRegionOptions {
   cornerB: Vec3 | null;
 }
 
+export interface WorldToFaceLocalDeltaOptions {
+  host: WallGeometryParams;
+  faceKey: ElementFaceKey;
+  delta: Vec3;
+}
+
+/** World delta → the face-local (du, dv) shift of a group's region (M3 T5
+ *  group move — the author direction: a Shift+drag from a group member moves
+ *  the ENTIRE group). The delta's projections onto the face frame's in-plane
+ *  axes; the normal component drops (same as faceRegionFromCorners). A plan
+ *  drag (z = 0) maps fully on top/bottom faces and along-u only on vertical
+ *  side faces (v is ±Z there). */
+export function worldToFaceLocalDelta(options: WorldToFaceLocalDeltaOptions): { du: number; dv: number } {
+  const { host, faceKey, delta } = options;
+  const frame = faceFrameForKey(host, faceKey);
+  return { du: dot(delta, frame.u), dv: dot(delta, frame.v) };
+}
+
 /** The group tool's gesture → region resolution (M3 T4): no drag corners =
  *  the whole-face default shortcut; two corners = the dragged rectangle. */
 export function resolveGroupRegion(options: ResolveGroupRegionOptions): FaceRegion {

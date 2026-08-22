@@ -5,6 +5,7 @@ import { Content, List, Root, Trigger } from '@radix-ui/react-tabs';
 import { useAppSelector } from '@/stores/hooks';
 import { BackgroundsSection } from './BackgroundsSection';
 import { BarGroupParamsPanel } from './BarGroupParamsPanel';
+import { PlacementGroupPanel } from './PlacementGroupPanel';
 
 const TRIGGER_CLASS =
   'flex-1 border-b-2 border-transparent px-panel py-1.5 text-xs text-muted-foreground ' +
@@ -15,6 +16,13 @@ export function SidePanel() {
   const elementCount = useAppSelector((state) => Object.keys(state.project.elements).length);
   const barCount = useAppSelector((state) => Object.keys(state.project.reinforcement).length);
   const isGroupTool = useAppSelector((state) => state.ui.activeTool === 'placeBarGroup');
+  // A selected placement group re-opens its rule params here (§B.5, M3 T5 —
+  // double-click a group bar selects it). Exactly one group at a time edits.
+  const selectedGroupIds = useAppSelector((state) => state.ui.selection.placementGroupIds);
+  let propertiesContent = <p>Select an element to edit its properties.</p>;
+  if (isGroupTool) propertiesContent = <BarGroupParamsPanel />;
+  else if (selectedGroupIds.length === 1)
+    propertiesContent = <PlacementGroupPanel groupId={selectedGroupIds[0]} />;
   // Sections are deliberately NOT counted here (author call, T10 review) —
   // they are view definitions, not building content; the 3D wireframe volume
   // is their presence.
@@ -49,7 +57,7 @@ export function SidePanel() {
         <BackgroundsSection />
       </Content>
       <Content value='properties' className='flex-1 overflow-auto p-panel text-xs text-muted-foreground'>
-        {isGroupTool ? <BarGroupParamsPanel /> : <p>Select an element to edit its properties.</p>}
+        {propertiesContent}
       </Content>
     </Root>
   );

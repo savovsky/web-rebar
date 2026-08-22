@@ -10,6 +10,12 @@ export type ToolId =
 interface SelectionState {
   elementIds: string[];
   barIds: string[];
+  /** Selected placement groups (M3 T5, §B.5): a group is selected THROUGH
+   *  its bars (double-click a group bar) — derived membership, no new entity
+   *  type in the picking order (the parked §B.5 hover-table work stays
+   *  parked). A selected group re-opens its rule params in the Properties
+   *  panel (edits dispatch updatePlacementGroup). */
+  placementGroupIds: string[];
 }
 
 /**
@@ -64,7 +70,7 @@ const initialState: UiState = {
   sticky: false,
   cursorHint: '',
   isInProgress: false,
-  selection: { elementIds: [], barIds: [] },
+  selection: { elementIds: [], barIds: [], placementGroupIds: [] },
   placementDraft: emptyDraft,
   activeSectionId: null,
   snapEnabled: true,
@@ -92,7 +98,7 @@ const uiSlice = createSlice({
       state.selection = action.payload;
     },
     clearSelection(state) {
-      state.selection = { elementIds: [], barIds: [] };
+      state.selection = { elementIds: [], barIds: [], placementGroupIds: [] };
     },
     startDraft(
       state,

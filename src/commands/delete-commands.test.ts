@@ -1,18 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   createSection,
   deleteBar,
   deleteElement,
   deleteSection,
   placeBar,
+  placeBarGroup,
   placeWall,
   redo,
   setActiveSection,
   undo,
 } from '@/commands';
+import { initWasmFromDisk } from '@/engine/wasm-test-init';
 import { createAppStore } from '@/stores';
 import { setSelection } from '@/stores/ui-slice';
 import { expectCommandError } from './test-utils';
+
+beforeAll(initWasmFromDisk); // the deleteBar group-membership test places a group
 
 const wallParams = {
   startPoint: { x: 0, y: 0, z: 0 },
@@ -32,7 +36,7 @@ const createPopulatedStore = () => {
   const wallId = store.dispatch(placeWall(wallParams));
   const barId1 = store.dispatch(placeBar({ hostElementId: wallId, diameter: 16, path: barPath }));
   const barId2 = store.dispatch(placeBar({ hostElementId: wallId, diameter: 10, path: barPath }));
-  store.dispatch(setSelection({ elementIds: [wallId], barIds: [barId1, barId2] }));
+  store.dispatch(setSelection({ elementIds: [wallId], barIds: [barId1, barId2], placementGroupIds: [] }));
   return { store, wallId, barId1, barId2 };
 };
 
@@ -44,7 +48,7 @@ describe('deleteElement', () => {
     const state = store.getState();
     expect(Object.keys(state.project.elements)).toHaveLength(0);
     expect(Object.keys(state.project.reinforcement)).toHaveLength(0);
-    expect(state.ui.selection).toEqual({ elementIds: [], barIds: [] });
+    expect(state.ui.selection).toEqual({ elementIds: [], barIds: [], placementGroupIds: [] });
   });
 
   it('leaves bars of other elements untouched', () => {
@@ -140,11 +144,40 @@ describe('deleteBar', () => {
     const state = store.getState();
     expect(state.project.elements[wallId]).toBeDefined();
     expect(Object.keys(state.project.reinforcement)).toEqual([barId2]);
-    expect(state.ui.selection).toEqual({ elementIds: [wallId], barIds: [barId2] });
+    expect(state.ui.selection).toEqual({ elementIds: [wallId], barIds: [barId2], placementGroupIds: [] });
   });
 
   it('rejects an unknown bar id', () => {
     const store = createAppStore();
     expectCommandError(() => store.dispatch(deleteBar({ id: 'ghost' })), 'NOT_FOUND');
+  });
+
+  it('a deleted GROUP member also leaves the group membership list (M3 T5 — the T3-recorded finding resolved)', () => {
+    const store = createAppStore();
+    const wallId = store.dispatch(placeWall(wallParams));
+    const { groupId, barIds } = store.dispatch(
+      placeBarGroup({
+        hostElementId: wallId,
+        faceKey: 'face:posThickness',
+        region: { uMin: -2000, uMax: 2000, vMin: -1400, vMax: 1400 },
+        diameter: 12,
+        barSpacing: 150,
+        edgeDistanceStart: 60,
+        edgeDistanceEnd: 60,
+        orientation: 'horizontal',
+      }),
+    );
+    const preDelete = store.getState().project;
+
+    store.dispatch(deleteBar({ id: barIds[0] }));
+
+    const project = store.getState().project;
+    expect(project.reinforcement[barIds[0]]).toBeUndefined();
+    expect(project.placementGroups[groupId].bars).toHaveLength(barIds.length - 1);
+    expect(project.placementGroups[groupId].bars).not.toContain(barIds[0]);
+
+    // ONE undo level restores the bar AND the membership exactly.
+    store.dispatch(undo());
+    expect(store.getState().project).toBe(preDelete);
   });
 });

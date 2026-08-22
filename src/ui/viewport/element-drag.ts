@@ -4,16 +4,22 @@
 // during the gesture and snap back on Esc, exactly like T10's section
 // wireframe volumes; no duplicate ghost render path. The transient offset
 // lives in a module store (§E — no 60 FPS Redux dispatches; same pattern as
-// hover-target.ts). On pointer-up, commitElementDrag fires the §N moveElement
-// command once (host-follow — one undo level for wall + bars) and the
-// single-shot tool auto-returns to Select (§B.6 rule 1; sticky stays, rule 2).
+// hover-target.ts). On pointer-up, commitElementDrag fires the §N command
+// once — moveElement for a wall target (host-follow — one undo level for
+// wall + bars), moveBar for a bar target (M3 T5, Q6: the §B.5 hover row's
+// bar branch — an individual bar translates, a group member DETACHES first
+// and then translates, ONE undo level restores membership + position) — and
+// the single-shot tool auto-returns to Select (§B.6 rule 1; sticky stays,
+// rule 2).
 import type { Intersection } from 'three';
 import { CommandError } from '@/commands/command-error';
+import { moveBar } from '@/commands/move-bar';
 import { moveElement } from '@/commands/move-element';
+import { movePlacementGroup } from '@/commands/move-placement-group';
 import type { Vec3 } from '@/data/models';
 import type { AppDispatch } from '@/stores';
 import { setCursorHint, setTool } from '@/stores/ui-slice';
-import { type HoverTarget, pickPointerWinner } from './hover-target';
+import { type HoverTarget, pickPointerWinner, setHoverPinned } from './hover-target';
 
 /** mm — a shorter final delta commits nothing (a click, not a drag). */
 const DRAG_DELTA_TOLERANCE_MM = 1e-3;
@@ -22,15 +28,21 @@ const DRAG_DELTA_TOLERANCE_MM = 1e-3;
 
 /**
  * The entity the Move tool DRAGS (the author's rule: "highlighted = what will
- * move"). Only a WALL winner is a drag target — it moves with its hosted
- * bars (host-follow §E revised). A bar winner resolves to null: bar-relative
- * moves are M3 scope, so a drag starting on a bar must do NOTHING — not even
- * move the wall behind it (the hover shows the bar alone). Section volumes
- * are not move targets either (their own Select-tool drag reshapes them).
+ * move"). A WALL winner moves with its hosted bars (host-follow §E revised);
+ * a BAR winner moves ALONE (M3 T5 — the §B.5 bar branch: an individual bar
+ * translates, a group member detaches per Q6) — UNLESS the §B.5 Shift+hover
+ * group pre-selection is active at the grab (Shift held): then the WHOLE
+ * GROUP is the drag target (author direction 2026-08-22 — the group move
+ * re-targets its face-local region via movePlacementGroup). Section volumes
+ * are not move targets (their own Select-tool drag reshapes them).
  */
-export function resolveMoveTarget(intersections: Intersection[]): HoverTarget | null {
+export function resolveMoveTarget(intersections: Intersection[], shiftKey = false): HoverTarget | null {
   const winner = pickPointerWinner(intersections);
-  if (winner === null || winner.entityType !== 'wall') return null;
+  if (winner === null) return null;
+  if (winner.entityType === 'bar' && shiftKey && winner.placementGroupId !== undefined) {
+    return { entityType: 'barGroup', id: winner.placementGroupId };
+  }
+  if (winner.entityType !== 'wall' && winner.entityType !== 'bar') return null;
   return winner;
 }
 
@@ -65,10 +77,14 @@ export function getElementDragOffset(): ElementDragOffset | null {
 
 export function setElementDragOffset(next: ElementDragOffset): void {
   activeOffset = next;
+  // Pin the hover for the gesture: Shift mid-drag is the §B.3 snap toggle and
+  // must not flip the pinned hover into a group highlight (M3 T5).
+  setHoverPinned(true);
   listeners.forEach((emit) => emit());
 }
 
 export function clearElementDragOffset(): void {
+  setHoverPinned(false);
   if (activeOffset === null) return;
   activeOffset = null;
   listeners.forEach((emit) => emit());
@@ -83,26 +99,37 @@ export function subscribeElementDragOffset(listener: () => void): () => void {
 
 interface CommitElementDragOptions {
   dispatch: AppDispatch;
-  elementId: string;
-  /** Final snapped plan delta (y = 0). */
+  /** The drag target: a wall (host-follow moveElement) or a bar (moveBar —
+   *  M3 T5; a group member detaches per Q6 inside the command). */
+  target: HoverTarget;
+  /** Final snapped plan delta (z = 0). */
   delta: Vec3;
   /** Sticky (double-click-locked) tools stay active after a completed move. */
   isSticky: boolean;
 }
 
 /**
- * Pointer-up: fire the §N moveElement command once — host-follow moves the
- * wall AND its hosted bars in one command transaction, so one undo level
+ * Pointer-up: fire the §N command once — moveElement for a wall (host-follow
+ * moves the wall AND its hosted bars in one command transaction), moveBar for
+ * a bar (detach-then-translate for a group member) — so one undo level
  * restores all of it exactly (Q4-a). A below-tolerance delta is a click, not
  * a drag: nothing commits and the tool stays active. After a completed move
  * the single-shot tool auto-returns to Select (§B.6 rule 1) unless sticky
  * (rule 2). Command rejections surface as a status hint and keep the tool.
  */
 export function commitElementDrag(options: CommitElementDragOptions): void {
-  const { dispatch, elementId, delta, isSticky } = options;
+  const { dispatch, target, delta, isSticky } = options;
   if (Math.hypot(delta.x, delta.y) < DRAG_DELTA_TOLERANCE_MM) return;
   try {
-    dispatch(moveElement({ elementId, delta }));
+    if (target.entityType === 'bar') {
+      dispatch(moveBar({ barId: target.id, delta }));
+    } else if (target.entityType === 'barGroup') {
+      // Group move (M3 T5, author direction): region re-target + rule-exact
+      // regenerate inside one movePlacementGroup command.
+      dispatch(movePlacementGroup({ groupId: target.id, delta }));
+    } else {
+      dispatch(moveElement({ elementId: target.id, delta }));
+    }
   } catch (error) {
     if (!(error instanceof CommandError)) throw error;
     dispatch(setCursorHint(error.message));

@@ -6,10 +6,18 @@ import { BarMesh } from './BarMesh';
 export function BarsLayer() {
   const bars = useAppSelector((state) => Object.values(state.project.reinforcement), shallowEqual);
   const selectedIds = useAppSelector((state) => state.ui.selection.barIds, shallowEqual);
+  const selectedGroupIds = useAppSelector((state) => state.ui.selection.placementGroupIds, shallowEqual);
   return (
     <>
       {bars.map((bar) => (
-        <BarMesh key={bar.id} bar={bar} isSelected={selectedIds.includes(bar.id)} />
+        <BarMesh
+          key={bar.id}
+          bar={bar}
+          isSelected={selectedIds.includes(bar.id)}
+          isGroupSelected={
+            bar.placementGroupId !== undefined && selectedGroupIds.includes(bar.placementGroupId)
+          }
+        />
       ))}
     </>
   );

@@ -3,59 +3,22 @@
 // orientation — with catalog defaults, editable BEFORE commit; edits hit the
 // transient params store, so the live viewport preview regenerates at frame
 // rate and the next commit uses them. Dumb component (rules 1/2): it renders
-// the store and writes patches; all rule math stays in src/engine/.
-import { useState } from 'react';
+// the store and writes patches; all rule math stays in src/engine/. The
+// field primitives are shared with the selected-group panel
+// (param-fields.tsx, M3 T5).
 import { DEFAULT_DIAMETERS } from '@/data/catalog/steel';
 import { setBarGroupParams, useBarGroupParams } from '../viewport/bar-group-params';
-
-const FIELD_CLASS =
-  'w-full rounded-sm border border-border bg-background px-1.5 py-0.5 font-mono text-foreground ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring';
-const LABEL_CLASS = 'flex items-center justify-between gap-2';
-
-interface ParamNumberFieldProps {
-  label: string;
-  value: number;
-  onCommit: (value: number) => void;
-}
-
-/** mm number field: local text while typing, commits a valid number on
- *  Enter/blur; the render-time adjustment pattern resyncs the text when the
- *  store value changes externally (no effect, no cascading render). */
-function ParamNumberField({ label, value, onCommit }: ParamNumberFieldProps) {
-  const [draft, setDraft] = useState<{ base: number; text: string }>({ base: value, text: String(value) });
-  if (draft.base !== value) setDraft({ base: value, text: String(value) });
-  const commit = () => {
-    const parsed = Number(draft.text);
-    if (Number.isFinite(parsed)) onCommit(parsed);
-    else setDraft({ base: value, text: String(value) });
-  };
-  return (
-    <label className={LABEL_CLASS}>
-      <span>{label}</span>
-      <input
-        className={FIELD_CLASS}
-        inputMode='decimal'
-        value={draft.text}
-        onChange={(event) => setDraft({ base: value, text: event.target.value })}
-        onBlur={commit}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') commit();
-        }}
-      />
-    </label>
-  );
-}
+import { PARAM_FIELD_CLASS, PARAM_LABEL_CLASS, ParamNumberField } from './param-fields';
 
 export function BarGroupParamsPanel() {
   const params = useBarGroupParams();
   return (
     <section aria-label='Bar group rule' className='space-y-1.5'>
       <h2 className='font-medium text-foreground'>Bar group rule</h2>
-      <label className={LABEL_CLASS}>
+      <label className={PARAM_LABEL_CLASS}>
         <span>Diameter</span>
         <select
-          className={FIELD_CLASS}
+          className={PARAM_FIELD_CLASS}
           value={params.diameterMm}
           onChange={(event) => setBarGroupParams({ diameterMm: Number(event.target.value) })}
         >
@@ -66,10 +29,10 @@ export function BarGroupParamsPanel() {
           ))}
         </select>
       </label>
-      <label className={LABEL_CLASS}>
+      <label className={PARAM_LABEL_CLASS}>
         <span>Orientation</span>
         <select
-          className={FIELD_CLASS}
+          className={PARAM_FIELD_CLASS}
           value={params.orientation}
           onChange={(event) =>
             setBarGroupParams({ orientation: event.target.value as 'horizontal' | 'vertical' })
@@ -82,22 +45,34 @@ export function BarGroupParamsPanel() {
       <ParamNumberField
         label='Cover (mm)'
         value={params.coverMm}
-        onCommit={(coverMm) => setBarGroupParams({ coverMm })}
+        onCommit={(coverMm) => {
+          setBarGroupParams({ coverMm });
+          return true; // transient pre-commit params accept any value — the command validates
+        }}
       />
       <ParamNumberField
         label='Spacing (mm)'
         value={params.spacingMm}
-        onCommit={(spacingMm) => setBarGroupParams({ spacingMm })}
+        onCommit={(spacingMm) => {
+          setBarGroupParams({ spacingMm });
+          return true;
+        }}
       />
       <ParamNumberField
         label='Edge start (mm)'
         value={params.edgeDistanceStartMm}
-        onCommit={(edgeDistanceStartMm) => setBarGroupParams({ edgeDistanceStartMm })}
+        onCommit={(edgeDistanceStartMm) => {
+          setBarGroupParams({ edgeDistanceStartMm });
+          return true;
+        }}
       />
       <ParamNumberField
         label='Edge end (mm)'
         value={params.edgeDistanceEndMm}
-        onCommit={(edgeDistanceEndMm) => setBarGroupParams({ edgeDistanceEndMm })}
+        onCommit={(edgeDistanceEndMm) => {
+          setBarGroupParams({ edgeDistanceEndMm });
+          return true;
+        }}
       />
       <p className='pt-1'>Applies to the next placement — the live preview follows.</p>
     </section>

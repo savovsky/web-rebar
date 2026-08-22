@@ -30,11 +30,20 @@ export const deletePlacementGroup =
       dispatch(detachBars({ ids: group.bars }));
     } else {
       dispatch(removeBars({ ids: group.bars }));
-      const { selection } = state.ui;
-      const prunedBarIds = selection.barIds.filter((id) => !group.bars.includes(id));
-      if (prunedBarIds.length !== selection.barIds.length) {
-        dispatch(setSelection({ elementIds: selection.elementIds, barIds: prunedBarIds }));
-      }
     }
     dispatch(removePlacementGroup({ id: params.groupId }));
+
+    // Prune selection references to the removed group (M3 T5) and its bars.
+    const { selection } = state.ui;
+    const pruned = {
+      elementIds: selection.elementIds,
+      barIds: selection.barIds.filter((id) => params.removeBars === false || !group.bars.includes(id)),
+      placementGroupIds: selection.placementGroupIds.filter((id) => id !== params.groupId),
+    };
+    if (
+      pruned.barIds.length !== selection.barIds.length ||
+      pruned.placementGroupIds.length !== selection.placementGroupIds.length
+    ) {
+      dispatch(setSelection(pruned));
+    }
   };

@@ -28,7 +28,7 @@ import { snapPointToGrid } from '@/engine/snapping';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { CLICK_DRAG_TOLERANCE_PX, SECTION_HANDLE_SIZE_MM, SECTION_VOLUME_FILL_OPACITY } from './constants';
 import { CROSSHAIR_RENDER_ORDER } from './draft-crosshair';
-import { clearHoverTarget, pickPointerWinner, setHoverTarget, useIsHoverTarget } from './hover-target';
+import { clearHoverTarget, pickPointerWinner, setHoverFromPick, useIsHoverTarget } from './hover-target';
 import { commitSectionDrag } from './section-volume-drag';
 import { useViewportTheme } from './viewport-theme';
 
@@ -77,7 +77,9 @@ function useSectionDrag(options: UseSectionDragOptions) {
     if (!drag) {
       // Not dragging: under the Select tool this move feeds the hover picking
       // (the fill box only wins when no bar/wall along the ray outranks it).
-      if (isSelectTool) setHoverTarget(pickPointerWinner(event.intersections));
+      if (isSelectTool) {
+        setHoverFromPick(pickPointerWinner(event.intersections), event.nativeEvent.shiftKey);
+      }
       return;
     }
     const ground = groundFromEvent(event);

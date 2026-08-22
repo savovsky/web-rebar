@@ -100,3 +100,51 @@ Status: ✅ manual 2026-08-21
 **Then** all behave exactly as at T3
 
 Status: ✅ manual 2026-08-21
+
+## M3-T13 — Move an individual bar (M3 T5, Move tool bar branch)
+
+**Given** a wall with an individually placed bar and the Move tool (M) active
+**When** the author hovers the bar and drags it
+**Then** the bar alone highlights and drags with live offset and grid snap (Shift disables snap); the host wall does not move; pointer-up commits; single-shot auto-returns to Select; ONE undo step restores the exact pre-move position
+
+Status: ✅ manual 2026-08-22
+
+## M3-T14 — Dragging a group bar detaches it (M3 T5, Q6)
+
+**Given** a placement group on a wall face and the Move tool active
+**When** the author drags one group member (no Shift)
+**Then** only that bar moves — it leaves the group (detached per Q6); ONE undo step restores BOTH its membership AND its position exactly
+
+Status: ✅ manual 2026-08-22
+
+## M3-T15 — Regenerate refills the vacated slot (M3 T5, Q6-a)
+
+**Given** a group with one detached (moved-out) member
+**When** the author edits the group's rule (e.g. spacing) in the Properties panel
+**Then** the group regenerates rule-exactly — the vacated slot is refilled — while the detached bar stays exactly where it was dropped, now an independent bar
+
+Status: ✅ manual 2026-08-22
+
+## M3-T16 — Group selection + rule edit (M3 T5, §B.5 double-click row)
+
+**Given** a placement group on a wall face
+**When** the author double-clicks a group bar and edits rule params (Ø, spacing, cover, edge distances, orientation) in the Properties panel
+**Then** the whole group selects (all members highlight with the selection token); the panel shows the group's rule with mark and bar count; each edit regenerates the group's bars live as ONE undo step; an invalid value (e.g. spacing 0) surfaces a status hint and the field reverts, the group unchanged
+
+Status: ✅ manual 2026-08-22
+
+## M3-T17 — Shift+hover pre-selection and group move (M3 T5, author direction 2026-08-22)
+
+**Given** a placement group and the Move tool active
+**When** the author hovers a group bar, holds Shift, and drags
+**Then** hover shows the single bar; Shift highlights the ENTIRE group; a drag started WITH Shift moves the whole group live along the face (grid snap on the delta) — the region re-targets and bars regenerate rule-exactly, host wall untouched, ONE undo level; releasing Shift mid-drag still commits the group move (Shift mid-drag only toggles snap); the same grab WITHOUT Shift detaches and moves the single bar (M3-T14); a cross-chord drag on a vertical side face is rejected with a status hint
+
+Status: ✅ manual 2026-08-22
+
+## M3-T18 — Group delete + regression (M3 T5)
+
+**Given** a selected group (double-click) and the M3 T5 build
+**When** the author presses Delete, and also works the existing tools (W, B, S, wall move, individual-bar delete, undo/redo)
+**Then** Delete removes the group WITH its bars as ONE undo level (exact restore on undo); deleting a single group bar also removes it from the group's membership; everything else behaves exactly as at T4
+
+Status: ✅ manual 2026-08-22

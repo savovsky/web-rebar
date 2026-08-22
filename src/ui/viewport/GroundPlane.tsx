@@ -10,7 +10,7 @@ import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { clearSelection } from '@/stores/ui-slice';
 import { CLICK_DRAG_TOLERANCE_PX, GROUND_PLANE_SIZE_MM } from './constants';
 import { setCursorPoint } from './cursor-position';
-import { pickPointerWinner, setHoverTarget } from './hover-target';
+import { pickPointerWinner, setHoverFromPick } from './hover-target';
 import { advanceWallDraft } from './place-wall-draft';
 import { useReferenceSnapTargets } from './reference-snap-targets';
 import { advanceSectionCut, beginSectionCut, finishSectionCut } from './section-cut-draft';
@@ -48,10 +48,13 @@ export function GroundPlane() {
     // Hover picking (§B.5): every Select/Move-tool move handler resolves the
     // same winner from the same intersection list — idempotent writes, so
     // event order is irrelevant; empty ground resolves to null and clears the
-    // hover. Move hover is identical to Select (a bar highlights as a bar —
-    // and a drag starting on a bar does nothing; only walls are drag targets).
+    // hover. Move hover is identical to Select ("highlighted = what will
+    // move"); Shift+hover pre-highlights a bar's whole placement group (§B.5
+    // revised 2026-08-22, M3 T5).
     const isHoverTool = activeTool === 'select' || activeTool === 'move';
-    if (isHoverTool) setHoverTarget(pickPointerWinner(event.intersections));
+    if (isHoverTool) {
+      setHoverFromPick(pickPointerWinner(event.intersections), event.nativeEvent.shiftKey);
+    }
     setCursorPoint(resolvePoint(event));
   };
 

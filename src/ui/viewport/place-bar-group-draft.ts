@@ -121,7 +121,7 @@ export function commitBarGroup(options: CommitBarGroupOptions): void {
         orientation: params.orientation,
       }),
     );
-    dispatch(setSelection({ elementIds: [], barIds: result.barIds }));
+    dispatch(setSelection({ elementIds: [], barIds: result.barIds, placementGroupIds: [] }));
   } catch (error) {
     if (!(error instanceof CommandError)) throw error;
     // Keep the captured face AND the region: fix the params and re-commit.

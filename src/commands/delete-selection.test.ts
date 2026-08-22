@@ -1,15 +1,19 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   createSection,
   deleteSelection,
   placeBar,
+  placeBarGroup,
   placeWall,
   redo,
   setActiveSection,
   undo,
 } from '@/commands';
+import { initWasmFromDisk } from '@/engine/wasm-test-init';
 import { createAppStore } from '@/stores';
 import { setSelection } from '@/stores/ui-slice';
+
+beforeAll(initWasmFromDisk); // the selected-group test places a group
 
 const wallParams = {
   startPoint: { x: 0, y: 0, z: 0 },
@@ -37,13 +41,13 @@ describe('deleteSelection', () => {
     const wallId = store.dispatch(placeWall(wallParams));
     store.dispatch(placeBar({ hostElementId: wallId, diameter: 16, path: barPath }));
     store.dispatch(placeBar({ hostElementId: wallId, diameter: 10, path: barPath }));
-    store.dispatch(setSelection({ elementIds: [wallId], barIds: [] }));
+    store.dispatch(setSelection({ elementIds: [wallId], barIds: [], placementGroupIds: [] }));
     const preDelete = store.getState().project;
 
     store.dispatch(deleteSelection());
     expect(Object.keys(store.getState().project.elements)).toHaveLength(0);
     expect(Object.keys(store.getState().project.reinforcement)).toHaveLength(0);
-    expect(store.getState().ui.selection).toEqual({ elementIds: [], barIds: [] });
+    expect(store.getState().ui.selection).toEqual({ elementIds: [], barIds: [], placementGroupIds: [] });
 
     store.dispatch(undo());
     expect(store.getState().project).toBe(preDelete); // exact frozen reference, one step
@@ -55,14 +59,48 @@ describe('deleteSelection', () => {
     const store = createAppStore();
     const wallId = store.dispatch(placeWall(wallParams));
     const barId = store.dispatch(placeBar({ hostElementId: wallId, diameter: 12, path: barPath }));
-    store.dispatch(setSelection({ elementIds: [], barIds: [barId] }));
+    store.dispatch(setSelection({ elementIds: [], barIds: [barId], placementGroupIds: [] }));
 
     store.dispatch(deleteSelection());
 
     const state = store.getState();
     expect(state.project.elements[wallId]).toBeDefined();
     expect(Object.keys(state.project.reinforcement)).toHaveLength(0);
-    expect(state.ui.selection).toEqual({ elementIds: [], barIds: [] });
+    expect(state.ui.selection).toEqual({ elementIds: [], barIds: [], placementGroupIds: [] });
+  });
+
+  it('deletes a selected placement GROUP with its bars (the deletePlacementGroup default cascade) — one undo level restores all', () => {
+    const store = createAppStore();
+    const wallId = store.dispatch(placeWall(wallParams));
+    const { groupId, barIds } = store.dispatch(
+      placeBarGroup({
+        hostElementId: wallId,
+        faceKey: 'face:posThickness',
+        region: { uMin: -2000, uMax: 2000, vMin: -1400, vMax: 1400 },
+        diameter: 12,
+        barSpacing: 150,
+        edgeDistanceStart: 60,
+        edgeDistanceEnd: 60,
+        orientation: 'horizontal',
+      }),
+    );
+    store.dispatch(setSelection({ elementIds: [], barIds: [], placementGroupIds: [groupId] }));
+    const preDelete = store.getState().project;
+    const undoDepthBefore = store.getState().undo.past.length;
+
+    store.dispatch(deleteSelection());
+
+    const state = store.getState();
+    expect(state.project.placementGroups).toEqual({});
+    for (const barId of barIds) expect(state.project.reinforcement[barId]).toBeUndefined();
+    expect(state.project.elements[wallId]).toBeDefined(); // the host survives
+    expect(state.ui.selection).toEqual({ elementIds: [], barIds: [], placementGroupIds: [] });
+    expect(state.undo.past.length).toBe(undoDepthBefore + 1); // nested deletePlacementGroup joins the scope
+
+    store.dispatch(undo());
+    expect(store.getState().project).toBe(preDelete); // group + bars exactly back
+    store.dispatch(redo());
+    expect(store.getState().project.placementGroups).toEqual({});
   });
 
   it('handles a mixed selection (element + bar of another host) as ONE undo level', () => {
@@ -70,7 +108,7 @@ describe('deleteSelection', () => {
     const wallId = store.dispatch(placeWall(wallParams));
     const otherWallId = store.dispatch(placeWall({ ...wallParams, baseElevation: 3000 }));
     const otherBarId = store.dispatch(placeBar({ hostElementId: otherWallId, diameter: 12, path: barPath }));
-    store.dispatch(setSelection({ elementIds: [wallId], barIds: [otherBarId] }));
+    store.dispatch(setSelection({ elementIds: [wallId], barIds: [otherBarId], placementGroupIds: [] }));
     const preDelete = store.getState().project;
     const undoDepthBefore = store.getState().undo.past.length;
 
@@ -105,7 +143,7 @@ describe('deleteSelection', () => {
     const wallId = store.dispatch(placeWall(wallParams));
     const sectionId = store.dispatch(createSection(sectionParams(wallId)));
     store.dispatch(setActiveSection({ sectionId }));
-    store.dispatch(setSelection({ elementIds: [wallId], barIds: [] }));
+    store.dispatch(setSelection({ elementIds: [wallId], barIds: [], placementGroupIds: [] }));
 
     store.dispatch(deleteSelection());
 
@@ -131,7 +169,7 @@ describe('deleteSelection', () => {
   it('skips dangling selection ids (selection is not restored on undo, §E) and hints instead', () => {
     const store = createAppStore();
     const wallId = store.dispatch(placeWall(wallParams));
-    store.dispatch(setSelection({ elementIds: [wallId], barIds: [] }));
+    store.dispatch(setSelection({ elementIds: [wallId], barIds: [], placementGroupIds: [] }));
     store.dispatch(undo()); // wall gone; the selection still references it
     expect(store.getState().project.elements[wallId]).toBeUndefined();
 

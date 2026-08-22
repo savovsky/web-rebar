@@ -17,7 +17,9 @@ import { exportSectionDxf } from './export-section-dxf';
 import { extendBar } from './extend-bar';
 import { importIfcModel } from './import-ifc';
 import { importReferenceDocument } from './import-reference-document';
+import { moveBar } from './move-bar';
 import { moveElement } from './move-element';
+import { movePlacementGroup } from './move-placement-group';
 import { placeBar } from './place-bar';
 import { placeBarGroup } from './place-bar-group';
 import { placeWall } from './place-wall';
@@ -41,7 +43,9 @@ export { exportSectionDxf } from './export-section-dxf';
 export { extendBar } from './extend-bar';
 export { importIfcModel } from './import-ifc';
 export { importReferenceDocument } from './import-reference-document';
+export { moveBar } from './move-bar';
 export { moveElement } from './move-element';
+export { movePlacementGroup } from './move-placement-group';
 export { placeBar } from './place-bar';
 export { placeBarGroup } from './place-bar-group';
 export { placeWall } from './place-wall';
@@ -66,7 +70,9 @@ export type {
   ImportReferenceDocumentParams,
   ImportReferenceDocumentSummary,
 } from './import-reference-document';
+export type { MoveBarParams, MoveBarResult } from './move-bar';
 export type { MoveElementParams } from './move-element';
+export type { MovePlacementGroupParams, MovePlacementGroupResult } from './move-placement-group';
 export type { PlaceBarParams } from './place-bar';
 export type { PlaceBarGroupParams, PlaceBarGroupResult } from './place-bar-group';
 export type { PlaceWallParams } from './place-wall';
@@ -93,7 +99,9 @@ export const commandRegistry = {
   extendBar: { name: 'extendBar', thunk: extendBar },
   importIfcModel: { name: 'importIfcModel', thunk: importIfcModel },
   importReferenceDocument: { name: 'importReferenceDocument', thunk: importReferenceDocument },
+  moveBar: { name: 'moveBar', thunk: moveBar },
   moveElement: { name: 'moveElement', thunk: moveElement },
+  movePlacementGroup: { name: 'movePlacementGroup', thunk: movePlacementGroup },
   placeBar: { name: 'placeBar', thunk: placeBar },
   placeBarGroup: { name: 'placeBarGroup', thunk: placeBarGroup },
   placeWall: { name: 'placeWall', thunk: placeWall },

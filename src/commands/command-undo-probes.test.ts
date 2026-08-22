@@ -1,7 +1,7 @@
 // The M1 T6 registry-completeness tripwire (the §E undo-per-command review
 // row), extracted from m1-acceptance.test.ts at M3 T3 when that file hit the
 // lint line ceiling — the probe map grows with every command-adding task and
-// M3 adds more (T3's three group commands now, T5's moveBar next). EVERY
+// M3 adds more (T3's three group commands, T5's moveBar). EVERY
 // registry command is probed: a new command fails the probes-cover test until
 // its undo behavior is decided (the tripwire working as designed, the M2
 // pattern). Project-mutating commands must record exactly ONE undo level with
@@ -25,7 +25,9 @@ import {
   extendBar,
   importIfcModel,
   importReferenceDocument,
+  moveBar,
   moveElement,
+  movePlacementGroup,
   placeBar,
   placeBarGroup,
   placeWall,
@@ -174,6 +176,15 @@ const commandProbes: Record<CommandName, (fixture: ProbeFixture) => void | Promi
   moveElement: ({ store, wallId }) => {
     store.dispatch(moveElement({ elementId: wallId, delta: MOVE_DELTA }));
   },
+  moveBar: ({ store, barId }) => {
+    store.dispatch(moveBar({ barId, delta: MOVE_DELTA }));
+  },
+  movePlacementGroup: ({ store, groupId }) => {
+    // posThickness face frame: u = −X (u = cross(+Z, normal)) — an
+    // along-chord plan delta projects to du; the cross-chord component does
+    // not reach a vertical side face.
+    store.dispatch(movePlacementGroup({ groupId, delta: { x: 300, y: 0, z: 0 } }));
+  },
   deleteBar: ({ store, barId }) => {
     store.dispatch(deleteBar({ id: barId }));
   },
@@ -184,7 +195,7 @@ const commandProbes: Record<CommandName, (fixture: ProbeFixture) => void | Promi
     store.dispatch(deleteSection({ sectionId }));
   },
   deleteSelection: ({ store, wallId }) => {
-    store.dispatch(setSelection({ elementIds: [wallId], barIds: [] }));
+    store.dispatch(setSelection({ elementIds: [wallId], barIds: [], placementGroupIds: [] }));
     store.dispatch(deleteSelection());
   },
   undo: ({ store }) => {
@@ -211,6 +222,8 @@ describe('every registered command is undoable (§E — the M1 T6 registry-compl
       'createSection',
       'reshapeSection',
       'moveElement',
+      'moveBar',
+      'movePlacementGroup',
       'deleteBar',
       'deleteElement',
       'deleteSection',

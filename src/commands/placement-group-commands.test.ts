@@ -339,7 +339,7 @@ describe('deletePlacementGroup', () => {
   it('default removes the group AND its bars (the deleteElement cascade precedent), prunes the selection — ONE undo level restores all exactly', () => {
     const { store, wallId } = createStoreWithWall();
     const { groupId, barIds } = store.dispatch(placeBarGroup(groupParams(wallId)));
-    store.dispatch(setSelection({ elementIds: [], barIds: [barIds[0], barIds[5]] }));
+    store.dispatch(setSelection({ elementIds: [], barIds: [barIds[0], barIds[5]], placementGroupIds: [] }));
     const preDelete = store.getState().project;
     const depthBefore = store.getState().undo.past.length;
 

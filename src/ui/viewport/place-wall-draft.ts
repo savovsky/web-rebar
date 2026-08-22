@@ -26,7 +26,7 @@ export function advanceWallDraft({ dispatch, committedPoints, point }: AdvanceWa
   }
   try {
     const wallId = dispatch(placeWall({ startPoint, endPoint: point, ...DEFAULT_WALL_DIMENSIONS }));
-    dispatch(setSelection({ elementIds: [wallId], barIds: [] }));
+    dispatch(setSelection({ elementIds: [wallId], barIds: [], placementGroupIds: [] }));
     // Chain: the placed wall's end point becomes the next wall's start point.
     dispatch(startDraft({ kind: 'wall' }));
     dispatch(addDraftPoint(point));
