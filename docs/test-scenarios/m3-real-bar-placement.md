@@ -35,7 +35,7 @@ Status: ✅ manual 2026-08-21
 **When** the author launches the app and uses Place Wall (W) and Place Bar (B)
 **Then** both tools behave exactly as before; placed bars keep their cover from all faces; undo/redo clean
 
-Status: ⬜ pending author confirmation
+Status: ✅ closed without run (author decision 2026-08-22 — the M3 regression re-run was cancelled; T2 changed no UI by design; see M3-T28)
 
 ## M3-T05 — Regression after §N group-commands task (M3 T3)
 
@@ -43,7 +43,7 @@ Status: ⬜ pending author confirmation
 **When** the author launches the app and works the existing tools: Place Wall (W), Place Bar (B) incl. chained bends, Move (M), Delete, undo/redo through the sequence
 **Then** all existing workflows behave exactly as before: individuals place fire-and-forget with cover kept from all faces; every edit is one undo step; the group commands are command-layer only (no UI yet — T4/T5)
 
-Status: ⬜ pending author confirmation
+Status: ✅ closed without run (author decision 2026-08-22 — same rationale as M3-T28; T3 changed no UI by design; the group commands are covered headless)
 
 ## M3-T06 — Whole-face group via Enter (M3 T4, action A)
 
@@ -227,4 +227,4 @@ Status: ✅ manual 2026-08-22
 **When** the full M3 regression pass is run as one session: **M3-T04/T05** (the regression smoke — app boots, W/B/M/Delete/undo behave exactly as at M2; subsumes the two pending headless-task regressions) → **M3-T06…T12** (the Place Bar Group tool — whole-face and dragged/click-click regions over a traced DXF background, rejection/sticky/Esc behavior) → **M3-T13…T18** (bar moves, group-bar detach + regenerate refill, group selection + rule edit, Shift+hover group move, group delete) → **M3-T19…T26** (placement-time clash warnings non-blocking, the Collision Check button, the same-plane mesh case, Esc dismissal, color precedence)
 **Then** every listed scenario behaves as persisted; the milestone is confirmed end-to-end in the browser; headless spot-check (optional): `pnpm test m3-acceptance` → 5 green tests
 
-Status: ⬜ pending author confirmation
+Status: ✅ closed WITHOUT run (author decision 2026-08-22): the milestone-closing regression re-run was cancelled — heavy UX/UI changes are expected as soon as the POC phase has verified everything can be built and run smoothly in the browser (no tech walls); the per-task manual walkthroughs (M3-T06…T26 ✅) plus the durable headless suites (`m3-acceptance.test.ts` + `command-undo-probes.test.ts` — 483 tests) are the milestone record. M3-T04/T05 (the subsumed regression smokes) closed the same way.

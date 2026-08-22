@@ -69,8 +69,8 @@ This folder collects **behavioral test scenarios**, captured session by session 
 | [M3-T01](./m3-real-bar-placement.md#m3-t01--app-boots-place-wallplace-bar-unchanged-m3-t1) | App boots, Place Wall/Bar unchanged | M3 T1 | ✅ manual 2026-08-21 |
 | [M3-T02](./m3-real-bar-placement.md#m3-t02--bar-removeredo-is-one-undo-step-m3-t1) | Bar remove/redo one undo step | M3 T1 | ✅ manual 2026-08-21 |
 | [M3-T03](./m3-real-bar-placement.md#m3-t03--ifc-round-trip-and-foreign-ifc-solids-unchanged-m3-t1) | IFC round-trip + foreign-IFC solids | M3 T1 | ✅ manual 2026-08-21 |
-| [M3-T04](./m3-real-bar-placement.md#m3-t04--regression-after-engine-math-task-m3-t2) | Regression after engine-math task | M3 T2 | ⬜ pending manual |
-| [M3-T05](./m3-real-bar-placement.md#m3-t05--regression-after-n-group-commands-task-m3-t3) | Regression after §N group-commands task | M3 T3 | ⬜ pending manual |
+| [M3-T04](./m3-real-bar-placement.md#m3-t04--regression-after-engine-math-task-m3-t2) | Regression after engine-math task | M3 T2 | ✅ closed w/o run 2026-08-22 (author — re-run cancelled) |
+| [M3-T05](./m3-real-bar-placement.md#m3-t05--regression-after-n-group-commands-task-m3-t3) | Regression after §N group-commands task | M3 T3 | ✅ closed w/o run 2026-08-22 (author — re-run cancelled) |
 | [M3-T06](./m3-real-bar-placement.md#m3-t06--whole-face-group-via-enter-m3-t4-action-a) | Whole-face group via Enter | M3 T4 | ✅ manual 2026-08-21 |
 | [M3-T07](./m3-real-bar-placement.md#m3-t07--region-group-by-drag--enter-m3-t4-action-b) | Region group by drag + Enter | M3 T4 | ✅ manual 2026-08-21 |
 | [M3-T08](./m3-real-bar-placement.md#m3-t08--region-group-by-click-click-m3-t4-action-b-variant) | Region group by click-click | M3 T4 | ✅ manual 2026-08-21 |
@@ -93,4 +93,4 @@ This folder collects **behavioral test scenarios**, captured session by session 
 | [M3-T25](./m3-real-bar-placement.md#m3-t25--esc-dismisses-the-clash-warning-m3-t6-review-amendment) | Esc dismisses the clash warning | M3 T6 | ✅ manual 2026-08-22 |
 | [M3-T26](./m3-real-bar-placement.md#m3-t26--clash-color-precedence--regression-m3-t6) | Clash color precedence + regression | M3 T6 | ✅ manual 2026-08-22 |
 | [M3-T27](./m3-real-bar-placement.md#m3-t27--full-test-suite-green-under-a-busy-machine-m3-t7) | Full test suite green under a busy machine | M3 T7 | ✅ manual 2026-08-22 |
-| [M3-T28](./m3-real-bar-placement.md#m3-t28--m3-acceptance-pass-the-full-regression-walkthrough-m3-t8) | M3 acceptance pass: full regression walkthrough | M3 T8 | ⬜ pending manual |
+| [M3-T28](./m3-real-bar-placement.md#m3-t28--m3-acceptance-pass-the-full-regression-walkthrough-m3-t8) | M3 acceptance pass: full regression walkthrough | M3 T8 | ✅ closed w/o run 2026-08-22 (author — the re-run was cancelled; UX/UI churn expected right after the POC's no-tech-walls verification) |
