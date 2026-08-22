@@ -69,3 +69,27 @@ This folder collects **behavioral test scenarios**, captured session by session 
 | [M3-T01](./m3-real-bar-placement.md#m3-t01--app-boots-place-wallplace-bar-unchanged-m3-t1) | App boots, Place Wall/Bar unchanged | M3 T1 | ✅ manual 2026-08-21 |
 | [M3-T02](./m3-real-bar-placement.md#m3-t02--bar-removeredo-is-one-undo-step-m3-t1) | Bar remove/redo one undo step | M3 T1 | ✅ manual 2026-08-21 |
 | [M3-T03](./m3-real-bar-placement.md#m3-t03--ifc-round-trip-and-foreign-ifc-solids-unchanged-m3-t1) | IFC round-trip + foreign-IFC solids | M3 T1 | ✅ manual 2026-08-21 |
+| [M3-T04](./m3-real-bar-placement.md#m3-t04--regression-after-engine-math-task-m3-t2) | Regression after engine-math task | M3 T2 | ⬜ pending manual |
+| [M3-T05](./m3-real-bar-placement.md#m3-t05--regression-after-n-group-commands-task-m3-t3) | Regression after §N group-commands task | M3 T3 | ⬜ pending manual |
+| [M3-T06](./m3-real-bar-placement.md#m3-t06--whole-face-group-via-enter-m3-t4-action-a) | Whole-face group via Enter | M3 T4 | ✅ manual 2026-08-21 |
+| [M3-T07](./m3-real-bar-placement.md#m3-t07--region-group-by-drag--enter-m3-t4-action-b) | Region group by drag + Enter | M3 T4 | ✅ manual 2026-08-21 |
+| [M3-T08](./m3-real-bar-placement.md#m3-t08--region-group-by-click-click-m3-t4-action-b-variant) | Region group by click-click | M3 T4 | ✅ manual 2026-08-21 |
+| [M3-T09](./m3-real-bar-placement.md#m3-t09--region-corners-snap-to-a-dxf-background-m3-t4-b3-revised) | Region corners snap to a DXF background | M3 T4 | ✅ manual 2026-08-21 |
+| [M3-T10](./m3-real-bar-placement.md#m3-t10--rejection-keeps-face-and-region-m3-t4) | Rejection keeps face and region | M3 T4 | ✅ manual 2026-08-21 |
+| [M3-T11](./m3-real-bar-placement.md#m3-t11--esc--sticky-behavior-m3-t4-b6-rules-12) | Esc / sticky behavior | M3 T4 | ✅ manual 2026-08-21 |
+| [M3-T12](./m3-real-bar-placement.md#m3-t12--regression-existing-tools-unchanged-m3-t4) | Regression: existing tools unchanged | M3 T4 | ✅ manual 2026-08-21 |
+| [M3-T13](./m3-real-bar-placement.md#m3-t13--move-an-individual-bar-m3-t5-move-tool-bar-branch) | Move an individual bar | M3 T5 | ✅ manual 2026-08-22 |
+| [M3-T14](./m3-real-bar-placement.md#m3-t14--dragging-a-group-bar-detaches-it-m3-t5-q6) | Dragging a group bar detaches it | M3 T5 | ✅ manual 2026-08-22 |
+| [M3-T15](./m3-real-bar-placement.md#m3-t15--regenerate-refills-the-vacated-slot-m3-t5-q6-a) | Regenerate refills the vacated slot | M3 T5 | ✅ manual 2026-08-22 |
+| [M3-T16](./m3-real-bar-placement.md#m3-t16--group-selection--rule-edit-m3-t5-b5-double-click-row) | Group selection + rule edit | M3 T5 | ✅ manual 2026-08-22 |
+| [M3-T17](./m3-real-bar-placement.md#m3-t17--shifthover-pre-selection-and-group-move-m3-t5-author-direction-2026-08-22) | Shift+hover pre-selection and group move | M3 T5 | ✅ manual 2026-08-22 |
+| [M3-T18](./m3-real-bar-placement.md#m3-t18--group-delete--regression-m3-t5) | Group delete + regression | M3 T5 | ✅ manual 2026-08-22 |
+| [M3-T19](./m3-real-bar-placement.md#m3-t19--placement-time-clash-warning-non-blocking-m3-t6-q8) | Placement-time clash warning, non-blocking | M3 T6 | ✅ manual 2026-08-22 |
+| [M3-T20](./m3-real-bar-placement.md#m3-t20--moving-a-bar-into-and-out-of-a-clash-m3-t6) | Moving a bar into and out of a clash | M3 T6 | ✅ manual 2026-08-22 |
+| [M3-T21](./m3-real-bar-placement.md#m3-t21--group-move-into-a-clash-m3-t6) | Group move into a clash | M3 T6 | ✅ manual 2026-08-22 |
+| [M3-T22](./m3-real-bar-placement.md#m3-t22--group-rule-edit-into-a-clash-m3-t6) | Group rule edit into a clash | M3 T6 | ✅ manual 2026-08-22 |
+| [M3-T23](./m3-real-bar-placement.md#m3-t23--collision-check-button-m3-t6-review-amendment-k1-on-demand) | Collision Check button (§K.1 on-demand) | M3 T6 | ✅ manual 2026-08-22 |
+| [M3-T24](./m3-real-bar-placement.md#m3-t24--same-plane-perpendicular-mesh-m3-t6-review-amendment) | Same-plane perpendicular mesh | M3 T6 | ✅ manual 2026-08-22 |
+| [M3-T25](./m3-real-bar-placement.md#m3-t25--esc-dismisses-the-clash-warning-m3-t6-review-amendment) | Esc dismisses the clash warning | M3 T6 | ✅ manual 2026-08-22 |
+| [M3-T26](./m3-real-bar-placement.md#m3-t26--clash-color-precedence--regression-m3-t6) | Clash color precedence + regression | M3 T6 | ✅ manual 2026-08-22 |
+| [M3-T27](./m3-real-bar-placement.md#m3-t27--full-test-suite-green-under-a-busy-machine-m3-t7) | Full test suite green under a busy machine | M3 T7 | ✅ manual 2026-08-22 |

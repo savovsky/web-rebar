@@ -215,47 +215,54 @@ describe('every registered command is undoable (§E — the M1 T6 registry-compl
     expect(Object.keys(commandProbes).sort()).toEqual(Object.keys(commandRegistry).sort());
   });
 
-  it('each project-mutating command records exactly ONE undo level and restores the exact pre-command reference on undo/redo', async () => {
-    const mutating: CommandName[] = [
-      'placeWall',
-      'placeBar',
-      'placeBarGroup',
-      'updatePlacementGroup',
-      'deletePlacementGroup',
-      'extendBar',
-      'createSection',
-      'reshapeSection',
-      'moveElement',
-      'moveBar',
-      'movePlacementGroup',
-      'deleteBar',
-      'deleteElement',
-      'deleteSection',
-      'deleteSelection',
-      'importIfcModel',
-      'importReferenceDocument',
-      'removeReferenceDocument',
-      'setReferenceDocumentVisibility',
-    ];
-    for (const name of mutating) {
-      const fixture = await createProbeFixture();
-      const before = fixture.store.getState().project;
-      const depthBefore = fixture.store.getState().undo.past.length;
+  // Generous timeouts (the M1 T5 contention rationale — the full probe
+  // loop over 19 mutating commands exceeds the 5 s default when the suite
+  // shares workers; no timing is asserted here, only undo semantics).
+  it(
+    'each project-mutating command records exactly ONE undo level and restores the exact pre-command reference on undo/redo',
+    { timeout: 120_000 },
+    async () => {
+      const mutating: CommandName[] = [
+        'placeWall',
+        'placeBar',
+        'placeBarGroup',
+        'updatePlacementGroup',
+        'deletePlacementGroup',
+        'extendBar',
+        'createSection',
+        'reshapeSection',
+        'moveElement',
+        'moveBar',
+        'movePlacementGroup',
+        'deleteBar',
+        'deleteElement',
+        'deleteSection',
+        'deleteSelection',
+        'importIfcModel',
+        'importReferenceDocument',
+        'removeReferenceDocument',
+        'setReferenceDocumentVisibility',
+      ];
+      for (const name of mutating) {
+        const fixture = await createProbeFixture();
+        const before = fixture.store.getState().project;
+        const depthBefore = fixture.store.getState().undo.past.length;
 
-      // Awaiting is type-neutral: sync probes return void, async ones
-      // (exportIfc/importIfcModel — lazy web-ifc load) a promise.
-      await commandProbes[name](fixture);
+        // Awaiting is type-neutral: sync probes return void, async ones
+        // (exportIfc/importIfcModel — lazy web-ifc load) a promise.
+        await commandProbes[name](fixture);
 
-      const after = fixture.store.getState().project;
-      expect(after, name).not.toBe(before);
-      expect(fixture.store.getState().undo.past, name).toHaveLength(depthBefore + 1);
+        const after = fixture.store.getState().project;
+        expect(after, name).not.toBe(before);
+        expect(fixture.store.getState().undo.past, name).toHaveLength(depthBefore + 1);
 
-      fixture.store.dispatch(undo());
-      expect(fixture.store.getState().project, name).toBe(before); // exact frozen reference
-      fixture.store.dispatch(redo());
-      expect(fixture.store.getState().project, name).toBe(after);
-    }
-  });
+        fixture.store.dispatch(undo());
+        expect(fixture.store.getState().project, name).toBe(before); // exact frozen reference
+        fixture.store.dispatch(redo());
+        expect(fixture.store.getState().project, name).toBe(after);
+      }
+    },
+  );
 
   it('setActiveSection records no undo level — undo covers project state only (§E)', async () => {
     const fixture = await createProbeFixture();
@@ -269,16 +276,20 @@ describe('every registered command is undoable (§E — the M1 T6 registry-compl
     expect(fixture.store.getState().ui.activeSectionId).toBe(fixture.sectionId);
   });
 
-  it('exportIfc records no undo level and mutates nothing — pure read + file output (M2 T2, same precedent as setActiveSection)', async () => {
-    const fixture = await createProbeFixture();
-    const depthBefore = fixture.store.getState().undo.past.length;
-    const projectBefore = fixture.store.getState().project;
+  it(
+    'exportIfc records no undo level and mutates nothing — pure read + file output (M2 T2, same precedent as setActiveSection)',
+    { timeout: 120_000 },
+    async () => {
+      const fixture = await createProbeFixture();
+      const depthBefore = fixture.store.getState().undo.past.length;
+      const projectBefore = fixture.store.getState().project;
 
-    await commandProbes.exportIfc(fixture);
+      await commandProbes.exportIfc(fixture);
 
-    expect(fixture.store.getState().undo.past).toHaveLength(depthBefore);
-    expect(fixture.store.getState().project).toBe(projectBefore);
-  });
+      expect(fixture.store.getState().undo.past).toHaveLength(depthBefore);
+      expect(fixture.store.getState().project).toBe(projectBefore);
+    },
+  );
 
   it('exportSectionDxf records no undo level and mutates nothing — pure read + file output (M2 T7, same precedent as exportIfc)', async () => {
     const fixture = await createProbeFixture();
@@ -303,7 +314,7 @@ describe('every registered command is undoable (§E — the M1 T6 registry-compl
     expect(fixture.store.getState().ui.cursorHint).toContain('Collision check');
   });
 
-  it('undo/redo themselves are never recorded', async () => {
+  it('undo/redo themselves are never recorded', { timeout: 120_000 }, async () => {
     const fixture = await createProbeFixture();
     const depthBefore = fixture.store.getState().undo.past.length;
     const projectBefore = fixture.store.getState().project;

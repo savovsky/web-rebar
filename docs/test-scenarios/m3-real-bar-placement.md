@@ -212,3 +212,11 @@ Status: ✅ manual 2026-08-22
 **Then** selection and hover colors outrank the red warning while interacting; with nothing clashing, every prior placement/edit flow behaves exactly as at T5 (no warnings, no red bars)
 
 Status: ✅ manual 2026-08-22
+
+## M3-T27 — Full test suite green under a busy machine (M3 T7)
+
+**Given** the T7 build (`vitest.config.ts` caps workers at 25%, the timeout-bumped probe files) and the author's normal parallel load (browser/editor/dev servers running)
+**When** the author runs `pnpm test`
+**Then** all 478 tests pass (the previously flaky timeout/budget-class tests stay green under load), the run finishes FASTER than before (~40 s wall), and the console shows the four T7 probe tables (group regenerate, collision check, section recompute, per-bar-mesh)
+
+Status: ✅ manual 2026-08-22

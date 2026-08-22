@@ -76,43 +76,49 @@ function asLinework(document: ReferenceDocument): LineworkReferenceDocument {
 }
 
 describe('sentence 1 — IFC round-trip: model → exportIfc → importIfcModel → identical model', () => {
-  it('a command-built model (wall + bent bar at 25 mm cover) round-trips EXACTLY (ids, geometry, intent); the import is exactly ONE undo level with exact undo/redo restore', async () => {
-    const source = createAppStore();
-    const wallId = source.dispatch(placeWall(WALL));
-    source.dispatch(placeWall(ELEVATED_WALL));
-    source.dispatch(placeBar({ hostElementId: wallId, diameter: 12, path: BENT_BAR_PATH }));
-    source.dispatch(placeBar({ hostElementId: wallId, diameter: 16, path: BENT_BAR_PATH.slice(0, 2) }));
-    const { bytes } = await source.dispatch(exportIfc());
-    const sourceProject = source.getState().project;
+  // Generous timeout (the M1 T5 contention rationale — the web-ifc load +
+  // round-trip exceeds the 5 s default when the full suite shares workers).
+  it(
+    'a command-built model (wall + bent bar at 25 mm cover) round-trips EXACTLY (ids, geometry, intent); the import is exactly ONE undo level with exact undo/redo restore',
+    { timeout: 120_000 },
+    async () => {
+      const source = createAppStore();
+      const wallId = source.dispatch(placeWall(WALL));
+      source.dispatch(placeWall(ELEVATED_WALL));
+      source.dispatch(placeBar({ hostElementId: wallId, diameter: 12, path: BENT_BAR_PATH }));
+      source.dispatch(placeBar({ hostElementId: wallId, diameter: 16, path: BENT_BAR_PATH.slice(0, 2) }));
+      const { bytes } = await source.dispatch(exportIfc());
+      const sourceProject = source.getState().project;
 
-    const target = createAppStore();
-    const preImport = target.getState().project;
-    const summary = await target.dispatch(importIfcModel({ buffer: bytes }));
+      const target = createAppStore();
+      const preImport = target.getState().project;
+      const summary = await target.dispatch(importIfcModel({ buffer: bytes }));
 
-    expect(summary.importedWalls).toBe(2);
-    expect(summary.importedBars).toBe(2);
-    expect(summary.skipped).toEqual({ missingIntentPset: 0, unsupportedElements: 0 });
-    // Identical model (metadata/sections excluded per the §A definition): ids
-    // via GlobalId decode, geometry EXACT (T1 proved SPF doubles round-trip
-    // exactly), design intent (coverDistance, hostElementId, steelGrade,
-    // diameter) exactly equal. barMark (M3 T1, plan Q7 — assigned identity,
-    // never in IFC) is normalized out like metadata; the assignment must be
-    // a complete bijection, asserted via sortedBarMarks.
-    const imported = target.getState().project;
-    expect(imported.elements).toEqual(sourceProject.elements);
-    expect(stripBarMarks(imported.reinforcement)).toEqual(stripBarMarks(sourceProject.reinforcement));
-    expect(sortedBarMarks(imported.reinforcement)).toEqual([1, 2]);
+      expect(summary.importedWalls).toBe(2);
+      expect(summary.importedBars).toBe(2);
+      expect(summary.skipped).toEqual({ missingIntentPset: 0, unsupportedElements: 0 });
+      // Identical model (metadata/sections excluded per the §A definition): ids
+      // via GlobalId decode, geometry EXACT (T1 proved SPF doubles round-trip
+      // exactly), design intent (coverDistance, hostElementId, steelGrade,
+      // diameter) exactly equal. barMark (M3 T1, plan Q7 — assigned identity,
+      // never in IFC) is normalized out like metadata; the assignment must be
+      // a complete bijection, asserted via sortedBarMarks.
+      const imported = target.getState().project;
+      expect(imported.elements).toEqual(sourceProject.elements);
+      expect(stripBarMarks(imported.reinforcement)).toEqual(stripBarMarks(sourceProject.reinforcement));
+      expect(sortedBarMarks(imported.reinforcement)).toEqual([1, 2]);
 
-    // Exactly ONE undo level per import (Q4-a — the async command scope);
-    // undo restores the exact pre-import reference, redo re-applies it.
-    const postImport = target.getState().project;
-    expect(postImport).not.toBe(preImport);
-    expect(target.getState().undo.past).toHaveLength(1);
-    target.dispatch(undo());
-    expect(target.getState().project).toBe(preImport);
-    target.dispatch(redo());
-    expect(target.getState().project).toBe(postImport);
-  });
+      // Exactly ONE undo level per import (Q4-a — the async command scope);
+      // undo restores the exact pre-import reference, redo re-applies it.
+      const postImport = target.getState().project;
+      expect(postImport).not.toBe(preImport);
+      expect(target.getState().undo.past).toHaveLength(1);
+      target.dispatch(undo());
+      expect(target.getState().project).toBe(preImport);
+      target.dispatch(redo());
+      expect(target.getState().project).toBe(postImport);
+    },
+  );
 });
 
 describe('sentence 2 — DXF import: synthetic real-file fixture → the expected ReferenceDocument', () => {

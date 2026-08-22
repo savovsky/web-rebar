@@ -5,9 +5,14 @@
 // the same engine/placement math as the Place Bar tool. Requires the WASM
 // module to be initialized first (initWasmFromDisk in tests) — the section
 // primitives and bar meshes cross the §D boundary.
+// M3 T7: the GROUP-BUILT variant (buildGroupReferenceProject) — the same
+// 50-wall grid, 5 sections and 1,000-bar scale with every wall's 20 bars
+// owned by ONE placement group (placeBarGroup), for the §7 probes.
 import { createSection } from '@/commands/create-section';
 import { DEFAULT_BAR_DIAMETER_MM, placeBar, resolveDefaultCover } from '@/commands/place-bar';
+import { placeBarGroup } from '@/commands/place-bar-group';
 import { placeWall } from '@/commands/place-wall';
+import type { FaceRegion } from '@/data/models';
 import { getWallFaceFrame, resolveBarCenterline } from '@/engine/placement';
 import { createAppStore } from '@/stores';
 
@@ -61,6 +66,11 @@ export interface BuildReferenceProjectOptions {
   createStore?: () => ReferenceStore;
 }
 
+export interface GroupReferenceProject extends ReferenceProject {
+  /** In build order — group i owns bars [i*COUNT, (i+1)*COUNT). */
+  groupIds: string[];
+}
+
 interface WallGridPosition {
   originX: number;
   originY: number;
@@ -104,32 +114,32 @@ const placeBarOnWall = (options: BarPlacementOptions): string => {
   );
 };
 
-/**
- * Builds the reference project (deterministic geometry — nothing
- * performance-relevant depends on the UUID ids). 50 walls on a 5 × 10 grid,
- * 20 bars per wall (1,000 total), 5 sections; section s cuts the 10 walls of
- * grid column s (wall indices s, s+5, …, s+45).
- */
-export const buildReferenceProject = (options?: BuildReferenceProjectOptions): ReferenceProject => {
-  const store = options?.createStore ? options.createStore() : createAppStore();
+const createStoreFor = (options?: BuildReferenceProjectOptions): ReferenceStore =>
+  options?.createStore ? options.createStore() : createAppStore();
+
+/** The 50-wall 5 × 10 grid (shared by both fixture variants). */
+const placeWallGrid = (store: ReferenceStore): string[] => {
   const wallIds: string[] = [];
-  const barIds: string[] = [];
   for (let wallIndex = 0; wallIndex < REFERENCE_WALL_COUNT; wallIndex++) {
     const { originX, originY } = wallGridPosition(wallIndex);
-    const wallId = store.dispatch(
-      placeWall({
-        startPoint: { x: originX, y: originY, z: 0 },
-        endPoint: { x: originX + WALL_LENGTH_MM, y: originY, z: 0 },
-        thickness: WALL_THICKNESS_MM,
-        height: WALL_HEIGHT_MM,
-      }),
+    wallIds.push(
+      store.dispatch(
+        placeWall({
+          startPoint: { x: originX, y: originY, z: 0 },
+          endPoint: { x: originX + WALL_LENGTH_MM, y: originY, z: 0 },
+          thickness: WALL_THICKNESS_MM,
+          height: WALL_HEIGHT_MM,
+        }),
+      ),
     );
-    wallIds.push(wallId);
-    for (let barIndex = 0; barIndex < REFERENCE_BARS_PER_WALL; barIndex++) {
-      barIds.push(placeBarOnWall({ store, wallId, wallIndex, barIndex }));
-    }
   }
+  return wallIds;
+};
 
+/** One section per grid column (shared by both fixture variants): the cut
+ *  line spans all 10 rows, so section s cuts the 10 walls of column s (wall
+ *  indices s, s+5, …, s+45). */
+const createColumnSections = (store: ReferenceStore, wallIds: string[]): string[] => {
   const sectionIds: string[] = [];
   const lastRowY = (WALLS_PER_SECTION - 1) * WALL_SPACING_Y_MM;
   for (let s = 0; s < REFERENCE_SECTION_COUNT; s++) {
@@ -147,5 +157,74 @@ export const buildReferenceProject = (options?: BuildReferenceProjectOptions): R
       ),
     );
   }
-  return { store, wallIds, barIds, sectionIds };
+  return sectionIds;
+};
+
+/**
+ * Builds the reference project (deterministic geometry — nothing
+ * performance-relevant depends on the UUID ids). 50 walls on a 5 × 10 grid,
+ * 20 bars per wall (1,000 total), 5 sections; section s cuts the 10 walls of
+ * grid column s (wall indices s, s+5, …, s+45).
+ */
+export const buildReferenceProject = (options?: BuildReferenceProjectOptions): ReferenceProject => {
+  const store = createStoreFor(options);
+  const wallIds = placeWallGrid(store);
+  const barIds: string[] = [];
+  for (let wallIndex = 0; wallIndex < REFERENCE_WALL_COUNT; wallIndex++) {
+    for (let barIndex = 0; barIndex < REFERENCE_BARS_PER_WALL; barIndex++) {
+      barIds.push(placeBarOnWall({ store, wallId: wallIds[wallIndex], wallIndex, barIndex }));
+    }
+  }
+  return { store, wallIds, barIds, sectionIds: createColumnSections(store, wallIds) };
+};
+
+// --- group-built variant (M3 T7) ---
+
+/** Group-owned bar count per wall — the same 1,000-bar reference scale. The
+ *  rule: full posThickness face (v span = height 2,800), 60 mm edges,
+ *  spacing 140 → positions 60 + k·140 ≤ 2,740 → k = 0…19 (the T2 count
+ *  semantics) = 20 bars. */
+export const REFERENCE_GROUP_BAR_COUNT = 20;
+export const REFERENCE_GROUP_SPACING_MM = 140;
+const GROUP_EDGE_DISTANCE_MM = 60;
+/** Full posThickness face in face-local (u,v) — the frame origin is the face
+ *  center, so ONE rect serves every wall of the grid (Q3-a host-local). */
+const GROUP_FACE_REGION: FaceRegion = {
+  uMin: -WALL_LENGTH_MM / 2,
+  uMax: WALL_LENGTH_MM / 2,
+  vMin: -WALL_HEIGHT_MM / 2,
+  vMax: WALL_HEIGHT_MM / 2,
+};
+
+/**
+ * The M3 T7 variant of the reference project: the SAME 50-wall grid,
+ * 5 sections and 1,000-bar scale, but every wall's 20 bars are owned by ONE
+ * placement group (50 groups, placed through placeBarGroup — the command
+ * runs its Q8 prospective clash check per placement, so the build itself
+ * exercises the T6 engine at growing scale). Group bars are rule-generated
+ * STRAIGHT bars (2-point paths — the T2 layout generates no hooks; the
+ * bent-bar mesh shape stays covered by the individual fixture above).
+ */
+export const buildGroupReferenceProject = (options?: BuildReferenceProjectOptions): GroupReferenceProject => {
+  const store = createStoreFor(options);
+  const wallIds = placeWallGrid(store);
+  const groupIds: string[] = [];
+  const barIds: string[] = [];
+  for (const wallId of wallIds) {
+    const { groupId, barIds: groupBarIds } = store.dispatch(
+      placeBarGroup({
+        hostElementId: wallId,
+        faceKey: 'face:posThickness',
+        region: { ...GROUP_FACE_REGION },
+        diameter: DEFAULT_BAR_DIAMETER_MM,
+        barSpacing: REFERENCE_GROUP_SPACING_MM,
+        edgeDistanceStart: GROUP_EDGE_DISTANCE_MM,
+        edgeDistanceEnd: GROUP_EDGE_DISTANCE_MM,
+        orientation: 'horizontal',
+      }),
+    );
+    groupIds.push(groupId);
+    barIds.push(...groupBarIds);
+  }
+  return { store, wallIds, barIds, groupIds, sectionIds: createColumnSections(store, wallIds) };
 };
