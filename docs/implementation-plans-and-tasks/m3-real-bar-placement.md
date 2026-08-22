@@ -139,7 +139,7 @@
 | T5 | Group selection/edit UX + `moveBar` + detach (Q6; §B.5 revisions) | acceptance sentence 3 headless; manual move/detach/regenerate walkthrough | ✅ Done | 68d706d |
 | T6 | Collision check: parry3d decision gate + clash engine + Q8 surfacing | gate verdict recorded (doc 09); acceptance sentence 4 headless | ✅ Done | 033aba9 |
 | T7 | Performance probes at reference scale with groups (F3 revisit; §L.1 evidence) | probe table in task log; tripwires asserted; breaches escalated | ✅ Done | 6aada6d |
-| T8 | M3 acceptance pass: `m3-acceptance.test.ts` + checklist audit + docs/scenarios sweep | verdict table green; lint/test/build green | ✅ Done | — |
+| T8 | M3 acceptance pass: `m3-acceptance.test.ts` + checklist audit + docs/scenarios sweep | verdict table green; lint/test/build green | ✅ Done | 22364d8 |
 
 ---
 
